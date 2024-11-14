@@ -1,0 +1,10 @@
+name = "POSY2"
+uuid = "b62be552-3e07-49d0-bbfa-d9387eb027f7"
+authors = ["Krivtchik_G "]
+version = "0.1.0"
+
+[deps]
+ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
+
+[compat]
+ArgCheck = "2.3.0"

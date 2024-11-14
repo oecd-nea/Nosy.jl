@@ -1,0 +1,72 @@
+using ArgCheck
+
+"""
+    GenericTimeSeries{T}
+Basic implementation of the AbstractTimeSeries. Used as a base for the TimeMesh.
+Algebra properties not implemented for GenericTimeSeries.
+"""
+struct GenericTimeSeries{T} <: AbstractTimeSeries{T}
+    data::Vector{T}
+end
+
+"""
+    TimeMesh{T}
+Contain the time structure of the model; is used for conversion between different time series types.
+"""
+struct TimeMesh{T}
+    weight::GenericTimeSeries{T}
+    nstep::Int64
+    nhour::Int64
+    hour_at_step::GenericTimeSeries{T} # vector of size nstep, hour index as a function of step index
+    step_at_hour::GenericTimeSeries{Int64} # vector of size nhour, step index as a function of hour index
+end
+
+const RTimeMesh = TimeMesh{Rational{Int64}} # enforce parametric type of mesh in the general case to avoid parameterizing AbstractMeshedTimeSeries
+
+"""
+    TimeMesh(w::Vector{Int})
+Return a TimeMesh based on the timestep weight vector `w`.
+"""
+function TimeMesh(w::Vector{T}) where T
+    
+    @argcheck isinteger(sum(w)) "Please use a weight series with integer sum"
+
+    @argcheck all(w .> 0. .&& w .<= 1.) "Please only use rational or integer weights in ]0., 1]"
+
+    nstep = length(w)
+    nhour = Int(sum(w))
+
+    hour_at_step = Vector{T}(undef, nstep)
+    step_at_hour = Vector{Int64}(undef, nhour)
+
+    hour_at_step[1] = T(1)
+    step_at_hour[1] = 1
+
+    local h = T(1) # current hour
+    for s in 2:nstep # iterate over step index
+        h = h + w[s-1]
+        hour_at_step[s] = h #floor(h)
+        if floor(hour_at_step[s]) != floor(hour_at_step[s-1])
+            step_at_hour[Int(hour_at_step[s])] = s
+        end
+    end
+
+    return TimeMesh(
+        GenericTimeSeries(w), 
+        nstep, 
+        nhour, 
+        GenericTimeSeries(hour_at_step), 
+        GenericTimeSeries(step_at_hour)
+    )
+end
+
+nhours(m::TimeMesh) = m.nhour
+nsteps(m::TimeMesh) = m.nstep
+
+weight(m::TimeMesh, step::Int) = m.weight[step]
+
+hour(m::TimeMesh, step::Int) = m.hour_at_step[step]
+step(m::TimeMesh, hour::Int) = m.step_at_hour[hour]
+
+eachhour(m) = 1:nhours(m)
+eachstep(m) = 1:nsteps(m)
