@@ -46,7 +46,7 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
     mesh::RTimeMesh
 
     """
-        Stepwise(v, mesh::TimeMesh)
+        Stepwise(v::AbstractVector, mesh::TimeMesh)
     Return a Stepwise time series based on vector `v` and mesh `mesh`.
     """
     function Stepwise(v::AbstractVector{T}, m::TimeMesh) where T
@@ -55,6 +55,12 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
         new{T}(data, m)
     end
 end
+
+"""
+    Stepwise(v::Number, mesh::TimeMesh)
+Return a Stepwise time series based on Number `v` and mesh `mesh`.    
+"""
+Stepwise(v::Number, m::TimeMesh) = Stepwise(fill(v, nsteps(m)), m)
 
 # Hourly: time series based on a hourly timestep
 struct Hourly{T} <: AbstractMeshedTimeSeries{T}

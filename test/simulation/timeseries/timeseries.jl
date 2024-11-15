@@ -72,6 +72,13 @@ using POSY2: nhours, nsteps, eachhour, eachstep, shift
             @test s2[0] == -1.
         end
 
+        # Stepwise from Number
+        let s3 = Stepwise(5., m)
+            @test s3 isa Stepwise{Float64}
+            @test nsteps(s3) == nsteps(m)
+            @test all(s3[s] == 5. for s in eachstep(m))
+        end
+
     end
 
 
