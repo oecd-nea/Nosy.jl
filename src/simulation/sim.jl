@@ -23,3 +23,7 @@ function Sim(mesh::TimeMesh, model::Model; options::Dict=_defaultoptions())
     )
 end
 
+nsteps(s::Sim) = nsteps(s.mesh)
+nhours(s::Sim) = nhours(s.mesh)
+eachstep(s::Sim) = eachstep(s.mesh)
+eachhour(s::Sim) = eachhour(s.mesh)
