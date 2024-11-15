@@ -50,8 +50,13 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
     Return a Stepwise time series based on vector `v` and mesh `mesh`.
     """
     function Stepwise(v::AbstractVector{T}, m::TimeMesh) where T
-        @assert length(v) == nsteps(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nsteps(m)))"
-        data = convert(Vector{T}, v)
+        if length(v) == nsteps(m)
+            data = convert(Vector{T}, v)
+        elseif length(v) == nhours(m)
+            data = parent(Stepwise(Hourly(v, m)))
+        else
+            throw(ArgumentError("The provided time series does not have the correct number of steps ($(length(v)) instead of $(nsteps(m)) or $(nhours(m)))"))
+        end
         new{T}(data, m)
     end
 end
@@ -72,7 +77,7 @@ struct Hourly{T} <: AbstractMeshedTimeSeries{T}
     Return a Hourly time series based on vector `v` and mesh `mesh`.
     """
     function Hourly(v::AbstractVector{T}, m::TimeMesh) where T
-        @assert length(v) == nhours(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nhours(m)))"
+        @argcheck length(v) == nhours(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nhours(m)))"
         data = convert(Vector{T}, v)
         new{T}(data, m)
     end
@@ -125,3 +130,5 @@ function Stepwise(h::Hourly{T}) where T
     end
     return Stepwise(v, h.mesh)
 end
+
+Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)

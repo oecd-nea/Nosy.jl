@@ -79,6 +79,13 @@ using POSY2: nhours, nsteps, eachhour, eachstep, shift
             @test all(s3[s] == 5. for s in eachstep(m))
         end
 
+        # Stepwise from ~hourly data
+        let s4 = Stepwise(Float64.(1:nhours(m)), m)
+            @test s4 isa Stepwise{Float64}
+            @test nsteps(s4) == nsteps(m)
+            @test all(s4[2*h-1] == Float64(h) for h in eachhour(m))
+        end
+
     end
 
 
