@@ -1,5 +1,6 @@
 
 using ArgCheck
+using JuMP: AffExpr
 
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
@@ -39,6 +40,9 @@ Division by scalar operator for AbstractMeshedTimeSeries.
 """
 Base.:/(s::AbstractMeshedTimeSeries, n::Number) = typeof(s).name.wrapper(s.data / n, s.mesh)
 
+# conversion of Number to Float64 to keep symmetry between Hourly and Stepwise and simplify types
+_toVal(v::AbstractVector{<:Number}) = Float64.(v)
+_toVal(v::AbstractVector{AffExpr}) = convert(Vector{AffExpr}, v)
 
 # Stepwise: time series based on a timestep possibly inferior to hour
 struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
@@ -50,14 +54,14 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
     Return a Stepwise time series based on vector `v` and mesh `mesh`.
     """
     function Stepwise(v::AbstractVector{T}, m::TimeMesh) where T
+        l = length(v)
+        @argcheck l == nsteps(m) || l == nhours(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nsteps(m)) or $(nhours(m)))"
+        _data = _toVal(v)
         if length(v) == nsteps(m)
-            data = convert(Vector{T}, v)
+            return new{eltype(_data)}(_data,m)
         elseif length(v) == nhours(m)
-            data = parent(Stepwise(Hourly(v, m)))
-        else
-            throw(ArgumentError("The provided time series does not have the correct number of steps ($(length(v)) instead of $(nsteps(m)) or $(nhours(m)))"))
+            return Stepwise(Hourly(_data, m))
         end
-        new{T}(data, m)
     end
 end
 
@@ -65,7 +69,7 @@ end
     Stepwise(v::Number, mesh::TimeMesh)
 Return a Stepwise time series based on Number `v` and mesh `mesh`.    
 """
-Stepwise(v::Number, m::TimeMesh) = Stepwise(fill(v, nsteps(m)), m)
+Stepwise(v::Number, m::TimeMesh) = Stepwise(fill(Float64(v), nsteps(m)), m)
 
 # Hourly: time series based on a hourly timestep
 struct Hourly{T} <: AbstractMeshedTimeSeries{T}
@@ -78,8 +82,8 @@ struct Hourly{T} <: AbstractMeshedTimeSeries{T}
     """
     function Hourly(v::AbstractVector{T}, m::TimeMesh) where T
         @argcheck length(v) == nhours(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nhours(m)))"
-        data = convert(Vector{T}, v)
-        new{T}(data, m)
+        data = _toVal(v)
+        new{eltype(data)}(data, m)
     end
 end
 
