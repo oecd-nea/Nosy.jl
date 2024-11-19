@@ -4,6 +4,15 @@ using JuMP: AffExpr
 
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
+
+"""
+AbstractMeshedTimeSeries interface (on top of AbstractTimeSeries)
+"""
+
+Base.copy(s::AbstractTimeSeries) = typeof(s)(copy(parent(s)), s.mesh)
+Base.similar(s::AbstractTimeSeries) = typeof(s).name.wrapper(similar(parent(s)), s.mesh)
+Base.zero(s::AbstractTimeSeries{T}) where T = fill!(similar(s), zero(T))
+
 """
 AbstractMeshedTimeSeries algebra.
 """

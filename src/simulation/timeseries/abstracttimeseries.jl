@@ -19,9 +19,6 @@ Base.iterate(h::AbstractTimeSeries, state) = iterate(parent(h), state)
 Base.eltype(h::AbstractTimeSeries) = eltype(parent(h))
 Base.resize!(h::AbstractTimeSeries, i::Integer) = resize!(parent(h), i)
 Base.in(x, h::AbstractTimeSeries) = in(x, parent(h))
-Base.copy(h::AbstractTimeSeries) = typeof(h)(copy(parent(h)))
-Base.similar(s::AbstractTimeSeries) = typeof(s)(similar(parent(s)))
-Base.zero(s::AbstractTimeSeries{T}) where T = fill!(similar(s), zero(T))
 
 # this snippet was taken from:
 # https://github.com/Vexatos/CircularArrays.jl/blob/master/src/CircularArrays.jl
