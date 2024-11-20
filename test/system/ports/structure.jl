@@ -26,7 +26,7 @@ using JuMP: Model, AffExpr
     let s = tsim()
 
         p1 = makeport(s)
-        ps = PortStructure{AffExpr}()
+        ps = PortStructure{AffExpr}(s)
 
         @test isempty(ps)
         @test !hasinput(ps, "p1")
@@ -52,7 +52,7 @@ using JuMP: Model, AffExpr
     let s = tsim()
 
         p1 = makeport(s)
-        ps = PortStructure{AffExpr}()
+        ps = PortStructure{AffExpr}(s)
 
         @test !hasoutput(ps, "p1")
         addoutput!(ps, "p1", p1)
@@ -73,7 +73,7 @@ using JuMP: Model, AffExpr
     let s = tsim()
 
         p1 = makeport(s)
-        ps = PortStructure{AffExpr}()
+        ps = PortStructure{AffExpr}(s)
 
         @test !haslevel(ps, "p1")
         addlevel!(ps, "p1", p1)
@@ -98,7 +98,7 @@ using JuMP: Model, AffExpr
         p3 = copycarrier(p1)
         p4 = copycarrier(p1)
 
-        ps = PortStructure{AffExpr}()
+        ps = PortStructure{AffExpr}(s)
 
         addinput!(ps, "p1", p1)
         @test hasuniquecarrier(ps)
@@ -116,7 +116,7 @@ using JuMP: Model, AffExpr
         p1 = makeport(s)
         p2 = makeport(s)
 
-        ps = PortStructure{AffExpr}()
+        ps = PortStructure{AffExpr}(s)
 
         addinput!(ps, "p1", p1)
         addoutput!(ps, "p2", p2)
@@ -130,7 +130,7 @@ using JuMP: Model, AffExpr
         p1 = makeport(s)
         p2 = makeport(s)
 
-        ps = PortStructure{AffExpr}()
+        ps = PortStructure{AffExpr}(s)
 
         #testing a different combination of senses
         addoutput!(ps, "p1", p1)

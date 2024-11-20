@@ -4,6 +4,7 @@ Contain all the ports associated with a node or model.
 """
 
 struct PortStructure{T<:VAL}
+    sim::Sim
     input::Dict{String,Port{T}}
     output::Dict{String,Port{T}}
     level::Dict{String,Port{T}}
@@ -11,13 +12,16 @@ end
 
 
 # parametric constructor for PortStructure
-function PortStructure{T}() where T<:VAL
+function PortStructure{T}(s::Sim) where T<:VAL
     return PortStructure(
+        s,
         Dict{String, Port{T}}(),
         Dict{String, Port{T}}(),
         Dict{String, Port{T}}()
     )
 end
+
+sim(ps::PortStructure) = ps.sim
 
 # Add named port to port structure
 

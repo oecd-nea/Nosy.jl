@@ -22,7 +22,7 @@ function Node(name::String, c::AbstractCarrier; rule=:default)
     return Node(
         name,
         c,
-        PortStructure{AffExpr}(),
+        PortStructure{AffExpr}(sim(c)),
         rule
     )
 end
