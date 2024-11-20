@@ -4,7 +4,9 @@ using POSY2: Sim, TimeMesh
 using POSY2: Port
 using POSY2: PortStructure, addinput!, addoutput!, addlevel!
 using POSY2: Node, input, output, name, carrier, rule, iscurtailed
+
 using JuMP: Model, AffExpr
+using ArgCheck: ArgumentError
 
 @testset "Node" begin
 
@@ -50,6 +52,16 @@ using JuMP: Model, AffExpr
         @test rule(n) == :curtailed
         @test iscurtailed(n) 
 
+    end
+
+
+    let s = tsim()
+
+        p1 = makeport(s)
+
+        # wrong rule
+        @test_throws ArgumentError Node("n", p1.carrier, rule=:wrong)
+        
     end
 
 

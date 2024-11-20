@@ -1,4 +1,5 @@
 using JuMP: AffExpr
+using ArgCheck: @argcheck
 
 """
 Definition of nodes.
@@ -11,7 +12,14 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     carrier::C
     s::PortStructure{T}
     rule::Symbol # :curtailed or :default
+
+    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, rule::Symbol) where T
+        @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
+        new{T,typeof(carrier)}(name, carrier, s, rule)
+    end 
 end
+
+const NODE_RULES = [:default, :curtailed]
 
 """
     Node(name::String, c::Carrier; rule=:default)
