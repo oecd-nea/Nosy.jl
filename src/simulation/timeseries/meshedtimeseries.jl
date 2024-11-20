@@ -74,6 +74,8 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
     end
 end
 
+mesh(s::Stepwise) = s.mesh
+
 """
     Stepwise(v::Number, mesh::TimeMesh)
 Return a Stepwise time series based on Number `v` and mesh `mesh`.    
@@ -95,6 +97,8 @@ struct Hourly{T} <: AbstractMeshedTimeSeries{T}
         new{eltype(data)}(data, m)
     end
 end
+
+mesh(s::Hourly) = s.mesh
 
 nhours(s::AbstractMeshedTimeSeries) = nhours(s.mesh)
 nsteps(s::AbstractMeshedTimeSeries) = nsteps(s.mesh)
@@ -145,3 +149,8 @@ function Stepwise(h::Hourly{T}) where T
 end
 
 Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)
+
+
+# The sum of a Stepwise series is evaluated as the sum of the Hourly series.
+# The sum is actually the sum weighted by the timesteps durations.
+Base.sum(s::Stepwise) = sum(Hourly(s))
