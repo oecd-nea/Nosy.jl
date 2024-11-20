@@ -50,7 +50,7 @@ end
 Apply modification to ports.
 """
 
-_mult(s::Stepwise, p::AbstractPort) = s .* series(p)
+_mult(s::Stepwise, p::AbstractPort) = Stepwise(s .* series(p), mesh(s))
 
 
 mass(p::AbstractPort) = _mass(carrierstyle(carrier(p)), p)
