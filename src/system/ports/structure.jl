@@ -72,3 +72,13 @@ function hasuniquecarrier(ps::PortStructure)
     end
     return true
 end
+
+# return the port associated with name pname
+function getport(ps::PortStructure, pname::String)
+    for s in (input, output, level)
+        d = s(ps)
+        if haskey(d, pname)
+            return d[pname]
+        end
+    end
+end
