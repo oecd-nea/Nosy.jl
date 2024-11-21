@@ -14,7 +14,7 @@ struct Port{T<:VAL,C<:AbstractCarrier} <: AbstractPort{T}
 end
 
 """
-    _Port(c::AbstractCarrier, s::AbstractVector)
+    Port(c::AbstractCarrier, s::AbstractVector)
 Construct a Port with a time series populated with expressions. Initial "used" state is false.
 """
 function Port(c::AbstractCarrier, s::AbstractVector)
