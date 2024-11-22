@@ -82,3 +82,14 @@ function getport(ps::PortStructure, pname::String)
         end
     end
 end
+
+# return true if the port structure has a port with name pname, return false otherwise
+function hasport(ps::PortStructure, pname::String)
+    for s in (input, output, level)
+        d = s(ps)
+        if haskey(d, pname)
+            return true
+        end
+    end
+    return false
+end

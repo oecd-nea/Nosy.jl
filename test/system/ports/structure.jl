@@ -2,7 +2,8 @@ using POSY2: MassCarrier
 using POSY2: Stepwise
 using POSY2: Sim, TimeMesh
 using POSY2: Port
-using POSY2: PortStructure, addinput!, addoutput!, addlevel!, hasinput, hasoutput, haslevel
+using POSY2: PortStructure, addinput!, addoutput!, addlevel!
+using POSY2: hasinput, hasoutput, haslevel, hasport
 using POSY2: allports, hasuniquecarrier, isempty
 using JuMP: Model, AffExpr
 
@@ -36,6 +37,10 @@ using JuMP: Model, AffExpr
         @test !hasoutput(ps, "p1")
         @test !haslevel(ps, "p1")
         @test allports(ps) == (p1,)
+
+        @test hasport(ps, "p1")
+        @test !hasport(ps, "p2")
+
         @test_throws AssertionError addinput!(ps, "p1", p1)
 
 
@@ -87,6 +92,10 @@ using JuMP: Model, AffExpr
         @test haslevel(ps, "p1")
         @test haslevel(ps, "p2")
         @test containsameelements(allports(ps), (p1, p2))
+
+        @test hasport(ps, "p1")
+        @test hasport(ps, "p2")
+        @test !hasport(ps, "p3")
         
     end
 
