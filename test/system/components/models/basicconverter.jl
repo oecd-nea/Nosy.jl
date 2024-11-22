@@ -30,6 +30,12 @@ using ArgCheck: ArgumentError
         @test hasinput(m, "input")
         @test hasoutput(m, "output")
 
+        @test hasport(m, "input")
+        @test hasport(m, "output")
+        @test !hasport(m, "level")
+
+        @test sim(m) == s
+
         @test carrier(getport(m, "input")) == mc
         @test carrier(getport(m, "output")) == ec
 

@@ -11,11 +11,18 @@ abstract type AbstractModel{T<:VAL} <: AbstractElement{T} end
 """
 AbstractModel interface:
   * implement portstructure(m::AbstractModel) -> return port structure associated with model
+  * implement sim(m::AbstractModel) => return Sim associated with model
+  * implement hasport(m::AbstractModel, pname::String) => return boolean indicating whether model has port named pname
 """
 
 
 # default implementation of portstructure
 portstructure(m::AbstractModel) = m.s
+
+# default implementation of sim
+sim(m::AbstractModel) = m.data.sim
+
+hasport(m::AbstractModel, pname::String) = hasport(m.s, pname)
 
 hasinput(m::AbstractModel, pname::String) = hasinput(portstructure(m), pname::String)
 hasoutput(m::AbstractModel, pname::String) = hasoutput(portstructure(m), pname::String)
