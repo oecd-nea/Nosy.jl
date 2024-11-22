@@ -3,7 +3,7 @@ using POSY2: Stepwise
 using POSY2: defaultmodifier, mass, energy, co2
 using POSY2: _defaultmodifier
 using POSY2: Sim, TimeMesh, sim
-using POSY2: Port, is_used, set_used!
+using POSY2: Port, is_used, set_used!, hasmodifier
 using JuMP: Model, AffExpr
 
 
@@ -25,6 +25,10 @@ using JuMP: Model, AffExpr
         @test !is_used(p)
         set_used!(p)
         @test is_used(p)
+
+        @test hasmodifier(p, mass)
+        @test !hasmodifier(p, energy)
+        @test !hasmodifier(p, co2)
 
     end
 
@@ -130,6 +134,10 @@ using JuMP: Model, AffExpr
 
         @test defaultmodifier(p) == energy(p)
 
+        @test !hasmodifier(p, mass)
+        @test hasmodifier(p, energy)
+        @test !hasmodifier(p, co2)
+
     end
 
 
@@ -147,6 +155,10 @@ using JuMP: Model, AffExpr
 
         @test defaultmodifier(p) == energy(p)
 
+        @test hasmodifier(p, mass)
+        @test hasmodifier(p, energy)
+        @test !hasmodifier(p, co2)
+
     end
 
 
@@ -163,6 +175,10 @@ using JuMP: Model, AffExpr
         @test all(co2(p)[i] == v[i] for i in 1:10)
 
         @test defaultmodifier(p) == mass(p)
+
+        @test hasmodifier(p, mass)
+        @test !hasmodifier(p, energy)
+        @test hasmodifier(p, co2)
 
     end
 

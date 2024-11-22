@@ -85,3 +85,8 @@ __co2(s::Stepwise, p::AbstractPort) = _mult(s::Stepwise, p::AbstractPort)
 # default modifier
 _defaultmodifier(p::AbstractPort) = _defaultmodifier(carrier(p)) # return the modifier function
 defaultmodifier(p::AbstractPort) = _defaultmodifier(p)(p) # apply the modifier function to the Port
+
+
+# check whether port has a modifier
+# return a boolean
+hasmodifier(p::AbstractPort, modifier) = !isnothing(modifier(carrier(p)))
