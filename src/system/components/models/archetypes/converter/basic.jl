@@ -42,7 +42,7 @@ end
 
 # return a BasicConverterModel using BasicConverter data
 function build(m::BasicConverter, mname::String)
-    vin = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_in")
+    vin = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(m.modifier) * "_in")
     vout = m.ratio .* m.modifier(m.input) ./ m.modifier(m.output) .* vin
 
     ps = PortStructure{AffExpr}(m.sim)
@@ -51,3 +51,9 @@ function build(m::BasicConverter, mname::String)
 
     return BasicConverterModel(m, ps)
 end
+
+# no constraints specific to BasicConverter
+# model already encapsulated in affine relation between input and output
+function _apply_constraints!(::BasicConverterModel) end
+
+modelname(::BasicConverterModel) = "basic converter"

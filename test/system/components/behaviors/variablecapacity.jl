@@ -1,11 +1,12 @@
 using POSY2: mass
-using POSY2: Sim, TimeMesh
+using POSY2: Sim, TimeMesh, nvariables, nconstraints
 using POSY2: build, buildbehavior
 using POSY2: VariableCapacity, VariableCapacityBehavior, _capacity
 using POSY2: BasicConverter
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
-using JuMP: Model, lower_bound, upper_bound, has_lower_bound, has_upper_bound
+using POSY2: Component
+using JuMP: Model, AffExpr, lower_bound, upper_bound, has_lower_bound, has_upper_bound
 using ArgCheck: ArgumentError
 
 @testset "VariableCapacity" begin
@@ -35,7 +36,7 @@ using ArgCheck: ArgumentError
             ub = Inf64,
         )  
 
-        b = buildbehavior(m, c)
+        b = buildbehavior(m, "comp", c)
 
         @test _capacity(b) isa AffExpr
 
@@ -68,20 +69,63 @@ using ArgCheck: ArgumentError
             ub = Inf64,
         )
         # port not found in the model
-        @test_throws ArgumentError buildbehavior(m, c)
+        @test_throws ArgumentError buildbehavior(m, "test", c)
     end
 
     let m = makeconv()
 
-        c = VariableCapacity(
-            "input",
+        c = VariableCapacity("input",
             co2, # input port is not compatible with this modifier
             lb = 5,
             ub = Inf64,
         )  
         # port not compatible with modifier
-        @test_throws ArgumentError buildbehavior(m, c)
+        @test_throws ArgumentError buildbehavior(m, "test", c)
     end
 
 
+    # tests on Component
+
+    function makecomp(vbehavior)
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        c = Component("comp", d, vbehavior)
+        return c
+    end
+
+    # no behaviors, no joint flows
+    let c = makecomp([])
+       
+        # model has 10 timesteps
+        # it should have 10 variables 
+        #   flow @ converter @ each step (10),
+        # and 10 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        @test nvariables(sim(c)) == 10
+        @test nconstraints(sim(c)) == 10
+
+    end
+
+
+    # 1 behavior (variable capacity), no joint flows
+    let c = makecomp([VariableCapacity("input", mass, lb=5, ub=Inf64)])
+
+        # model has 10 timesteps
+        # it should have 11 variables 
+        #   flow @ converter @ each step (10),
+        #   capacity (1)
+        # and 21 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        #   converter input flow <= capacity @ each step (10),
+        #   capacity >= cap lower bound (1),
+        @test nvariables(sim(c)) == 11
+        @test nconstraints(sim(c)) == 21
+
+    end
+
+    
 end

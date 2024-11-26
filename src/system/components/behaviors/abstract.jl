@@ -19,3 +19,20 @@ The constructor is called by the component constructor instead.
 
 abstract type AbstractBehavior{T} <: AbstractElement{T} end
 
+
+"""
+AbstractBehaviorData interface:
+  * implement buildbehavior(c::AbstractComponent, cname::String, b::AbstractBehaviorData) -> return a AbstractBehavior
+"""
+
+buildbehavior(::AbstractComponent, ::String, ::AbstractBehavior) = error("Not implemented")
+
+
+"""
+AbstractBehavior interface:
+  * implement behaviorname(b::AbstractBehaviorModel) -> return a String
+  * implement _apply_constraints!(c::AbstractComponent, b::AbstractBehavior) -> apply constraints to component, return nothing
+"""
+
+behaviorname(::AbstractBehavior) = error("Not implemented")
+_apply_constraints!(::AbstractComponent, ::AbstractBehavior) = error("Not implemented")

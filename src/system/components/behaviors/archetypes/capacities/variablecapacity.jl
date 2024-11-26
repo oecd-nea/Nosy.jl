@@ -25,23 +25,25 @@ struct VariableCapacity{M<:Function} <: AbstractCapacityData
     end
 end
 
-struct VariableCapacityBehavior{M<:Function,T<:VAL} <: AbstractCapacityBehavior{T}
+struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
     data::VariableCapacity{M}
     val::T
 end
 
 # return a VariableCapacityBehavior
-function buildbehavior(m::AbstractModel, b::VariableCapacity)
+function buildbehavior(m::AbstractModel, cname::String, b::VariableCapacity)
     @argcheck hasport(m, b.pname) "Model does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(m, b.pname), b.modifier) "Target port does not have the required modifier"
-    v = @variable(sim(m).model, lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+    v = @variable(sim(m).model, base_name=cname * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
     return VariableCapacityBehavior(b, convert(AffExpr, v))
 end
 
-# return the AffExpr
-_capacity(c::VariableCapacityBehavior) = c.val
-
 # apply the component constraints related to variable capacity
 function _apply_constraints!(c::AbstractComponent, b::VariableCapacityBehavior)
-
+    @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)) .<= b.val)
 end
+
+behaviorname(::VariableCapacityBehavior) = "variable capacity"
+
+# return the AffExpr
+_capacity(c::VariableCapacityBehavior) = c.val

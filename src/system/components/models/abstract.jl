@@ -10,9 +10,15 @@ abstract type AbstractModel{T<:VAL} <: AbstractElement{T} end
 
 """
 AbstractModel interface:
+
+Implemented by default, can be customized:
   * implement portstructure(m::AbstractModel) -> return port structure associated with model
   * implement sim(m::AbstractModel) => return Sim associated with model
   * implement hasport(m::AbstractModel, pname::String) => return boolean indicating whether model has port named pname
+
+Not implemented by default:
+  * implement _apply_constraints!(m::AbstractModel) => apply constraints related to the model
+  * implement modelname(m::AbstractModel) => return String with model name
 """
 
 
@@ -30,3 +36,8 @@ haslevel(m::AbstractModel, pname::String) = haslevel(portstructure(m), pname::St
 
 getport(m::AbstractModel, pname::String) = getport(portstructure(m), pname)
 
+# fallback function for _apply_constraints!
+# used when no specific model constraint is defined
+_apply_constraints!(::AbstractModel) = error("Not implemented")
+
+modelname(::AbstractModel) = error("Not implemented")
