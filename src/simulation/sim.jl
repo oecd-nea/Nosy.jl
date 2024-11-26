@@ -1,4 +1,4 @@
-using JuMP: Model
+using JuMP: Model, num_constraints, num_variables, list_of_constraint_types
 
 """
 Sim: data structure containing the information shared with all the simulation.
@@ -27,3 +27,11 @@ nsteps(s::Sim) = nsteps(s.mesh)
 nhours(s::Sim) = nhours(s.mesh)
 eachstep(s::Sim) = eachstep(s.mesh)
 eachhour(s::Sim) = eachhour(s.mesh)
+
+# count the constraints of a Sim
+# snippet from: https://discourse.julialang.org/t/num-constraints-to-return-the-total-number-of-constraints/65488
+_nconstraints(m::Model) = sum(num_constraints(m, F, S) for (F, S) in list_of_constraint_types(m))
+nconstraints(s::Sim) = _nconstraints(s.model)
+
+# count the variables of a Sim
+nvariables(s::Sim) = num_variables(s.model)
