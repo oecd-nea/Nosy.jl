@@ -25,3 +25,8 @@ mass(c::CO2Carrier) = c.mass
 co2(::EnergyCarrier) = nothing
 co2(::MassCarrier) = nothing
 co2(c::CO2Carrier) = c.weight
+
+modifiername(::typeof(mass)) = "mass"
+modifiername(::typeof(energy)) = "energy"
+modifiername(::typeof(co2)) = "co2"
+modifiername(::typeof(defaultmodifier)) = "default"
