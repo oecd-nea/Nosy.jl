@@ -93,3 +93,16 @@ function hasport(ps::PortStructure, pname::String)
     end
     return false
 end
+
+# return a shallow copy of the port structure
+# in particular:
+#  * adding a pair to ps.input etc. does not add it to the copy and vice versa
+#  * modifying a value in a pair does modify it in the copy and vice versa
+function shallowcopy(ps::PortStructure)
+    return PortStructure(
+        sim(ps),
+        copy(input(ps)),
+        copy(output(ps)),
+        copy(level(ps))
+    )
+end

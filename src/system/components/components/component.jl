@@ -1,19 +1,20 @@
 """
 Components.
 """
-
+abstract type AbstractComponent{T} <: AbstractElement{T} end
 
 struct Component{T<:VAL,M<:AbstractModel} <: AbstractComponent{T}
     name::String
     model::M
-    behaviors::Vector{AbstractBehavior{T}} # NB this is an abstract type, performance impact
-    # jointflows::Vector{AbstractModel{T}} # TODO add after joint flow implementation
+    behaviors::Vector{AbstractRegularBehavior{T}} # NB this is an abstract type, performance impact
+    jointflows::Vector{AbstractJointFlow{T}}
+    s::PortStructure{T} # shallow copy of the port structure of the underlying model
 end
 
 model(c::Component) = c.model
 name(c::Component) = c.name
 behaviors(c::Component) = c.behaviors
-sim(c::AbstractComponent) = sim((model(c)))
+sim(c::Component) = sim((model(c)))
 
 # build behavior from behavior data and component
 # and add it to component behaviors
@@ -22,20 +23,26 @@ function _addbehavior!(c::Component, b::AbstractBehavior)
 end
 
 """
-    Component(name::String, model::AbstractModelData, behaviors::Vector{AbstractBehaviorData})
+    Component(name::String, model::AbstractModelData, behaviors::AbstractVector)
 Component constructor. Return a Component with name `name`, based on model `model` and bearing behaviors `behaviors`.
 """
 function Component(name::String, model::AbstractModelData, behaviors::AbstractVector)
     
+    m = build(model, name)
+    
     c = Component(
         name, 
-        build(model, name),
-        Vector{AbstractBehavior{AffExpr}}(undef,0),
+        m,
+        Vector{AbstractRegularBehavior{AffExpr}}(undef,0),
+        Vector{AbstractJointFlow{AffExpr}}(undef,0),
+        shallowcopy(portstructure(m))
     )
 
     # some behaviors must be applied before others
     # e.g. capacity behavior must come before overnight cost behavior
     # because overnight cost is based on capacity
+    # joint flows take highest priority: they are build before the regular behaviors
+    # priority within joint flows is given by user input
     vbehaviordata = _sortbehaviordata(behaviors)
 
     for b in vbehaviordata

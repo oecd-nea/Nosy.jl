@@ -39,7 +39,7 @@ function buildbehavior(m::AbstractModel, cname::String, b::VariableCapacity)
 end
 
 # apply the component constraints related to variable capacity
-function _apply_constraints!(c::AbstractComponent, b::VariableCapacityBehavior)
+function _apply_constraints!(c::Component, b::VariableCapacityBehavior)
     @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)) .<= b.val)
 end
 
