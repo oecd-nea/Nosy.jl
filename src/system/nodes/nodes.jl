@@ -42,8 +42,10 @@ carrier(n::Node) = n.carrier
 rule(n::Node) = n.rule
 iscurtailed(n::Node) = rule(n) == :curtailed
 
-input(n::Node) = input(n.s)
-output(n::Node) = output(n.s)
+portstructure(n::Node) = n.s
+
+input(n::Node) = input(portstructure(n))
+output(n::Node) = output(portstructure(n))
 
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)

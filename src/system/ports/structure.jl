@@ -62,18 +62,18 @@ Base.isempty(ps::PortStructure) = all(isempty(d) for d in (ps.input, ps.output, 
 # return a tuple with all the ports of a PortStructure
 allports(ps::PortStructure) = (values(ps.input)..., values(ps.output)..., values(ps.level)...)
 
+# return true if all the ports of the port structure are used
+# return false otherwise
+isfullyconnected(ps::PortStructure) = all(is_used(p) for p in allports(ps))
+
 # return true if ps only is associated with one carrier, false otherwise
 function hasuniquecarrier(ps::PortStructure)
     c = carrier(first(allports(ps)))
-    for p in allports(ps)
-        if carrier(p) != c
-            return false
-        end
-    end
-    return true
+    return !any(carrier(p) != c for p in allports(ps))
 end
 
 # return the port associated with name pname
+# return nothing if there is no such port
 function getport(ps::PortStructure, pname::String)
     for s in (input, output, level)
         d = s(ps)
@@ -83,15 +83,33 @@ function getport(ps::PortStructure, pname::String)
     end
 end
 
-# return true if the port structure has a port with name pname, return false otherwise
-function hasport(ps::PortStructure, pname::String)
-    for s in (input, output, level)
-        d = s(ps)
-        if haskey(d, pname)
-            return true
-        end
+# slightly sped-up function with a hint for port sense
+function getport(ps::PortStructure, pname::String, sense::Symbol)
+    if sense == :input
+        d = input(ps)
+    elseif sense == :output
+        d = output(ps)
+    elseif sense == :level
+        d = level(ps)
+    else
+        throw(ArgumentError("hint must be :input, :output or :level"))
     end
-    return false
+    return d[pname]
+end
+
+# return true if the port structure has a port with name pname, return false otherwise
+hasport(ps::PortStructure, pname::String) = any(haskey(s(ps), pname) for s in (input, output, level))
+
+function portsense(ps::PortStructure, pname::String)::Symbol
+    if haskey(input(ps), pname)
+        return :input
+    elseif haskey(output(ps), pname)
+        return :output
+    elseif haskey(level(ps), pname)
+        return :level
+    else
+        throw(ArgumentError("The port structure does not contain a node with name $pname"))
+    end
 end
 
 # return a shallow copy of the port structure

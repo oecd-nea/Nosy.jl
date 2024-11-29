@@ -1,0 +1,194 @@
+using POSY2: mass
+using POSY2: Sim, TimeMesh, nvariables, nconstraints
+using POSY2: LinkedJointFlow
+using POSY2: BasicConverter
+using POSY2: MassCarrier, EnergyCarrier
+using POSY2: mass, energy
+using POSY2: Component, Node, portstructure, isfullyconnected, is_used, getport
+using POSY2: Snapshot, components, nodes, connect!
+using JuMP: Model, AffExpr
+
+@testset "Connect" begin
+
+    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+
+    function makecomp(mc, ec, vbehavior=[])   
+        d = BasicConverter(mc, ec)
+        c = Component("comp", d, vbehavior)
+        return c
+    end    
+
+
+    # base case: default connect, not all ports compatible
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+
+        n = Node("n", mc)
+        c = makecomp(mc, ec)
+        sn = Snapshot(s)
+
+        @test isempty(components(sn))
+        @test isempty(nodes(sn))
+
+        connect!(sn, c, n)
+
+        @test length(components(sn)) == 1
+        @test haskey(components(sn), "comp")
+
+        @test length(nodes(sn)) == 1
+        @test haskey(nodes(sn), "n")
+
+        @test isempty(input(portstructure(n)))
+        @test length(output(portstructure(n))) == 1
+        @test haskey(output(portstructure(n)), "comp")
+        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+
+        @test is_used(getport(c, "input"))
+        @test !is_used(getport(c, "output"))
+        @test !isfullyconnected(c) # output was not connected
+
+    end
+
+
+    # all ports are compatible
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+
+        n = Node("n", mc)
+        c = makecomp(mc, mc) # same carrier in and out
+        sn = Snapshot(s)
+        connect!(sn, c, n)
+
+        @test length(components(sn)) == 1
+        @test haskey(components(sn), "comp")
+
+        @test length(nodes(sn)) == 1
+        @test haskey(nodes(sn), "n")
+
+        @test length(input(portstructure(n))) == 1
+        @test haskey(input(portstructure(n)), "comp")
+        @test input(portstructure(n))["comp"] == output(portstructure(c))["output"]
+        @test length(output(portstructure(n))) == 1
+        @test haskey(output(portstructure(n)), "comp")
+        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+
+        @test is_used(getport(c, "input"))
+        @test is_used(getport(c, "output"))
+        @test isfullyconnected(c) # both input and output were connected
+
+    end
+
+
+    # selective connect
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+
+        n = Node("n", mc)
+        c = makecomp(mc, mc) # same carrier in and out
+        sn = Snapshot(s)
+        connect!(sn, c, n, "input") # connecting input only
+
+        @test length(components(sn)) == 1
+        @test haskey(components(sn), "comp")
+
+        @test length(nodes(sn)) == 1
+        @test haskey(nodes(sn), "n")
+
+        @test isempty(input(portstructure(n)))
+        @test length(output(portstructure(n))) == 1
+        @test haskey(output(portstructure(n)), "comp")
+        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+
+        @test is_used(getport(c, "input"))
+        @test !is_used(getport(c, "output"))
+        @test !isfullyconnected(c) # output was not connected
+
+    end
+
+
+    # component with joint flow, only connect joint flow
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+
+        j = LinkedJointFlow("j", ec, :output, "input", x->x)
+        c = makecomp(mc, mc, [j]) # added joint flow (output)
+        n = Node("n", ec) # node only compatible with joint flow
+        sn = Snapshot(s)
+
+        connect!(sn, c, n)
+
+        @test length(components(sn)) == 1
+        @test haskey(components(sn), "comp")
+
+        @test length(nodes(sn)) == 1
+        @test haskey(nodes(sn), "n")
+
+        @test isempty(output(portstructure(n)))
+        @test length(input(portstructure(n))) == 1
+        @test haskey(input(portstructure(n)), "comp")
+        @test input(portstructure(n))["comp"] == output(portstructure(c))["j"]
+
+        @test !is_used(getport(c, "input"))
+        @test !is_used(getport(c, "output"))
+        @test is_used(getport(c, "j"))
+        @test !isfullyconnected(c) # input & output was not connected
+
+    end
+
+
+    # component with joint flow, but incompatible
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+
+        j = LinkedJointFlow("j", ec, :output, "input", x->x)
+        c = makecomp(mc, mc, [j]) # added joint flow (output)
+        n = Node("n", mc) # node not compatible with joint flow
+        sn = Snapshot(s)
+
+        connect!(sn, c, n)
+
+        @test length(components(sn)) == 1
+        @test haskey(components(sn), "comp")
+
+        @test length(nodes(sn)) == 1
+        @test haskey(nodes(sn), "n")
+
+        @test length(output(portstructure(n))) == 1
+        @test haskey(output(portstructure(n)), "comp")
+        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+        
+        @test length(input(portstructure(n))) == 1
+        @test haskey(input(portstructure(n)), "comp")
+        @test input(portstructure(n))["comp"] == output(portstructure(c))["output"]
+
+        @test is_used(getport(c, "input"))
+        @test is_used(getport(c, "output"))
+        @test !is_used(getport(c, "j"))
+        @test !isfullyconnected(c) # joint flow was not connected
+
+    end
+
+    # no compatible port
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+
+        n = Node("n", mc)
+        c = makecomp(ec, ec) # no carrier in common between node and component
+        sn = Snapshot(s)
+        
+        @test_throws AssertionError connect!(sn, c, n)
+        
+    end
+
+
+end
