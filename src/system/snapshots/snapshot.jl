@@ -42,3 +42,12 @@ function addcomponent!(s::Snapshot, c::Component)
         s.components[name(c)] = c
     end
 end
+
+# apply remaining constraints associated with a snapshot
+function apply_constraints!(s::Snapshot)
+    # component constraints are already applied when constructing the components
+    # node constraints are applied here
+    for n in nodes(s)
+        apply_constraints!(n)
+    end
+end
