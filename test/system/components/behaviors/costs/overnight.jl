@@ -3,7 +3,8 @@ using POSY2: Sim, TimeMesh
 using POSY2: build
 using POSY2: VariableCapacity, FixedCapacity
 using POSY2: BasicConverter
-using POSY2: OvernightCost, OvernightCostBehavior, _overnightcost
+using POSY2: OvernightCost, OvernightCostBehavior
+using POSY2: overnightcost, _overnightcost
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
 using POSY2: Component
@@ -48,6 +49,9 @@ using ArgCheck: ArgumentError
         # adapting to fixed capacity
         @test _overnightcost(m.behaviors[2]) == AffExpr(5. * 10.)
 
+        # component metric
+        @test overnightcost(m) == AffExpr(5. * 10.)
+
     end
 
 
@@ -55,6 +59,9 @@ using ArgCheck: ArgumentError
 
         # adapting to variable capacity
         @test _overnightcost(m.behaviors[2]) == _capacity(m.behaviors[1]) * 10.
+
+        # component metric
+        @test overnightcost(m) == _capacity(m.behaviors[1]) * 10.
 
     end
 

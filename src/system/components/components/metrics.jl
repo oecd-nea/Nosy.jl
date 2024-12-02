@@ -15,3 +15,16 @@ function capacity(c::Component)
         return _capacity(cap)
     end
 end
+
+"""
+    overnightcost(c::Component)
+Return the overnight cost of Component `c`.
+"""
+function overnightcost(c::Component{T})::T where T
+    _cost = uniquebehavior(c, OvernightCostBehavior)
+    if isnothing(_cost)
+        return zero(T)
+    else
+        return _overnightcost(_cost)
+    end
+end
