@@ -1,11 +1,14 @@
 using POSY2: mass
 using POSY2: Sim, TimeMesh
-using POSY2: VariableCapacity, VariableCapacityBehavior, _capacity
+using POSY2: VariableCapacity, FixedCapacity
+using POSY2: FixedCapacity, FixedCapacityBehavior
+using POSY2: OvernightCost
 using POSY2: BasicConverter, BasicConverterModel
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
 using POSY2: Component, model, sim
-using POSY2: capacity, _capacity
+using POSY2: capacity
+using POSY2: overnightcost
 using JuMP: Model, AffExpr
 using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
@@ -27,7 +30,8 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
     # no capacity behavior
     let c = makecomp([])
 
-        @test isnothing(capacity(c))
+        @test capacity(c) == 0.
+        @test overnightcost(c) == 0.
 
     end    
 
@@ -39,6 +43,13 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
         v = getvariable(capacity(c))
         @test lower_bound(v) == 5.
         @test !has_upper_bound(v)
+
+    end
+
+    let c = makecomp([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.)])
+
+        @test capacity(c) == AffExpr(5.)
+        @test overnightcost(c) == AffExpr(5. * 10.)
 
     end
 
