@@ -1,4 +1,5 @@
 
+using LinearAlgebra: dot # scalar product
 using ArgCheck
 using JuMP: AffExpr
 
@@ -151,6 +152,25 @@ end
 Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)
 
 
-# The sum of a Stepwise series is evaluated as the sum of the Hourly series.
-# The sum is actually the sum weighted by the timesteps durations.
-Base.sum(s::Stepwise) = sum(Hourly(s))
+# The sum of a Stepwise series is evaluated as the sum of stepwise elements weighted by timesteps durations.
+function Base.sum(s::Stepwise{AffExpr})
+    local _res = zero(AffExpr)
+    for i in eachindex(s)
+        _res = addto!(_res, s[i] * weight(s.mesh, i)) # faster to use addto! rather than instantiate each time
+    end
+    return _res
+end
+
+Base.sum(s::Stepwise{Float64}) = dot(s.data, s.mesh.weight)
+
+# The sum of a Hourly is a regular sum
+# We use addto! just to make it faster, it doesn't change the result
+function Base.sum(h::Hourly{AffExpr})
+    local _res = zero(AffExpr)
+    for e in h
+        _res = addto!(_res, e) # faster to use addto! rather than instantiate each time
+    end
+    return _res    
+end
+
+Base.sum(s::Hourly{Float64}) = sum(s.data)

@@ -1,5 +1,6 @@
 using POSY2: TimeMesh, Hourly, Stepwise
 using POSY2: nhours, nsteps, eachhour, eachstep, shift
+using JuMP: AffExpr
 
 @testset "Time series" begin
 
@@ -159,5 +160,36 @@ using POSY2: nhours, nsteps, eachhour, eachstep, shift
         @test_throws ArgumentError h1 + h2
 
     end
+
+
+    let
+
+        # summation of Hourly and Stepwise - Float64 version
+        v = [Float64(i) for i in 1:200]
+        m = TimeMesh(repeat([1//2, 1//2], 100))
+
+        s = Stepwise(v, m)
+        h = Hourly(s)
+
+        @test sum(s) == Float64(sum(1:200)/2)
+        @test sum(h) == Float64(sum(1:2:200))
+
+    end
+
+
+    let
+
+        # summation of Hourly and Stepwise - AffExpr version
+        v = [AffExpr(i) for i in 1:200]
+        m = TimeMesh(repeat([1//2, 1//2], 100))
+
+        s = Stepwise(v, m)
+        h = Hourly(s)
+
+        @test sum(s) == AffExpr(sum(1:200)/2)
+        @test sum(h) == AffExpr(sum(1:2:200))
+
+    end
+
 
 end

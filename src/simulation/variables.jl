@@ -1,4 +1,4 @@
-using JuMP: @variable, VariableRef
+using JuMP: @variable, VariableRef, AffExpr
 using ArgCheck: @argcheck
 
 """
@@ -41,3 +41,11 @@ function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=fal
 
     return sw
 end
+
+# accelerate sum of AffExpr elements
+function addto!(e1::AffExpr, e2::AffExpr)
+    add_to_expression!(e1, e2)
+    return e1
+end
+
+addto!(n1::Number, n2::Number) = n1 + n2
