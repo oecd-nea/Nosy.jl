@@ -23,6 +23,9 @@ end
 components(s::Snapshot) = s.components
 nodes(s::Snapshot) = s.nodes
 
+hascomponent(s::Snapshot, cname::String) = haskey(components(s), cname)
+getcomponent(s::Snapshot, cname::String) = components(s)[cname]
+
 # add a node entry to the dict of nodes of a snapshot
 # if the key is already present, check that the node is the same
 function addnode!(s::Snapshot, n::Node)
