@@ -46,3 +46,6 @@ behaviorname(::FixedCapacityBehavior) = "fixed capacity"
 
 # return the AffExpr
 _capacity(c::FixedCapacityBehavior) = c.data.val
+
+_portname(c::FixedCapacityBehavior) = c.data.pname
+_modifier(c::FixedCapacityBehavior) = c.data.modifier

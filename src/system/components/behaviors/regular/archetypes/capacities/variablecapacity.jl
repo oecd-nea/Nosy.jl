@@ -47,3 +47,6 @@ behaviorname(::VariableCapacityBehavior) = "variable capacity"
 
 # return the AffExpr
 _capacity(c::VariableCapacityBehavior) = c.val
+
+_portname(c::VariableCapacityBehavior) = c.data.pname
+_modifier(c::VariableCapacityBehavior) = c.data.modifier
