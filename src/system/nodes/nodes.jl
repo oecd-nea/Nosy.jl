@@ -43,6 +43,7 @@ rule(n::Node) = n.rule
 iscurtailed(n::Node) = rule(n) == :curtailed
 
 portstructure(n::Node) = n.s
+sim(n::Node) = sim(carrier(n))
 
 input(n::Node) = input(portstructure(n))
 output(n::Node) = output(portstructure(n))

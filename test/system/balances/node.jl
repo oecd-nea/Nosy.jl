@@ -5,7 +5,7 @@ using POSY2: Sim, TimeMesh
 using POSY2: Port
 using POSY2: PortStructure, addinput!, addoutput!, addlevel!
 using POSY2: input, output, level
-using POSY2: _balance
+using POSY2: balance
 
 using JuMP: Model, AffExpr
 
@@ -38,11 +38,11 @@ using JuMP: Model, AffExpr
         (n, p1, p2, p3) = makenode(s)
 
         # non-collapsed, non-aggregated balance
-        b = _balance(n, input, mass, collapse=false, aggregate=false)
+        b = balance(n, :input, mass, collapse=false, aggregate=false)
         @test haskey(b, "p1") && b["p1"] == mass(p1)
         @test haskey(b, "p2") && b["p2"] == mass(p2)    
         @test !haskey(b, "p3")
-        @test isempty(_balance(n, level, mass, collapse=false, aggregate=false))
+        @test_throws ArgumentError balance(n, :level, mass, collapse=false, aggregate=false) # :level not allowed
     
     end
 

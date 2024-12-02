@@ -10,12 +10,16 @@ Direct application of the balance on the port structure of the node.
 Return the flow balance for node `n`.
 Parameters:
   * `n`: Node
-  * `sense`: sense function e.g. `input`, `output`
+  * `sense`: `input` or `:output`
   * `modifier`: modifier function e.g. `energy`, `mass`, `co2`
   * `collapse`: if `true`, the flows are summed over time, otherwise the Stepwise series are returned
   * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
 """
-# the following method is not user-facing as it potentially returns Stepwise data, not Hourly data
-function _balance(n::Node, sense::Function, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
-    return _balance(n.s, sense, modifier, collapse, aggregate)
+function balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
+    @argcheck sense in (:input, :output) "sense must be either :input or :output"
+    if sense == :input
+        return _balance(n.s, input, modifier, collapse, aggregate)
+    else # if sense == :output
+        return _balance(n.s, output, modifier, collapse, aggregate)
+    end
 end
