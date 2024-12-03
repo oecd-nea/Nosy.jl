@@ -13,17 +13,30 @@ Return the capacity of a Component `c`.
 If the component has no capacity, return zero.
 """
 function capacity(c::Component{T}) where T
-    return _capacity(uniquebehavior(c, AbstractCapacityBehavior), T)
+    return _capacity(uniquebehavior(c, AbstractCapacityBehavior{T}), T)
 end
 
-
-_overnightcost(::Nothing) = 0. # type inference fail still less expensive than AffExpr(0.)
+# perform the sum of the metric over the component
+# bs is the list of candidate behaviors compatible with the metric
+function sumofmetric(c::Component{T}, B, metric) where T
+    bs = behaviors(c, B)
+    if isempty(bs)
+        return 0. # not type-stable, but prevents allocation of AffExpr(0.) each time a component has not the behavior, which is most of the time
+    else
+        return sum(metric(b)::T for b in bs)
+    end
+end
 
 """
     overnightcost(c::Component)
-Return the overnight cost of Component `c`.
+Return the overnight cost of Component `c` as the sum of its overnight costs.
 If the component has no overnight cost, return zero.
 """
-function overnightcost(c::Component)
-    return _overnightcost(uniquebehavior(c, OvernightCostBehavior))
-end
+overnightcost(c::Component{T}) where T = sumofmetric(c, OvernightCostBehavior{T}, _overnightcost)
+
+"""
+    variablecost(c::Component)
+Return the variable cost of Component `c` as the sum of its variable costs.
+If the component has no variable cost, return zero.
+"""
+variablecost(c::Component{T}) where T = sumofmetric(c, VariableCostBehavior{T}, _variablecost)

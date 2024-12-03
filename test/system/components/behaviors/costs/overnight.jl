@@ -65,6 +65,13 @@ using ArgCheck: ArgumentError
 
     end
 
+    # no overnight cost
+    let m = makeconv([])
+
+        @test overnightcost(m) == 0. # Float64
+
+    end
+
     # incompatible port names
     @test_throws ArgumentError makeconv([OvernightCost("input", mass, 10.), VariableCapacity("output", mass)])
 
