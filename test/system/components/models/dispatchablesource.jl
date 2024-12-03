@@ -1,0 +1,36 @@
+using POSY2: MassCarrier, EnergyCarrier
+using POSY2: mass, energy
+using POSY2: Sim, TimeMesh, sim
+using POSY2: getport, hasinput, hasoutput
+using POSY2: build
+using POSY2: DispatchableSource, DispatchableSourceModel
+
+using JuMP: Model
+
+@testset "DispatchableSource" begin
+
+    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+
+    let s = tsim()
+
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+
+        d = DispatchableSource(mc)        
+
+        m = build(d, "disp")
+
+        @test !hasinput(m, "input")
+        @test hasoutput(m, "output")
+
+        @test !hasport(m, "input")
+        @test hasport(m, "output")
+        @test !hasport(m, "level")
+
+        @test sim(m) == s
+
+        @test carrier(getport(m, "output")) == mc
+
+    end
+
+
+end
