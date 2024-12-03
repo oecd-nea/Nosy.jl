@@ -4,7 +4,7 @@ using POSY2: Sim, TimeMesh
 using POSY2: BasicConverter, LinkedJointFlow
 using POSY2: Component
 using POSY2: input, output
-using POSY2: balance
+using POSY2: balance, _balance
 
 using JuMP: Model, AffExpr
 
@@ -97,6 +97,27 @@ using JuMP: Model, AffExpr
         # collapsed, aggregated balance, co2
         @test balance(c, :input, co2, collapse=true, aggregate=true) == zero(AffExpr)
 
+    end
+
+    # single-port balance of components
+    let c = makecomp3()
+
+        # non-collapsed
+        @test _balance(c, "input", :input, mass, collapse=false) == mass(c.s.input["input"])
+        @test _balance(c, "input", :input, energy, collapse=false) == energy(c.s.input["input"])
+        @test_throws AssertionError _balance(c, "output", :output, mass, collapse=false) # carrier has no mass
+        @test _balance(c, "output", :output, energy, collapse=false) == energy(c.s.output["output"])
+        @test _balance(c, "linked", :input, mass, collapse=false) == mass(c.s.input["linked"])
+        @test _balance(c, "linked", :input, energy, collapse=false) == energy(c.s.input["linked"])
+
+        # non-collapsed
+        @test _balance(c, "input", :input, mass, collapse=true) == sum(mass(c.s.input["input"]))
+        @test _balance(c, "input", :input, energy, collapse=true) == sum(energy(c.s.input["input"]))
+        @test_throws AssertionError _balance(c, "output", :output, mass, collapse=true) # carrier has no mass
+        @test _balance(c, "output", :output, energy, collapse=true) == sum(energy(c.s.output["output"]))
+        @test _balance(c, "linked", :input, mass, collapse=true) == sum(mass(c.s.input["linked"]))
+        @test _balance(c, "linked", :input, energy, collapse=true) == sum(energy(c.s.input["linked"]))
+                
     end
 
 

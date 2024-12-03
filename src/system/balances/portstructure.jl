@@ -26,6 +26,11 @@ function _balance_expand(ps::PortStructure{T}, sense::Function, modifier::Functi
     return d
 end
 
+# perform balance on only one port
+_balance_one(ps::PortStructure, pname::String, sense::Function, modifier::Function) = modifier(sense(ps)[pname])
+
+_collapse_balance_one(ps::PortStructure, pname::String, sense::Function, modifier::Function) = sum(_balance_one(ps, pname, sense, modifier))
+
 _collapse_balance(b::AbstractDict{String,Stepwise{T}}) where T = LittleDict{String,T}(k => sum(v) for (k,v) in b)
 
 function _aggregate_balance(b::AbstractDict{String,Stepwise{T}}, s::Sim) where T 

@@ -23,3 +23,24 @@ function balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool
         return _balance(c.s, output, modifier, collapse, aggregate)
     end
 end
+
+# balance applied to only one port of the component
+# this function should not be exported, it is used for behaviors e.g. variable cost
+function _balance(c::Component, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
+    @argcheck sense in (:input, :output) "sense must be either :input or :output"
+    if sense == :input
+        @argcheck hasinput(c.s, pname) "Component $(name(c)) does not have input $pname"
+        if collapse
+            return _collapse_balance_one(c.s, pname, input, modifier)
+        else
+            return _balance_one(c.s, pname, input, modifier)
+        end
+    else # if sense == :output
+        @argcheck hasoutput(c.s, pname) "Component $(name(c)) does not have output $pname"
+        if collapse
+            return _collapse_balance_one(c.s, pname, output, modifier)
+        else
+            return _balance_one(c.s, pname, output, modifier)
+        end
+    end
+end
