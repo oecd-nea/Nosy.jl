@@ -36,8 +36,8 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound, is_binar
         @test v isa Stepwise{AffExpr}
         @test length(v) == nsteps(s)
 
-        @test all(lower_bound.(getvariable.(v)) .== collect(-1. * (1:10)))
-        @test all(upper_bound.(getvariable.(v)) .== Stepwise([4,5,6,7,8], s.mesh))
+        @test all(lower_bound.(getvariable.(v)).data .== collect(-1. * (1:10)))
+        @test all(upper_bound.(getvariable.(v)).data .== Stepwise([4,5,6,7,8], s.mesh))
 
         @test all(!is_binary(getvariable(e)) for e in v)
         @test all(is_integer(getvariable(e)) for e in v)

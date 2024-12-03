@@ -192,4 +192,21 @@ using JuMP: AffExpr
     end
 
 
+    let
+
+        # Broadcasting of Stepwise
+        m = TimeMesh(repeat([1//2, 1//2], 100))
+        v1 = Stepwise(1:200, m)
+        v2 = Stepwise(201:400, m)
+
+        @test (v1 .+ 1) isa Stepwise{Float64}
+        @test (v1 .+ 1).data == Float64.(2:201)
+        @test (v1 .+ v2) isa Stepwise{Float64}
+        @test (v1 .+ v2).data == Float64.(1:200) + Float64.(201:400)
+        @test (v1 .* v2) isa Stepwise{Float64}
+        @test (v1 .* v2).data == Float64.(1:200) .* Float64.(201:400)
+
+    end
+
+
 end

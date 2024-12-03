@@ -36,7 +36,7 @@ end
 
 # apply the component constraints related to fixed capacity
 function _apply_constraints!(c::Component, b::FixedCapacityBehavior)
-    @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)) .<= _capacity(b))
+    @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)).data .<= _capacity(b))
 end
 
 behaviorname(::FixedCapacityBehavior) = "fixed capacity"

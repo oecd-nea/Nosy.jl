@@ -16,9 +16,9 @@ function apply_constraints!(n::Node)
 end
 
 function _defaultnodeconstraint!(n::Node, _in::Stepwise, _out::Stepwise)
-    @constraint(sim(n).model, _in .== _out)
+    @constraint(sim(n).model, _in.data .== _out.data)
 end
 
 function _curtailednodeconstraint!(n::Node, _in::Stepwise, _out::Stepwise)
-    @constraint(sim(n).model, _in .>= _out)
+    @constraint(sim(n).model, _in.data .>= _out.data)
 end

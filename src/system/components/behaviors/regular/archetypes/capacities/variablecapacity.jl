@@ -40,7 +40,7 @@ end
 
 # apply the component constraints related to variable capacity
 function _apply_constraints!(c::Component, b::VariableCapacityBehavior)
-    @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)) .<= _capacity(b))
+    @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)).data .<= _capacity(b))
 end
 
 behaviorname(::VariableCapacityBehavior) = "variable capacity"

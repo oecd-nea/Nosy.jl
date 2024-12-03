@@ -11,7 +11,7 @@ function _checkcompatible(bound, s::Sim)
     return nothing
 end
 
-function _set_bound_if_not_inf(b, v::VariableRef,setboundf)
+function _set_bound_if_not_inf!(b, v::VariableRef,setboundf)
     if !isinf(b)
         setboundf(v,b)
     end
@@ -33,10 +33,12 @@ function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=fal
     _checkcompatible(ub, s)
 
     v = @variable(s.model, [1:nsteps(s)], binary=binary, integer=integer, base_name=basename)
-
-    _set_bound_if_not_inf.(Stepwise(lb, s.mesh), v, set_lower_bound)
-    _set_bound_if_not_inf.(Stepwise(ub, s.mesh), v, set_upper_bound)
-
+    sl = Stepwise(lb, s.mesh)
+    su = Stepwise(ub, s.mesh)   
+    for i in eachindex(v)
+        _set_bound_if_not_inf!(sl[i], v[i], set_lower_bound)
+        _set_bound_if_not_inf!(su[i], v[i], set_upper_bound)
+    end
     sw = Stepwise(_to_affexpr(v), s.mesh)
 
     return sw

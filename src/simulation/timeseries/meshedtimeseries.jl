@@ -1,7 +1,7 @@
 
 using LinearAlgebra: dot # scalar product
 using ArgCheck
-using JuMP: AffExpr
+using JuMP: AffExpr, VariableRef
 
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
@@ -51,8 +51,10 @@ Division by scalar operator for AbstractMeshedTimeSeries.
 Base.:/(s::AbstractMeshedTimeSeries, n::Number) = typeof(s).name.wrapper(s.data / n, s.mesh)
 
 # conversion of Number to Float64 to keep symmetry between Hourly and Stepwise and simplify types
+_toVal(v::AbstractVector{Bool}) = v
 _toVal(v::AbstractVector{<:Number}) = Float64.(v)
 _toVal(v::AbstractVector{AffExpr}) = convert(Vector{AffExpr}, v)
+_toVal(v::AbstractVector{VariableRef}) = convert(Vector{VariableRef}, v)
 
 # Stepwise: time series based on a timestep possibly inferior to hour
 struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
@@ -174,3 +176,30 @@ function Base.sum(h::Hourly{AffExpr})
 end
 
 Base.sum(s::Hourly{Float64}) = sum(s.data)
+
+
+# Broadcasting interface
+# https://docs.julialang.org/en/v1/manual/interfaces/
+Base.BroadcastStyle(::Type{<:Stepwise}) = Broadcast.ArrayStyle{Stepwise}()
+Base.broadcastable(s::Stepwise) = s
+
+find_stepwise(bc::Base.Broadcast.Broadcasted) = find_stepwise(bc.args)
+find_stepwise(args::Tuple) = find_stepwise(args[1], Base.tail(args))
+find_stepwise(x) = x
+find_stepwise(::Tuple{}) = nothing
+find_stepwise(s::Stepwise, rest) = s
+find_stepwise(::Any, rest) = find_stepwise(rest)
+
+function find_stepwise(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{Stepwise}}, rest)
+    v = find_stepwise(bc)
+    if isnothing(v)
+        find_stepwise(rest)
+    end
+    return v
+end
+
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{Stepwise}}, ::Type{ElType}) where ElType
+    # scan bc for the Stepwise to get its mesh
+    s = find_stepwise(bc)
+    return Stepwise(similar(Vector{ElType}, axes(bc)), s.mesh)
+end
