@@ -68,6 +68,10 @@ function _buildaddbehavior!(c::Component, b::AbstractBehaviorData)
 
 end
 
+# fallback if this function is not implemented
+_apply_constraints!(::AbstractComponent, m::AbstractModel) = _apply_constraints!(m) 
+
+
 # apply the constraints to a component
 # constraints are from:
 #  * the model
