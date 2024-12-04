@@ -84,9 +84,6 @@ function _apply_constraints!(c::Component{AffExpr})
 
 end
 
-# fallback if this function is not implemented
-_apply_constraints!(::AbstractComponent, m::AbstractModel) = _apply_constraints!(m) 
-
 # display component info
 function Base.show(io::IO, c::Component)
     bs = isempty(behaviors(c)) ? "" : " (" * join([behaviorname(b) for b in behaviors(c)], ", ") * ")"
