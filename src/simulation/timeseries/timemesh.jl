@@ -63,6 +63,7 @@ end
 nhours(m::TimeMesh) = m.nhour
 nsteps(m::TimeMesh) = m.nstep
 
+weight(m::TimeMesh) = m.weight
 weight(m::TimeMesh, step::Int) = m.weight[step]
 
 hour(m::TimeMesh, step::Int) = m.hour_at_step[step]
