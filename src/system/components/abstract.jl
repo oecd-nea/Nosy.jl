@@ -1,6 +1,9 @@
 """
-Abstract types for behavior data and behaviors.
+Abstract types for components, models, and behaviors.
 """
+
+abstract type AbstractComponent{T} <: AbstractElement{T} end
+
 
 """
 AbstractBehaviorData: supertype for behavior data.
