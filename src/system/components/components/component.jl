@@ -1,7 +1,6 @@
 """
 Components.
 """
-abstract type AbstractComponent{T} <: AbstractElement{T} end
 
 struct Component{T<:VAL,M<:AbstractModel} <: AbstractComponent{T}
     name::String
@@ -76,7 +75,7 @@ end
 function _apply_constraints!(c::Component{AffExpr})
 
     # model constraints
-    _apply_constraints!(model(c))
+    _apply_constraints!(c, model(c))
 
     #  behaviors constraints
     for b in behaviors(c)
@@ -84,6 +83,9 @@ function _apply_constraints!(c::Component{AffExpr})
     end
 
 end
+
+# fallback if this function is not implemented
+_apply_constraints!(::Component, m::AbstractModel) = _apply_constraints!(m) 
 
 # display component info
 function Base.show(io::IO, c::Component)
