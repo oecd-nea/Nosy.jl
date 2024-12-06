@@ -2,13 +2,13 @@ using POSY2: mass
 using POSY2: Sim, TimeMesh
 using POSY2: VariableCapacity, FixedCapacity
 using POSY2: FixedCapacity, FixedCapacityBehavior
-using POSY2: OvernightCost
+using POSY2: OvernightCost, VariableCost
 using POSY2: BasicConverter, BasicConverterModel
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
 using POSY2: Component, model, sim
 using POSY2: capacity
-using POSY2: overnightcost
+using POSY2: overnightcost, variablecost, cost
 using JuMP: Model, AffExpr
 using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
@@ -20,7 +20,7 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
     function makecomp(vbehavior)
         s = tsim()    
-        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5,6,7,8,9,10])
         ec = EnergyCarrier("e", s)
         d = BasicConverter(mc, ec)
         c = Component("comp", d, vbehavior)
@@ -32,6 +32,7 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
         @test capacity(c) == 0.
         @test overnightcost(c) == 0.
+        @test cost(c) == 0.
 
     end    
 
@@ -46,10 +47,12 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
     end
 
-    let c = makecomp([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.)])
+    let c = makecomp([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.), VariableCost("input", energy, 2.), VariableCost("output", energy, 3.)])
 
         @test capacity(c) == AffExpr(5.)
         @test overnightcost(c) == AffExpr(5. * 10.)
+        @test variablecost(c) == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        @test cost(c) == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
 
     end
 

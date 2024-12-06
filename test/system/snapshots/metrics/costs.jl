@@ -2,9 +2,10 @@ using POSY2: mass, energy
 using POSY2: Sim, TimeMesh
 using POSY2: VariableCapacity, FixedCapacity
 using POSY2: BasicConverter
-using POSY2: overnightcost
+using POSY2: VariableCost, OvernightCost
+using POSY2: overnightcost, variablecost, cost
 using POSY2: MassCarrier, EnergyCarrier
-using POSY2: Component, Node, Snapshot, connect!
+using POSY2: Component, Node, Snapshot, connect!, getcomponent, balance
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
 
@@ -32,10 +33,14 @@ using ArgCheck: ArgumentError
         return sn
     end
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.)])
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.), VariableCost("input", energy, 2.)])
 
         # fixed capacity + overnight cost
         @test overnightcost(s, "comp") == AffExpr(5. * 10.)
+
+        @test variablecost(s, "comp") == balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
+
+        @test cost(s, "comp") == AffExpr(5. * 10.) + balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
 
     end
 
@@ -43,6 +48,8 @@ using ArgCheck: ArgumentError
 
         # no overnight costs
         @test overnightcost(s, "comp") == 0.
+        @test variablecost(s, "comp") == 0.
+        @test cost(s, "comp") == 0.
 
     end
 
@@ -51,6 +58,8 @@ using ArgCheck: ArgumentError
 
         # no component with name `nocomp`
         @test_throws AssertionError overnightcost(s, "nocomp")
+        @test_throws AssertionError variablecost(s, "nocomp")
+        @test_throws AssertionError cost(s, "nocomp")
 
     end
 
