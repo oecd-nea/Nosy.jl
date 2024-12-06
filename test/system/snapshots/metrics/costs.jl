@@ -5,7 +5,7 @@ using POSY2: BasicConverter
 using POSY2: VariableCost, OvernightCost
 using POSY2: overnightcost, variablecost, cost
 using POSY2: MassCarrier, EnergyCarrier
-using POSY2: Component, Node, Snapshot, connect!, getcomponent, balance
+using POSY2: Component, Node, Snapshot, connect!, getcomponent, balance, getport
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
 
@@ -33,7 +33,7 @@ using ArgCheck: ArgumentError
         return sn
     end
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.), VariableCost("input", energy, 2.)])
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:vom, "input", energy, 2.), VariableCost(:vom, "input", energy, 2.)])
 
         # fixed capacity + overnight cost
         @test overnightcost(s, "comp") == AffExpr(5. * 10.)
@@ -43,6 +43,24 @@ using ArgCheck: ArgumentError
         @test cost(s, "comp") == AffExpr(5. * 10.) + balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
 
     end
+
+
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
+
+        c = getcomponent(s, "comp")
+        
+        @test overnightcost(s, "comp", :overnight) == AffExpr(5. * 10.)
+        @test overnightcost(s, "comp", :other) == 0.
+        @test variablecost(s, "comp") == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        @test variablecost(s, "comp", :fuel) == sum(energy(getport(c, "input"))) * 2
+        @test variablecost(s, "comp", :vom) == sum(energy(getport(c, "output"))) * 3
+        @test cost(s, "comp") == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        @test cost(s, "comp", :overnight) == overnightcost(c, :overnight)
+        @test cost(s, "comp", :fuel) == variablecost(c, :fuel)
+        @test cost(s, "comp", :vom) == variablecost(c, :vom)
+
+    end
+
 
     let s = makesnapshot([])
 

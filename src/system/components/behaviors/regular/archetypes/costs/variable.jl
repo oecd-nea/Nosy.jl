@@ -4,21 +4,22 @@ Variable cost is associated with a flow.
 """
 
 struct VariableCost{M<:Function,V} <: AbstractCostBehaviorData
+    type::Symbol
     pname::String
     modifier::M
     val::V # Float64 or Vector{Float64}
 
     @doc """
-        VariableCost(pname::String, modifier::Function, val)
+        VariableCost(type::Symbol, pname::String, modifier::Function, val)
     Return an VariableCost behavior data, associated with port name `pname`, modifier `modifier` and cost `val`.
     `val` must be either a Number or an AbstractVector{<:Number} with length equal to number of steps or hours.
     """
-    function VariableCost(pname::String, modifier::Function, val) 
+    function VariableCost(type::Symbol, pname::String, modifier::Function, val) 
         # NB variable cost can be negative.
         if val isa AbstractVector{<:Number}
-            return new{typeof(modifier),Vector{Float64}}(pname, modifier, convert(Vector{Float64}, val))
+            return new{typeof(modifier),Vector{Float64}}(type, pname, modifier, convert(Vector{Float64}, val))
         elseif val isa Number
-            return new{typeof(modifier),Float64}(pname, modifier, convert(Float64, val))
+            return new{typeof(modifier),Float64}(type, pname, modifier, convert(Float64, val))
         else
             throw(ArgumentError("`val` must be a Number or a AbstractVector{<:Number}"))
         end
@@ -48,6 +49,8 @@ end
 
 
 # no constraint associated with cost
+
+_costtype(b::VariableCostBehavior) = b.data.type
 
 _variablecost(b::VariableCostBehavior) = b.val
 

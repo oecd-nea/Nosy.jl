@@ -28,7 +28,7 @@ using ArgCheck: ArgumentError
     end
 
     # scalar variable cost
-    let c = makeconv([VariableCost("input", mass, 10)])
+    let c = makeconv([VariableCost(:vom, "input", mass, 10)])
 
         @test c.behaviors[1] isa VariableCostBehavior{AffExpr}
 
@@ -41,7 +41,7 @@ using ArgCheck: ArgumentError
     end
 
     # vectorial variable cost - stepwise format
-    let c = makeconv([VariableCost("input", mass, fill(10,10))])
+    let c = makeconv([VariableCost(:vom, "input", mass, fill(10,10))])
 
         # adapting to variable capacity
         @test isapprox(_variablecost(c.behaviors[1]), 10 * balance(c, :input, mass, collapse=true, aggregate=true))
@@ -53,7 +53,7 @@ using ArgCheck: ArgumentError
 
 
     # vectorial variable cost - hourly format
-    let c = makeconv([VariableCost("input", mass, fill(10,5))])
+    let c = makeconv([VariableCost(:vom, "input", mass, fill(10,5))])
 
         # adapting to variable capacity
         @test isapprox(_variablecost(c.behaviors[1]), 10 * balance(c, :input, mass, collapse=true, aggregate=true))
@@ -67,11 +67,11 @@ using ArgCheck: ArgumentError
 
 
     # vectorial variable cost - wrong format
-    @test_throws AssertionError makeconv([VariableCost("input", mass, fill(10,7))])
+    @test_throws AssertionError makeconv([VariableCost(:vom, "input", mass, fill(10,7))])
 
 
     # multiple variable costs
-    let c = makeconv([VariableCost("input", mass, 1), VariableCost("input", energy, 1)])
+    let c = makeconv([VariableCost(:vom, "input", mass, 1), VariableCost(:fuel, "input", energy, 1)])
 
         @test variablecost(c) == _variablecost(c.behaviors[1]) + _variablecost(c.behaviors[2])
 

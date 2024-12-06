@@ -14,7 +14,7 @@ using ArgCheck: ArgumentError
 @testset "OvernightCost" begin
 
 
-    let b = OvernightCost("input", mass, 5)
+    let b = OvernightCost(:overnight, "input", mass, 5)
 
         # conversion to Float64
         @test b.val == 5.
@@ -23,7 +23,7 @@ using ArgCheck: ArgumentError
 
 
     # no negative cost
-    @test_throws ArgumentError OvernightCost("input", mass, -5.)
+    @test_throws ArgumentError OvernightCost(:overnight, "input", mass, -5.)
 
     tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
 
@@ -41,7 +41,7 @@ using ArgCheck: ArgumentError
 
     # NB: overnight cost is given before capacity
     # constructor should re-order behaviors     
-    let m = makeconv([OvernightCost("input", mass, 10.), FixedCapacity("input", mass, 5.)])  
+    let m = makeconv([OvernightCost(:overnight, "input", mass, 10.), FixedCapacity("input", mass, 5.)])  
 
         # test: behaviors are re-ordered (capacity before cost)
         @test m.behaviors[1] isa FixedCapacityBehavior{AffExpr} && m.behaviors[2] isa OvernightCostBehavior{AffExpr}
@@ -55,7 +55,7 @@ using ArgCheck: ArgumentError
     end
 
 
-    let m = makeconv([OvernightCost("input", mass, 10.), VariableCapacity("input", mass)])
+    let m = makeconv([OvernightCost(:overnight, "input", mass, 10.), VariableCapacity("input", mass)])
 
         # adapting to variable capacity
         @test _overnightcost(m.behaviors[2]) == _capacity(m.behaviors[1]) * 10.
@@ -73,9 +73,9 @@ using ArgCheck: ArgumentError
     end
 
     # incompatible port names
-    @test_throws ArgumentError makeconv([OvernightCost("input", mass, 10.), VariableCapacity("output", mass)])
+    @test_throws ArgumentError makeconv([OvernightCost(:overnight, "input", mass, 10.), VariableCapacity(:"output", mass)])
 
     # incompatible port modifiers
-    @test_throws AssertionError makeconv([OvernightCost("input", mass, 10.), VariableCapacity("input", energy)])
+    @test_throws AssertionError makeconv([OvernightCost(:overnight, "input", mass, 10.), VariableCapacity("input", energy)])
 
 end

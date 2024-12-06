@@ -8,3 +8,7 @@ function sumofmetric(c::Component{T}, B, metric) where T
         return sum(metric(b)::T for b in bs)
     end
 end
+
+_metrictype(::AbstractBehavior) = error("not implemented")
+
+sumofmetric(c::Component{T}, B, metric, type::Symbol) where T = sum([metric(b)::T for b in behaviors(c, B) if _metrictype(b) == type], init=0.)

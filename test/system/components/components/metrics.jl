@@ -47,12 +47,21 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
     end
 
-    let c = makecomp([FixedCapacity("input", mass, 5.), OvernightCost("input", mass, 10.), VariableCost("input", energy, 2.), VariableCost("output", energy, 3.)])
+    let c = makecomp([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
 
         @test capacity(c) == AffExpr(5.)
         @test overnightcost(c) == AffExpr(5. * 10.)
+
+        # test selection based on cost type
+        @test overnightcost(c, :overnight) == AffExpr(5. * 10.)
+        @test overnightcost(c, :other) == 0.
         @test variablecost(c) == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        @test variablecost(c, :fuel) == sum(energy(getport(c, "input"))) * 2
+        @test variablecost(c, :vom) == sum(energy(getport(c, "output"))) * 3
         @test cost(c) == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        @test cost(c, :overnight) == overnightcost(c, :overnight)
+        @test cost(c, :fuel) == variablecost(c, :fuel)
+        @test cost(c, :vom) == variablecost(c, :vom)
 
     end
 

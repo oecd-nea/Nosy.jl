@@ -4,17 +4,18 @@ Overnight cost is associated with a capacity. A component without capacity has n
 """
 
 struct OvernightCost{M<:Function} <: AbstractCostBehaviorData
+    type::Symbol
     pname::String
     modifier::M
     val::Float64
 
     @doc """
-        OvernightCost(pname::String, modifier::Function, val::Number)
+        OvernightCost(type::Symbol, pname::String, modifier::Function, val::Number)
     Return an OvernightCost behavior data, associated with port name `pname`, modifier `modifier` and fixed value `val`.
     """
-    function OvernightCost(pname::String, modifier::Function, val::Number)
+    function OvernightCost(type::Symbol, pname::String, modifier::Function, val::Number)
         @argcheck val >= 0. "Overnight cost cannot be negative"
-        new{typeof(modifier)}(pname, modifier, Float64(val))
+        new{typeof(modifier)}(type, pname, modifier, Float64(val))
     end
 end
 
@@ -32,6 +33,8 @@ function buildbehavior(c::Component, b::OvernightCost)
 end
 
 # no constraint associated with cost
+
+_costtype(b::OvernightCostBehavior) = b.data.type
 
 _overnightcost(b::OvernightCostBehavior) = b.val
 
