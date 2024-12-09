@@ -1,0 +1,51 @@
+using ArgCheck: @argcheck
+
+"""
+Demand.
+
+Consumes an input flow according to a series.
+The series is not normalized, it is the actual consumption value.
+"""
+
+
+struct Demand{C<:AbstractCarrier,M<:Function} <: AbstractModelData
+    sim::Sim
+    carrier::C
+    modifier::M # the modifier of the time series given by the user
+    series::Stepwise{Float64} # expressed in the defaultmodifier of carrier (!= modifier)
+end
+
+"""
+    Demand(carrier::AbstractCarrier, series; modifier=defaultmodifier)
+Return a model Demand model for carrier `carrier` with a non-negative series `series`.
+The parameter `series` can be either a Vector (of length equal to number of hours or steps) or a Number.
+If the parameter `modifier` is provided, it implies that the `series` provided by the user is expressed in term of modified carrier unit.
+"""
+function Demand(carrier::AbstractCarrier, series; modifier=_defaultmodifier(carrierstyle(carrier)))
+    @argcheck all(series .>= 0.) "The series cannot be negative"
+    s = sim(carrier)
+
+    _series = Stepwise(series, s.mesh) ./ (Stepwise(modifier(carrier), s.mesh) .* Stepwise(defaultmodifier(carrier), s.mesh))
+
+    return Demand(s, carrier, modifier, Stepwise(_series, s.mesh))
+end
+
+struct DemandModel{T<:VAL,C<:AbstractCarrier,M} <: AbstractModel{T}
+    data::Demand{C,M}
+    s::PortStructure{T}
+end
+
+# return a DemandModel using Demand data
+function build(m::Demand, ::String) # no variable -> no use of name
+
+    ps = PortStructure{AffExpr}(m.sim)
+    addinput!(ps, "input", Port(m.carrier, m.series))
+
+    return DemandModel(m, ps)
+end
+
+# no constraints specific to DemandModel
+function _apply_constraints!(::DemandModel) end
+
+modelname(::DemandModel) = "demand"
+

@@ -38,6 +38,11 @@ function buildbehavior(m::AbstractModel, cname::String, b::VariableCapacity)
     return VariableCapacityBehavior(b, convert(AffExpr, v))
 end
 
+# special case - DemandModel: not compatible (already has an implicit capacity as the demand series is not normalized)
+function buildbehavior(::DemandModel, ::String, ::VariableCapacity)
+    throw(ArgumentError("Demand model is not compatible with capacity"))
+end
+
 # general case: apply constraint at each timestep
 function _apply_constraints!(m::AbstractModel, b::VariableCapacityBehavior)
     @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= _capacity(b))

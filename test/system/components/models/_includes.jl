@@ -1,4 +1,5 @@
 include("basicconverter.jl")
 include("dispatchablesource.jl")
 include("profilesource.jl")
+include("demand.jl")
 include("lazystorage.jl")

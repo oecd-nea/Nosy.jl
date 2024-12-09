@@ -2,7 +2,7 @@ using POSY2: mass
 using POSY2: Sim, TimeMesh, nvariables, nconstraints, sim
 using POSY2: build, buildbehavior
 using POSY2: VariableCapacity, VariableCapacityBehavior, _capacity
-using POSY2: BasicConverter
+using POSY2: BasicConverter, ProfileSource, Demand
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
 using POSY2: ProfileSource
@@ -158,5 +158,17 @@ using ArgCheck: ArgumentError
     end
 
     @test_throws ArgumentError makeprofilesourcenondefault()
+
+    # consumption not compatible with capacity
+    function makeconsumption()
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        d = Demand(mc,[0.1,0.2,0.3,0.4,0.5])
+        cap = VariableCapacity("output", energy, lb=5., ub=Inf64)
+        c = Component("profile", d, [cap])
+        return c
+    end
+
+    @test_throws ArgumentError makeconsumption()
 
 end
