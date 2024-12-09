@@ -109,5 +109,35 @@ using ArgCheck: ArgumentError
 
     end
 
+    # profile source are a special case for capacity
+    # constraints are not applied to output but to hidden capacity
+    function makeprofilesource()
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        d = ProfileSource(mc,[0.1,0.2,0.3,0.4,0.5])
+        cap = FixedCapacity("output", mass, 5.)
+        c = Component("profile", d, [cap])
+        return c
+    end
+
+    let m = makeprofilesource()  
+
+        @test nvariables(sim(m)) == 1 # profile source inner capacity
+        @test nconstraints(sim(m)) == 2 # profile source inner cap lb, equality of inner cap and fixed cap
+
+    end
     
+
+    # profile source + capacity on non-default modifier
+    function makeprofilesourcenondefault()
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        d = ProfileSource(mc,[0.1,0.2,0.3,0.4,0.5])
+        cap = FixedCapacity("output", energy, 5.) # NB energy instead of mass
+        c = Component("profile", d, [cap])
+        return c
+    end
+
+    @test_throws ArgumentError makeprofilesourcenondefault()
+
 end

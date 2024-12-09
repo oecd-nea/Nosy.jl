@@ -1,10 +1,11 @@
 using POSY2: mass
-using POSY2: Sim, TimeMesh, nvariables, nconstraints
+using POSY2: Sim, TimeMesh, nvariables, nconstraints, sim
 using POSY2: build, buildbehavior
 using POSY2: VariableCapacity, VariableCapacityBehavior, _capacity
 using POSY2: BasicConverter
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
+using POSY2: ProfileSource
 using POSY2: Component
 using JuMP: Model, AffExpr, lower_bound, upper_bound, has_lower_bound, has_upper_bound
 using ArgCheck: ArgumentError
@@ -127,5 +128,35 @@ using ArgCheck: ArgumentError
 
     end
 
+    # profile source are a special case for capacity
+    # constraints are not applied to output but to hidden capacity
+    function makeprofilesource()
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        d = ProfileSource(mc,[0.1,0.2,0.3,0.4,0.5])
+        cap = VariableCapacity("output", mass, lb=5., ub=Inf64)
+        c = Component("profile", d, [cap])
+        return c
+    end
+
+    let m = makeprofilesource()  
+
+        @test nvariables(sim(m)) == 2 # profile source inner capacity, variable capacity
+        @test nconstraints(sim(m)) == 3 # profile source inner cap lb, variable cap lb, equality of both
+
+    end
     
+
+    # profile source + capacity on non-default modifier
+    function makeprofilesourcenondefault()
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        d = ProfileSource(mc,[0.1,0.2,0.3,0.4,0.5])
+        cap = VariableCapacity("output", energy, lb=5., ub=Inf64) # NB energy instead of mass
+        c = Component("profile", d, [cap])
+        return c
+    end
+
+    @test_throws ArgumentError makeprofilesourcenondefault()
+
 end

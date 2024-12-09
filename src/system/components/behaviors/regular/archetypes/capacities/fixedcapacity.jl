@@ -34,9 +34,21 @@ function buildbehavior(m::AbstractModel, ::String, b::FixedCapacity{M}) where M
     return FixedCapacityBehavior(b, AffExpr(b.val))
 end
 
-# apply the component constraints related to fixed capacity
+# general case: apply constraint at each timestep
+function _apply_constraints!(m::AbstractModel, b::FixedCapacityBehavior)
+    @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= _capacity(b))
+end
+
+# special case - ProfileSourceModel: apply constraint at each timestep
+function _apply_constraints!(m::ProfileSourceModel, b::FixedCapacityBehavior)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(m.data.carrier)) "no modifier conversion allowed between component and capacity"
+    @constraint(sim(m).model, m.cap == b.val)
+end
+
+# redirect application of capacity constraint to model
+# NB capacity is not applied to joint flows with this workflow
 function _apply_constraints!(c::Component, b::FixedCapacityBehavior)
-    @constraint(sim(c).model, b.data.modifier(getport(model(c), b.data.pname)).data .<= _capacity(b))
+    _apply_constraints!(model(c), b)
 end
 
 behaviorname(::FixedCapacityBehavior) = "fixed capacity"
