@@ -90,3 +90,25 @@ function connect!(s::Snapshot, c::Component, n::Node)
     end
     @assert _connected "Could not connect component $(name(c)) to node $(name(n))"
 end
+
+# return true (and empty string) if all the components of the snapshot are fully connected
+# return a tuple of (false, not_connected_component_name) otherwise
+# NB components not connected at all to the snapshot are not tested
+function isfullyconnected(s::Snapshot)
+    for (k,v) in components(s)
+        if !isfullyconnected(v)
+            return (false,k)
+        end
+    end
+    return (true,"")
+end
+
+# throw an error indicating the name of unconnected component if the snapshot is not fully connected
+# return true otherwise
+function assertconnected(s::Snapshot)
+    (b,cname) = isfullyconnected(s)
+    if !b
+        throw(AssertionError("Component $cname is not fully connected"))
+    end
+    return true
+end

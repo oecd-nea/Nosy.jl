@@ -1,11 +1,11 @@
 using POSY2: mass
 using POSY2: Sim, TimeMesh, nvariables, nconstraints
 using POSY2: LinkedJointFlow
-using POSY2: BasicConverter
+using POSY2: DispatchableSource, BasicConverter, Demand
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
 using POSY2: Component, Node, portstructure, isfullyconnected, is_used, getport
-using POSY2: Snapshot, components, nodes, connect!
+using POSY2: Snapshot, components, nodes, connect!, assertconnected
 using JuMP: Model, AffExpr
 
 @testset "Connect" begin
@@ -189,6 +189,53 @@ using JuMP: Model, AffExpr
         @test_throws AssertionError connect!(sn, c, n)
         
     end
+
+
+        # snapshot with one node and 2 components, no joint flows
+        let s = tsim()
+        
+            snap = Snapshot(s)
+    
+            ec = EnergyCarrier("e", s)
+            en = Node("energy", ec)
+    
+            mc = MassCarrier("m", s)
+            mn = Node("mass", mc)
+    
+            disp = Component("disp", DispatchableSource(ec), [LinkedJointFlow("link", mc, :output, "output", x->x)])
+            cons = Component("cons", Demand(ec, 10), [])
+            conv = Component("conv", BasicConverter(mc, ec), [])
+    
+            # no component is connected, so "all" connected components are fully connected
+            @test assertconnected(snap)
+          
+            connect!(snap, cons, en)
+    
+            # cons only has 1 port -> now fully connected. Other components are not connected at all
+            @test assertconnected(snap)
+    
+            connect!(snap, conv, mn)
+    
+            # conv is partially connected: to mn, but not to en
+            @test_throws AssertionError assertconnected(snap)
+    
+            connect!(snap, conv, en)
+    
+            # conv is now fully connected (mn, en)
+            @test assertconnected(snap)
+    
+            connect!(snap, disp, en)
+    
+            # disp output port is connected, but the joint flow is not
+            @test_throws AssertionError assertconnected(snap)
+            
+            connect!(snap, disp, mn)
+    
+            # all disp ports are now connected
+            @test assertconnected(snap)
+            
+    
+        end
 
 
 end
