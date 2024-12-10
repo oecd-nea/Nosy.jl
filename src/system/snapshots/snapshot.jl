@@ -2,11 +2,14 @@
 A snapshot contains nodes and components.
 """
 
+using Base: RefValue
+
 struct Snapshot{T}
     sim::Sim
     components::Dict{String,Component{T}}
     nodes::Dict{String,Node{T}}
     options::Dict
+    finalized::RefValue{Bool}
 end
 
 defaultsnapshotoptions() = Dict()
@@ -16,7 +19,8 @@ function Snapshot(sim::Sim, options::Dict=defaultsnapshotoptions())
         sim,
         Dict{String,Component{AffExpr}}(),
         Dict{String,Node{AffExpr}}(),
-        options
+        options,
+        RefValue(false)
     )
 end
 
@@ -25,6 +29,9 @@ nodes(s::Snapshot) = s.nodes
 
 hascomponent(s::Snapshot, cname::String) = haskey(components(s), cname)
 getcomponent(s::Snapshot, cname::String) = components(s)[cname]
+
+is_finalized(s::Snapshot) = s.finalized[]
+set_finalized!(s::Snapshot) = setindex!(s.finalized, true)
 
 # add a node entry to the dict of nodes of a snapshot
 # if the key is already present, check that the node is the same

@@ -51,12 +51,18 @@ end
 
 # slow version when port handle is not available
 function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, pname::String)
+    # check the snapshot is not finalized
+    @assert !is_finalized(s) "Cannot connect to snapshot: the snapshot is already finalized."
+
     _connect!(c, n, sense, pname)
     _populatesnapshot!(s, c, n)
 end
 
 # fast version when port handle is available
 function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, p::Port)
+    # check the snapshot is not finalized
+    @assert !is_finalized(s) "Cannot connect to snapshot: the snapshot is already finalized."
+
     _connect!(c, n, sense, p)
     _populatesnapshot!(s, c, n)
 end
