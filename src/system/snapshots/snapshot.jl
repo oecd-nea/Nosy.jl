@@ -50,7 +50,7 @@ end
 function apply_constraints!(s::Snapshot)
     # component constraints are already applied when constructing the components
     # node constraints are applied here
-    for n in nodes(s)
+    for (_, n) in nodes(s)
         apply_constraints!(n)
     end
 end
