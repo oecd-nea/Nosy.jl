@@ -24,6 +24,7 @@ function Snapshot(sim::Sim, options::Dict=defaultsnapshotoptions())
     )
 end
 
+sim(s::Snapshot) = s.sim
 components(s::Snapshot) = s.components
 nodes(s::Snapshot) = s.nodes
 
