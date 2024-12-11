@@ -3,7 +3,7 @@ Port structure.
 Contain all the ports associated with a node or model.
 """
 
-struct PortStructure{T<:VAL}
+struct PortStructure{T<:VAL} <: AbstractElement{T}
     sim::Sim
     input::Dict{String,Port{T}}
     output::Dict{String,Port{T}}

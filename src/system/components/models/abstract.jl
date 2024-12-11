@@ -4,7 +4,7 @@ Model formalism:
   * model (constructed from model data by component constructor) is a subtype of AbstractModel
 """
 
-abstract type AbstractModelData end
+abstract type AbstractModelData <: AbstractElement{Float64} end
 
 abstract type AbstractModel{T<:VAL} <: AbstractElement{T} end
 

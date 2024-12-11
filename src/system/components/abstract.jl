@@ -11,7 +11,7 @@ Behavior data encapsulates the data required to generate behaviors.
 It is directly constructed by the user call to the constructor.
 """
 
-abstract type AbstractBehaviorData end
+abstract type AbstractBehaviorData <: AbstractElement{Float64} end
 
 
 """

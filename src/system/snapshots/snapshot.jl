@@ -4,7 +4,7 @@ A snapshot contains nodes and components.
 
 using Base: RefValue
 
-struct Snapshot{T}
+struct Snapshot{T} <: AbstractElement{T}
     sim::Sim
     components::Dict{String,Component{T}}
     nodes::Dict{String,Node{T}}
