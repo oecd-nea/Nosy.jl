@@ -71,3 +71,13 @@ step(m::TimeMesh, hour::Int) = m.step_at_hour[hour]
 
 eachhour(m) = 1:nhours(m)
 eachstep(m) = 1:nsteps(m)
+
+# display mesh info
+function Base.show(io::IO, m::TimeMesh)
+    nh = nhours(m)
+    ns = nsteps(m)
+    print(
+        io, 
+        "Time mesh ($nh hours, $ns steps)"
+    )
+end

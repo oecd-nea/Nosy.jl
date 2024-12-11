@@ -62,3 +62,13 @@ function apply_constraints!(s::Snapshot)
         apply_constraints!(n)
     end
 end
+
+# display snapshot info
+function Base.show(io::IO, s::Snapshot)
+    nc = length(components(s))
+    nn = length(nodes(s))
+    print(
+        io, 
+        "Snapshot with $nc component(s) and $nn node(s)"
+    )
+end

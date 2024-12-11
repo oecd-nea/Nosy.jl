@@ -1,4 +1,4 @@
-using JuMP: Model, num_constraints, num_variables, list_of_constraint_types
+using JuMP: Model, num_constraints, num_variables, list_of_constraint_types, solver_name
 
 """
 Sim: data structure containing the information shared with all the simulation.
@@ -35,3 +35,14 @@ nconstraints(s::Sim) = _nconstraints(s.model)
 
 # count the variables of a Sim
 nvariables(s::Sim) = num_variables(s.model)
+
+# display sim info
+function Base.show(io::IO, s::Sim)
+    ns = nsteps(s)
+    nh = nhours(s)
+    sn = solver_name(s.model)
+    print(
+        io, 
+        "Simulation ($nh hours, $ns timesteps, $sn)"
+    )
+end

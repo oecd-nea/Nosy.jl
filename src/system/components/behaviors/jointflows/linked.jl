@@ -48,3 +48,6 @@ function _addbehavior!(c::Component, j::LinkedJointFlowModel)
     end
     push!(c.jointflows, j)
 end
+
+name(j::LinkedJointFlowModel) = j.data.name
+jointflowname(::LinkedJointFlowModel) = "fixed"

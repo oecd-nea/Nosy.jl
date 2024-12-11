@@ -67,5 +67,13 @@ addoutput!(n::Node{T,C1}, name::String, ::Port{T,C2}) where {T,C1,C2} =  throw(A
 # cannot add level to node
 addlevel!(::Node{T,C1}, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(AssertionError("Ports cannot have a level"))
 
-
-
+# display node info
+function Base.show(io::IO, n::Node)
+    nin = length(input(n))
+    nout = length(output(n))
+    ntype = iscurtailed(n) ? "curtailed" : "not curtailed"
+    print(
+        io,
+        "Node \"$(name(n))\" ($ntype) with $nin input(s), $nout output(s)"
+    )
+end

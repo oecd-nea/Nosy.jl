@@ -76,6 +76,16 @@ struct CO2Carrier <: AbstractCarrier
 end
 
 sim(c::AbstractCarrier) = c.sim
+name(c::AbstractCarrier) = c.name
 
 Base.isequal(::AbstractCarrier, ::AbstractCarrier) = false
 Base.isequal(c1::C, c2::C) where {C<:AbstractCarrier} = (c1 === c2)
+
+# display carrier info
+function Base.show(io::IO, c::AbstractCarrier)
+    cn = modifiername(_defaultmodifier(carrierstyle(c)))
+    print(
+        io, 
+        "Carrier \"$(name(c))\" for $cn"
+    )
+end

@@ -41,3 +41,11 @@ getport(m::AbstractModel, pname::String) = getport(portstructure(m), pname)
 _apply_constraints!(::AbstractModel) = error("Not implemented")
 
 modelname(::AbstractModel) = error("Not implemented")
+
+# display model data info
+function Base.show(io::IO, c::AbstractModel)
+  print(
+      io, 
+      "Model of type \"$(modelname(c))\""
+  )
+end

@@ -15,3 +15,12 @@ AbstractRegularBehavior interface:
 
 behaviorname(::AbstractRegularBehavior) = error("Not implemented")
 _apply_constraints!(::Component, ::AbstractRegularBehavior) = error("Not implemented")
+
+
+# display behavior info
+function Base.show(io::IO, b::AbstractRegularBehavior)
+  print(
+      io, 
+      "Behavior \"$(behaviorname(b))\""
+  )
+end

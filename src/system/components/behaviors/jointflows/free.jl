@@ -42,3 +42,6 @@ function _addbehavior!(c::Component, j::FreeJointFlowModel)
     end
     push!(c.jointflows, j)
 end
+
+name(j::FreeJointFlowModel) = j.data.name
+jointflowname(::FreeJointFlowModel) = "free"

@@ -91,8 +91,9 @@ end
 # display component info
 function Base.show(io::IO, c::Component)
     bs = isempty(behaviors(c)) ? "" : " (" * join([behaviorname(b) for b in behaviors(c)], ", ") * ")"
+    nj = length(c.jointflows)
     print(
         io, 
-        "Component \"$(name(c))\" based on $(modelname(model(c))) with $(length(behaviors(c))) behavior(s)$bs"
+        "Component \"$(name(c))\" based on $(modelname(model(c))) with $nj joint flow(s) and $(length(behaviors(c))) behavior(s)$bs"
     )
 end
