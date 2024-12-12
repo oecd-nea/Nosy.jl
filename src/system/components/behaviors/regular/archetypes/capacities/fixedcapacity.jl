@@ -46,14 +46,36 @@ end
 
 # special case - ProfileSourceModel: apply constraint at each timestep
 function _apply_constraints!(m::ProfileSourceModel, b::FixedCapacityBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(m.data.carrier)) "no modifier conversion allowed between component and capacity"
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(m, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @constraint(sim(m).model, m.cap == b.val)
+end
+
+# special case: any model, but presence of capacity multiplier behavior
+function _apply_constraints!(m::AbstractModel, b::FixedCapacityBehavior, mult::CapacityMultiplierBehavior)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(m, b.data.pname)))) "no modifier conversion allowed between component and capacity"
+    @argcheck _portname(b) == _portname(mult) "the fixed capacity and the capacity multiplier do not target the same port"
+    @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= (_capacity(b) * mult.val).data)
 end
 
 # redirect application of capacity constraint to model
 # NB capacity is not applied to joint flows with this workflow
+# also checks whether component has CapacityMultiplier behavior
+# which does impact the _apply_constraints! method it is dispatched to
 function _apply_constraints!(c::Component, b::FixedCapacityBehavior)
-    _apply_constraints!(model(c), b)
+    local hasmatchingmultiplierbehavior = false
+    if hasbehavior(c, CapacityMultiplierBehavior)
+        for mult in getbehaviors(c, CapacityMultiplierBehavior)
+            if _portname(mult) == _portname(b)
+                hasmatchingmultiplierbehavior = true
+                _apply_constraints!(model(c), b, mult)
+                break
+            end
+        end
+    end
+
+    if !hasmatchingmultiplierbehavior
+        _apply_constraints!(model(c), b)
+    end
 end
 
 behaviorname(::FixedCapacityBehavior) = "fixed capacity"

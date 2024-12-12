@@ -1,5 +1,5 @@
 using POSY2: energy
-using POSY2: Sim, TimeMesh
+using POSY2: Sim, TimeMesh, Model
 using POSY2: DispatchableSource, Demand
 using POSY2: EnergyCarrier
 using POSY2: VariableCapacity, OvernightCost
