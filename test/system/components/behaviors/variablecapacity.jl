@@ -16,19 +16,16 @@ using ArgCheck: ArgumentError
 
     getvariable(e::AffExpr) = first(e.terms)[1]
 
-    function makeconv()
+    function makecomp(vbehavior=[])
         s = tsim()    
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
-        d = BasicConverter(
-            mc,
-            ec,
-        )        
-        m = build(d, "conv")
-        return m
+        d = BasicConverter(mc, ec)
+        c = Component("comp", d, vbehavior)
+        return c
     end
 
-    let m = makeconv()  
+    let m = makecomp()  
 
         c = VariableCapacity(
             "input",
@@ -37,7 +34,7 @@ using ArgCheck: ArgumentError
             ub = Inf64,
         )  
 
-        b = buildbehavior(m, "comp", c)
+        b = buildbehavior(m, c)
 
         @test _capacity(b) isa AffExpr
 
@@ -61,7 +58,7 @@ using ArgCheck: ArgumentError
         ub = 3., # upper bound lower than lower bound
     )  
 
-    let m = makeconv()
+    let m = makecomp()
 
         c = VariableCapacity(
             "level", # no port has this name in the model d
@@ -70,10 +67,10 @@ using ArgCheck: ArgumentError
             ub = Inf64,
         )
         # port not found in the model
-        @test_throws ArgumentError buildbehavior(m, "test", c)
+        @test_throws ArgumentError buildbehavior(m, c)
     end
 
-    let m = makeconv()
+    let m = makecomp()
 
         c = VariableCapacity("input",
             co2, # input port is not compatible with this modifier
@@ -81,19 +78,7 @@ using ArgCheck: ArgumentError
             ub = Inf64,
         )  
         # port not compatible with modifier
-        @test_throws ArgumentError buildbehavior(m, "test", c)
-    end
-
-
-    # tests on Component
-
-    function makecomp(vbehavior)
-        s = tsim()    
-        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
-        ec = EnergyCarrier("e", s)
-        d = BasicConverter(mc, ec)
-        c = Component("comp", d, vbehavior)
-        return c
+        @test_throws ArgumentError buildbehavior(m, c)
     end
 
     # no behaviors, no joint flows
@@ -122,6 +107,34 @@ using ArgCheck: ArgumentError
         #   converter input lower bound = 0 @ each step (10),
         #   converter input upper bound <= Inf @ each step (0),
         #   converter input flow <= capacity @ each step (10),
+        #   capacity >= cap lower bound (1),
+        @test nvariables(sim(c)) == 11
+        @test nconstraints(sim(c)) == 21
+
+    end
+
+
+    function makecompwjoint(vbehavior=[])
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        j = LinkedJointFlow("jflow", mc, :output, "input", x->x) # output joint flow carrying mass
+        c = Component("comp", d, [j, vbehavior...])
+        return c
+    end
+
+    # 1 behavior (fixed capacity), joint flow
+    let c = makecompwjoint([VariableCapacity("jflow", mass, lb=5.)])
+
+        # model has 10 timesteps
+        # it should have 11 variables 
+        #   flow @ converter @ each step (10),
+        #   capacity (1)
+        # and 21 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        #   converter joint flow <= capacity @ each step (10),
         #   capacity >= cap lower bound (1),
         @test nvariables(sim(c)) == 11
         @test nconstraints(sim(c)) == 21

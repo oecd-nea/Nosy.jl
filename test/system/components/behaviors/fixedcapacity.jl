@@ -13,19 +13,16 @@ using ArgCheck: ArgumentError
 
     tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
 
-    function makeconv()
+    function makecomp(vbehavior=[])
         s = tsim()    
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
-        d = BasicConverter(
-            mc,
-            ec,
-        )        
-        m = build(d, "conv")
-        return m
+        d = BasicConverter(mc, ec)
+        c = Component("comp", d, vbehavior)
+        return c
     end
 
-    let m = makeconv()  
+    let m = makecomp()  
 
         c = FixedCapacity(
             "input",
@@ -33,7 +30,7 @@ using ArgCheck: ArgumentError
             5 # should be converted to Float by FixedCapacity constructor
         )
 
-        b = buildbehavior(m, "comp", c)
+        b = buildbehavior(m, c)
 
         @test _capacity(b) == 5.
         
@@ -46,7 +43,7 @@ using ArgCheck: ArgumentError
     )
 
 
-    let m = makeconv()
+    let m = makecomp()
 
         c = FixedCapacity(
             "level", # no port has this name in the model d
@@ -54,33 +51,22 @@ using ArgCheck: ArgumentError
             5,
         )
         # port not found in the model
-        @test_throws ArgumentError buildbehavior(m, "test", c)
+        @test_throws ArgumentError buildbehavior(m, c)
     end
 
-    let m = makeconv()
+    let m = makecomp()
 
         c = FixedCapacity("input",
             co2, # input port is not compatible with this modifier
             5,
         )  
         # port not compatible with modifier
-        @test_throws ArgumentError buildbehavior(m, "test", c)
+        @test_throws ArgumentError buildbehavior(m, c)
     end
 
-
-    # tests on Component
-
-    function makecomp(vbehavior)
-        s = tsim()    
-        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
-        ec = EnergyCarrier("e", s)
-        d = BasicConverter(mc, ec)
-        c = Component("comp", d, vbehavior)
-        return c
-    end
 
     # no behaviors, no joint flows
-    let c = makecomp([])
+    let c = makecomp()
        
         # model has 10 timesteps
         # it should have 10 variables 
@@ -104,6 +90,31 @@ using ArgCheck: ArgumentError
         #   converter input lower bound = 0 @ each step (10),
         #   converter input upper bound <= Inf @ each step (0),
         #   converter input flow <= capacity @ each step (10),
+        @test nvariables(sim(c)) == 10
+        @test nconstraints(sim(c)) == 20
+
+    end
+
+    function makecompwjoint(vbehavior=[])
+        s = tsim()    
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        j = LinkedJointFlow("jflow", mc, :output, "input", x->x) # output joint flow carrying mass
+        c = Component("comp", d, [j, vbehavior...])
+        return c
+    end
+
+    # 1 behavior (fixed capacity), joint flow
+    let c = makecompwjoint([FixedCapacity("jflow", mass, 5)])
+
+        # model has 10 timesteps
+        # it should have 10 variables 
+        #   flow @ converter @ each step (10),
+        # and 21 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        #   converter joint flow <= capacity @ each step (10),
         @test nvariables(sim(c)) == 10
         @test nconstraints(sim(c)) == 20
 
@@ -139,19 +150,5 @@ using ArgCheck: ArgumentError
     end
 
     @test_throws ArgumentError makeprofilesourcenondefault()
-
-
-    # consumption not compatible with capacity
-    function makeconsumption()
-        s = tsim()    
-        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
-        d = Demand(mc,[0.1,0.2,0.3,0.4,0.5])
-        cap = FixedCapacity("output", energy, 5.)
-        c = Component("profile", d, [cap])
-        return c
-    end
-
-    @test_throws ArgumentError makeconsumption()
-
 
 end

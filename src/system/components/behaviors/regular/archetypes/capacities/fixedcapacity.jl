@@ -25,36 +25,46 @@ struct FixedCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
     val::T
 end
 
-
 # return a FixedCapacityBehavior
 # NB string is not used as no variable is created
-function buildbehavior(m::AbstractModel, ::String, b::FixedCapacity{M}) where M
-    @argcheck hasport(m, b.pname) "Model does not have port named $(b.pname)"
-    @argcheck hasmodifier(getport(m, b.pname), b.modifier) "Target port does not have the required modifier"
+function buildbehavior(c::Component, b::FixedCapacity{M}) where M
+    #  _assert_model_compat_cap(model(c), b)
+    @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
+    @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     return FixedCapacityBehavior(b, AffExpr(b.val))
 end
 
-# special case - DemandModel: not compatible (already has an implicit capacity as the demand series is not normalized)
-function buildbehavior(::DemandModel, ::String, ::FixedCapacity{M}) where M
-    throw(ArgumentError("Demand model is not compatible with capacity"))
-end
+"""
+Apply capacity constraints.
+"""
 
-# general case: apply constraint at each timestep
-function _apply_constraints!(m::AbstractModel, b::FixedCapacityBehavior)
-    @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= _capacity(b))
+# general expression of capacity constraint
+# can target model port or joint flow port
+function __apply_constraint_general!(c::Component, b::FixedCapacityBehavior)
+    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
 end
 
 # special case - ProfileSourceModel: apply constraint at each timestep
-function _apply_constraints!(m::ProfileSourceModel, b::FixedCapacityBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(m, b.data.pname)))) "no modifier conversion allowed between component and capacity"
-    @constraint(sim(m).model, m.cap == b.val)
+function __apply_constraints_profile!(c::Component, b::FixedCapacityBehavior)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
+    @constraint(sim(c).model, c.model.cap == b.val)
+end
+
+# general case: apply constraint at each timestep
+# dispatch to either general case or model = profile source case
+function __apply_constraints!(c::Component, b::FixedCapacityBehavior)
+    if model(c) isa ProfileSourceModel && _portname(b) == "output"
+        __apply_constraints_profile!(c, b)
+    else
+        __apply_constraint_general!(c, b)
+    end
 end
 
 # special case: any model, but presence of capacity multiplier behavior
-function _apply_constraints!(m::AbstractModel, b::FixedCapacityBehavior, mult::CapacityMultiplierBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(m, b.data.pname)))) "no modifier conversion allowed between component and capacity"
+function _apply_constraints!(c::Component, b::FixedCapacityBehavior, mult::CapacityMultiplierBehavior)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @argcheck _portname(b) == _portname(mult) "the fixed capacity and the capacity multiplier do not target the same port"
-    @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= (_capacity(b) * mult.val).data)
+    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= (_capacity(b) * mult.val).data)
 end
 
 # redirect application of capacity constraint to model
@@ -67,14 +77,14 @@ function _apply_constraints!(c::Component, b::FixedCapacityBehavior)
         for mult in getbehaviors(c, CapacityMultiplierBehavior)
             if _portname(mult) == _portname(b)
                 hasmatchingmultiplierbehavior = true
-                _apply_constraints!(model(c), b, mult)
+                _apply_constraints!(c, b, mult)
                 break
             end
         end
     end
 
     if !hasmatchingmultiplierbehavior
-        _apply_constraints!(model(c), b)
+        __apply_constraints!(c, b) # 2 underscores
     end
 end
 

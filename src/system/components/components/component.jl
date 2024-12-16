@@ -15,6 +15,8 @@ name(c::Component) = c.name
 behaviors(c::Component) = c.behaviors
 sim(c::Component) = sim((model(c)))
 
+hasport(c::Component, pname::String) = hasport(c.s, pname)
+
 # build behavior from behavior data and component
 # and add it to component behaviors
 function _addbehavior!(c::Component, b::AbstractBehavior)
@@ -56,12 +58,11 @@ function Component(name::String, model::AbstractModelData, behaviors::AbstractVe
 end
 
 # fallback for buildbehavior: build the behavior according the the model, not the component
-buildbehavior(c::Component, b::AbstractBehaviorData) = buildbehavior(model(c), name(c), b)
+buildbehavior(c::AbstractComponent, b::AbstractBehaviorData) = buildbehavior(model(c), name(c), b)
 
 # build the behavior
 # append it to the behaviors vector of the component
 function _buildaddbehavior!(c::Component, b::AbstractBehaviorData)
-
     bm = buildbehavior(c, b)
 
     _addbehavior!(c, bm)

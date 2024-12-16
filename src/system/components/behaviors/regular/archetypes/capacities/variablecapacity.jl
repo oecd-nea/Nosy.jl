@@ -31,34 +31,45 @@ struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{
 end
 
 # return a VariableCapacityBehavior
-function buildbehavior(m::AbstractModel, cname::String, b::VariableCapacity)
-    @argcheck hasport(m, b.pname) "Model does not have port named $(b.pname)"
-    @argcheck hasmodifier(getport(m, b.pname), b.modifier) "Target port does not have the required modifier"
-    v = @variable(sim(m).model, base_name=cname * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+function buildbehavior(c::Component, b::VariableCapacity)
+    # _check_model_compat_cap(model(c), b)
+    @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
+    @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
+    v = @variable(sim(c).model, base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
     return VariableCapacityBehavior(b, convert(AffExpr, v))
 end
 
-# special case - DemandModel: not compatible (already has an implicit capacity as the demand series is not normalized)
-function buildbehavior(::DemandModel, ::String, ::VariableCapacity)
-    throw(ArgumentError("Demand model is not compatible with capacity"))
-end
+"""
+Apply capacity constraints.
+"""
 
-# general case: apply constraint at each timestep
-function _apply_constraints!(m::AbstractModel, b::VariableCapacityBehavior)
-    @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= _capacity(b))
+# general expression of capacity constraint
+# can target model port or joint flow port
+function __apply_constraint_general!(c::Component, b::VariableCapacityBehavior)
+    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
 end
 
 # special case - ProfileSourceModel: apply constraint at each timestep
-function _apply_constraints!(m::ProfileSourceModel, b::VariableCapacityBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(m, b.data.pname)))) "no modifier conversion allowed between component and capacity"
-    @constraint(sim(m).model, m.cap == b.val)
+function __apply_constraints_profile!(c::Component, b::VariableCapacityBehavior)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
+    @constraint(sim(c).model, c.model.cap == b.val)
+end
+
+# general case: apply constraint at each timestep
+# dispatch to either general case or model = profile source case
+function __apply_constraints!(c::Component, b::VariableCapacityBehavior)
+    if model(c) isa ProfileSourceModel && _portname(b) == "output"
+        __apply_constraints_profile!(c, b)
+    else
+        __apply_constraint_general!(c, b)
+    end
 end
 
 # special case: any model, but presence of capacity multiplier behavior
-function _apply_constraints!(m::AbstractModel, b::VariableCapacityBehavior, mult::CapacityMultiplierBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(m, b.data.pname)))) "no modifier conversion allowed between component and capacity"
+function _apply_constraints!(c::Component, b::VariableCapacityBehavior, mult::CapacityMultiplierBehavior)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @argcheck _portname(b) == _portname(mult) "the variable capacity and the capacity multiplier do not target the same port"
-    @constraint(sim(m).model, b.data.modifier(getport(m, b.data.pname)).data .<= (_capacity(b) * mult.val).data)
+    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= (_capacity(b) * mult.val).data)
 end
 
 # redirect application of capacity constraint to model
@@ -69,14 +80,14 @@ function _apply_constraints!(c::Component, b::VariableCapacityBehavior)
         for mult in getbehaviors(c, CapacityMultiplierBehavior)
             if _portname(mult) == _portname(b)
                 hasmatchingmultiplierbehavior = true
-                _apply_constraints!(model(c), b, mult)
+                _apply_constraints!(c, b, mult)
                 break
             end
         end
     end
 
     if !hasmatchingmultiplierbehavior
-        _apply_constraints!(model(c), b)
+        __apply_constraints!(c, b)
     end
 end
 
