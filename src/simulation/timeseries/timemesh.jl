@@ -1,5 +1,5 @@
 using ArgCheck
-
+ 
 """
     GenericTimeSeries{T}
 Basic implementation of the AbstractTimeSeries. Used as a base for the TimeMesh.
