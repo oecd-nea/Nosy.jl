@@ -1,7 +1,7 @@
-using POSY2
+using Nosy
 using Test
 
-@testset verbose=true "POSY2" begin
+@testset verbose=true "Nosy" begin
 
     include("tools.jl")
 

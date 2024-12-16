@@ -1,11 +1,11 @@
-using POSY2: mass
-using POSY2: Sim, TimeMesh, nvariables, nconstraints
-using POSY2: LinkedJointFlow
-using POSY2: DispatchableSource, BasicConverter, Demand
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component, Node, portstructure, isfullyconnected, is_used, getport
-using POSY2: Snapshot, components, nodes, connect!, assertconnected
+using Nosy: mass
+using Nosy: Sim, TimeMesh, nvariables, nconstraints
+using Nosy: LinkedJointFlow
+using Nosy: DispatchableSource, BasicConverter, Demand
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component, Node, portstructure, isfullyconnected, is_used, getport
+using Nosy: Snapshot, components, nodes, connect!, assertconnected
 using JuMP: Model, AffExpr
 
 @testset "Connect" begin

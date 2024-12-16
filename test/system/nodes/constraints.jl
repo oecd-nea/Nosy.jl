@@ -1,10 +1,10 @@
-using POSY2: mass
-using POSY2: Sim, TimeMesh, nvariables, nconstraints
-using POSY2: BasicConverter
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component, Node, connect!, apply_constraints!
-using POSY2: Snapshot, components, nodes, connect!
+using Nosy: mass
+using Nosy: Sim, TimeMesh, nvariables, nconstraints
+using Nosy: BasicConverter
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component, Node, connect!, apply_constraints!
+using Nosy: Snapshot, components, nodes, connect!
 
 using JuMP: Model, AffExpr
 

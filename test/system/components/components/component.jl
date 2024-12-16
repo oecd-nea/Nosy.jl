@@ -1,12 +1,12 @@
-using POSY2: mass
-using POSY2: Sim, TimeMesh
-using POSY2: build, buildbehavior
-using POSY2: VariableCapacity, VariableCapacityBehavior, _capacity
-using POSY2: BasicConverter, BasicConverterModel
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component, model, sim
-using POSY2: behaviors, uniquebehavior, hasbehavior
+using Nosy: mass
+using Nosy: Sim, TimeMesh
+using Nosy: build, buildbehavior
+using Nosy: VariableCapacity, VariableCapacityBehavior, _capacity
+using Nosy: BasicConverter, BasicConverterModel
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component, model, sim
+using Nosy: behaviors, uniquebehavior, hasbehavior
 using JuMP: Model, AffExpr
 
 @testset "Component" begin

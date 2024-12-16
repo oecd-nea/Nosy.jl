@@ -1,13 +1,13 @@
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh
-using POSY2: build
-using POSY2: BasicConverter
-using POSY2: LinkedJointFlow
-using POSY2: VariableCost, VariableCostBehavior
-using POSY2: variablecost, _variablecost
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component, balance
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh
+using Nosy: build
+using Nosy: BasicConverter
+using Nosy: LinkedJointFlow
+using Nosy: VariableCost, VariableCostBehavior
+using Nosy: variablecost, _variablecost
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component, balance
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
 

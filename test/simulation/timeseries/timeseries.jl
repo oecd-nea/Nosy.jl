@@ -1,5 +1,5 @@
-using POSY2: TimeMesh, Hourly, Stepwise
-using POSY2: nhours, nsteps, eachhour, eachstep, shift
+using Nosy: TimeMesh, Hourly, Stepwise
+using Nosy: nhours, nsteps, eachhour, eachstep, shift
 using JuMP: AffExpr
 
 @testset "Time series" begin

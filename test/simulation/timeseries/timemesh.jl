@@ -1,5 +1,5 @@
-using POSY2: TimeMesh
-using POSY2: nhours, nsteps, weight, hour, step, eachhour, eachstep
+using Nosy: TimeMesh
+using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep
 
 @testset "Time series mesh" begin
 

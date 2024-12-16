@@ -1,13 +1,13 @@
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh
-using POSY2: build
-using POSY2: VariableCapacity, FixedCapacity
-using POSY2: BasicConverter
-using POSY2: FixedCost, FixedCostBehavior
-using POSY2: fixedcost, _fixedcost
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh
+using Nosy: build
+using Nosy: VariableCapacity, FixedCapacity
+using Nosy: BasicConverter
+using Nosy: FixedCost, FixedCostBehavior
+using Nosy: fixedcost, _fixedcost
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
 

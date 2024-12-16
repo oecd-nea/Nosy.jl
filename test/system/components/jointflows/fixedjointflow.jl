@@ -1,12 +1,12 @@
-using POSY2: mass
-using POSY2: Sim, TimeMesh, nvariables, nconstraints
-using POSY2: sim, eachstep, Hourly, Stepwise
-using POSY2: FixedJointFlow, FixedJointFlowModel
-using POSY2: BasicConverter
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component
-using POSY2: portstructure, input, getport
+using Nosy: mass
+using Nosy: Sim, TimeMesh, nvariables, nconstraints
+using Nosy: sim, eachstep, Hourly, Stepwise
+using Nosy: FixedJointFlow, FixedJointFlowModel
+using Nosy: BasicConverter
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component
+using Nosy: portstructure, input, getport
 using JuMP: Model, AffExpr
 
 @testset "FixedJointFlow" begin

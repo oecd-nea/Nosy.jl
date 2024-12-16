@@ -1,9 +1,9 @@
-using POSY2: MassCarrier, EnergyCarrier, CO2Carrier
-using POSY2: Stepwise
-using POSY2: defaultmodifier, mass, energy, co2
-using POSY2: _defaultmodifier
-using POSY2: Sim, TimeMesh, sim
-using POSY2: Port, is_used, set_used!, hasmodifier
+using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: Stepwise
+using Nosy: defaultmodifier, mass, energy, co2
+using Nosy: _defaultmodifier
+using Nosy: Sim, TimeMesh, sim
+using Nosy: Port, is_used, set_used!, hasmodifier
 using JuMP: Model, AffExpr
 
 

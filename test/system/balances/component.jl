@@ -1,10 +1,10 @@
-using POSY2: MassCarrier, EnergyCarrier, CO2Carrier
-using POSY2: mass, energy, co2
-using POSY2: Sim, TimeMesh
-using POSY2: BasicConverter, LinkedJointFlow
-using POSY2: Component
-using POSY2: input, output
-using POSY2: balance, _balance
+using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: mass, energy, co2
+using Nosy: Sim, TimeMesh
+using Nosy: BasicConverter, LinkedJointFlow
+using Nosy: Component
+using Nosy: input, output
+using Nosy: balance, _balance
 
 using JuMP: Model, AffExpr
 

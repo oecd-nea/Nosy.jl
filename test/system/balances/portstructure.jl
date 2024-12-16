@@ -1,11 +1,11 @@
-using POSY2: MassCarrier, EnergyCarrier, CO2Carrier
-using POSY2: mass, energy, co2
-using POSY2: Stepwise
-using POSY2: Sim, TimeMesh
-using POSY2: Port
-using POSY2: PortStructure, addinput!, addoutput!, addlevel!
-using POSY2: input, output, level
-using POSY2: _balance
+using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: mass, energy, co2
+using Nosy: Stepwise
+using Nosy: Sim, TimeMesh
+using Nosy: Port
+using Nosy: PortStructure, addinput!, addoutput!, addlevel!
+using Nosy: input, output, level
+using Nosy: _balance
 
 using JuMP: Model, AffExpr
 

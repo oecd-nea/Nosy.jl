@@ -1,8 +1,8 @@
-using POSY2: MassCarrier, EnergyCarrier, CO2Carrier
-using POSY2: carrierstyle
-using POSY2: defaultmodifier, mass, energy, co2
-using POSY2: Sim, TimeMesh, sim
-using POSY2: eachhour, eachstep
+using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: carrierstyle
+using Nosy: defaultmodifier, mass, energy, co2
+using Nosy: Sim, TimeMesh, sim
+using Nosy: eachhour, eachstep
 using JuMP: Model
 
 @testset "Carriers" begin

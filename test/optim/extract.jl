@@ -1,11 +1,11 @@
-using POSY2: energy
-using POSY2: Sim, TimeMesh, Model
-using POSY2: DispatchableSource, Demand
-using POSY2: EnergyCarrier
-using POSY2: VariableCapacity, FixedCost
-using POSY2: Component, Node, Snapshot, connect!, optimize!
-using POSY2: cost, capacity, balance
-using POSY2: extract, _extract
+using Nosy: energy
+using Nosy: Sim, TimeMesh, Model
+using Nosy: DispatchableSource, Demand
+using Nosy: EnergyCarrier
+using Nosy: VariableCapacity, FixedCost
+using Nosy: Component, Node, Snapshot, connect!, optimize!
+using Nosy: cost, capacity, balance
+using Nosy: extract, _extract
 
 using JuMP: set_silent, objective_value, value
 using HiGHS: Optimizer
@@ -69,20 +69,20 @@ using HiGHS: Optimizer
 
         @test _extract(ec) == ec
         
-        @assert disp.model isa POSY2.DispatchableSourceModel{EnergyCarrier,AffExpr}
-        @test _extract(disp.model) isa POSY2.DispatchableSourceModel{EnergyCarrier,Float64}
+        @assert disp.model isa Nosy.DispatchableSourceModel{EnergyCarrier,AffExpr}
+        @test _extract(disp.model) isa Nosy.DispatchableSourceModel{EnergyCarrier,Float64}
 
-        @assert disp.behaviors[1] isa POSY2.VariableCapacityBehavior{AffExpr}
-        @test _extract(disp.behaviors[1]) isa POSY2.VariableCapacityBehavior{Float64}
+        @assert disp.behaviors[1] isa Nosy.VariableCapacityBehavior{AffExpr}
+        @test _extract(disp.behaviors[1]) isa Nosy.VariableCapacityBehavior{Float64}
 
-        @assert disp.behaviors[2] isa POSY2.FixedCostBehavior{AffExpr}
-        @test _extract(disp.behaviors[2]) isa POSY2.FixedCostBehavior{Float64}
+        @assert disp.behaviors[2] isa Nosy.FixedCostBehavior{AffExpr}
+        @test _extract(disp.behaviors[2]) isa Nosy.FixedCostBehavior{Float64}
 
-        @assert disp.behaviors isa Vector{POSY2.AbstractRegularBehavior{AffExpr}}
-        @test _extract(disp.behaviors) isa Vector{POSY2.AbstractRegularBehavior{Float64}}
+        @assert disp.behaviors isa Vector{Nosy.AbstractRegularBehavior{AffExpr}}
+        @test _extract(disp.behaviors) isa Vector{Nosy.AbstractRegularBehavior{Float64}}
 
-        @assert disp.jointflows isa Vector{POSY2.AbstractJointFlow{AffExpr}}
-        @test _extract(disp.jointflows) isa Vector{POSY2.AbstractJointFlow{Float64}}
+        @assert disp.jointflows isa Vector{Nosy.AbstractJointFlow{AffExpr}}
+        @test _extract(disp.jointflows) isa Vector{Nosy.AbstractJointFlow{Float64}}
 
         @test isempty(_extract(disp.jointflows))
 

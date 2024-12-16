@@ -1,9 +1,9 @@
-using POSY2: MassCarrier
-using POSY2: Stepwise
-using POSY2: Sim, TimeMesh
-using POSY2: Port
-using POSY2: PortStructure, addinput!, addoutput!, addlevel!
-using POSY2: Node, input, output, name, carrier, rule, iscurtailed
+using Nosy: MassCarrier
+using Nosy: Stepwise
+using Nosy: Sim, TimeMesh
+using Nosy: Port
+using Nosy: PortStructure, addinput!, addoutput!, addlevel!
+using Nosy: Node, input, output, name, carrier, rule, iscurtailed
 
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError

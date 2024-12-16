@@ -1,5 +1,5 @@
-using POSY2: TimeMesh, Stepwise, Sim
-using POSY2: nhours, nsteps
+using Nosy: TimeMesh, Stepwise, Sim
+using Nosy: nhours, nsteps
 
 using JuMP: Model, @variable, AffExpr, set_lower_bound, set_upper_bound
 using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound, is_binary, is_integer

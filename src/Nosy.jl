@@ -1,4 +1,4 @@
-module POSY2
+module Nosy
 
 export TimeMesh, Sim
 export MassCarrier, EnergyCarrier, CO2Carrier
@@ -31,4 +31,4 @@ include("simulation/_includes.jl")
 include("system/_includes.jl")
 include("opti/_includes.jl")
 
-end # module POSY2
+end # module Nosy

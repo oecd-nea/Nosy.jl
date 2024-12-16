@@ -1,10 +1,10 @@
-using POSY2: energy
-using POSY2: Sim, TimeMesh, Model
-using POSY2: DispatchableSource, Demand
-using POSY2: EnergyCarrier
-using POSY2: VariableCapacity, FixedCost
-using POSY2: Component, Node, Snapshot, connect!, optimize!
-using POSY2: cost
+using Nosy: energy
+using Nosy: Sim, TimeMesh, Model
+using Nosy: DispatchableSource, Demand
+using Nosy: EnergyCarrier
+using Nosy: VariableCapacity, FixedCost
+using Nosy: Component, Node, Snapshot, connect!, optimize!
+using Nosy: cost
 
 using JuMP: set_silent, is_solved_and_feasible, objective_value, value
 using HiGHS: Optimizer

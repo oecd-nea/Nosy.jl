@@ -1,10 +1,10 @@
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh, nvariables, nconstraints
-using POSY2: DispatchableSource, BasicConverter, Demand
-using POSY2: LinkedJointFlow
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: Component, Node, Snapshot, connect!
-using POSY2: finalize!, is_finalized
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh, nvariables, nconstraints
+using Nosy: DispatchableSource, BasicConverter, Demand
+using Nosy: LinkedJointFlow
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: Component, Node, Snapshot, connect!
+using Nosy: finalize!, is_finalized
 using JuMP: Model
 
 @testset "Snapshot finalization" begin

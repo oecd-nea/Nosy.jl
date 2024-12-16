@@ -1,10 +1,10 @@
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh, sim
-using POSY2: Stepwise
-using POSY2: getport, hasinput, hasoutput
-using POSY2: build
-using POSY2: Demand, DemandModel
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh, sim
+using Nosy: Stepwise
+using Nosy: getport, hasinput, hasoutput
+using Nosy: build
+using Nosy: Demand, DemandModel
 
 using JuMP: Model
 

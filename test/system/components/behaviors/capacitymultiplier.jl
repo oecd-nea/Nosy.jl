@@ -1,12 +1,12 @@
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh, sim, nvariables, nconstraints
-using POSY2: build, buildbehavior
-using POSY2: CapacityMultiplier, CapacityMultiplierBehavior
-using POSY2: FixedCapacity
-using POSY2: BasicConverter, ProfileSource, Demand
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh, sim, nvariables, nconstraints
+using Nosy: build, buildbehavior
+using Nosy: CapacityMultiplier, CapacityMultiplierBehavior
+using Nosy: FixedCapacity
+using Nosy: BasicConverter, ProfileSource, Demand
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component
 import JuMP
 using ArgCheck: ArgumentError
 

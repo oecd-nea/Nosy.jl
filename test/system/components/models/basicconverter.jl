@@ -1,9 +1,9 @@
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh
-using POSY2: getport, hasinput, hasoutput
-using POSY2: build
-using POSY2: BasicConverter, BasicConverterModel
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh
+using Nosy: getport, hasinput, hasoutput
+using Nosy: build
+using Nosy: BasicConverter, BasicConverterModel
 
 using JuMP: Model
 using ArgCheck: ArgumentError

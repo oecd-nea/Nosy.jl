@@ -1,12 +1,12 @@
-using POSY2: mass
-using POSY2: Sim, TimeMesh, nvariables, nconstraints, sim
-using POSY2: build, buildbehavior
-using POSY2: VariableCapacity, VariableCapacityBehavior, _capacity
-using POSY2: BasicConverter, ProfileSource, Demand
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: ProfileSource
-using POSY2: Component
+using Nosy: mass
+using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim
+using Nosy: build, buildbehavior
+using Nosy: VariableCapacity, VariableCapacityBehavior, _capacity
+using Nosy: BasicConverter, ProfileSource, Demand
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: ProfileSource
+using Nosy: Component
 using JuMP: Model, AffExpr, lower_bound, upper_bound, has_lower_bound, has_upper_bound
 using ArgCheck: ArgumentError
 

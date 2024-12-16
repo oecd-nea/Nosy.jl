@@ -1,12 +1,12 @@
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Sim, TimeMesh
-using POSY2: portstructure, getport
-using POSY2: input, output, level
-using POSY2: LazyStorage, LazyStorageModel
-using POSY2: FreeJointFlow
-using POSY2: Component
-using POSY2: nvariables, nconstraints
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh
+using Nosy: portstructure, getport
+using Nosy: input, output, level
+using Nosy: LazyStorage, LazyStorageModel
+using Nosy: FreeJointFlow
+using Nosy: Component
+using Nosy: nvariables, nconstraints
 
 using JuMP: Model
 using ArgCheck: ArgumentError

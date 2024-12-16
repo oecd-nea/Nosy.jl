@@ -1,14 +1,14 @@
-using POSY2: mass
-using POSY2: Sim, TimeMesh
-using POSY2: VariableCapacity, FixedCapacity
-using POSY2: FixedCapacity, FixedCapacityBehavior
-using POSY2: FixedCost, VariableCost
-using POSY2: BasicConverter, BasicConverterModel
-using POSY2: MassCarrier, EnergyCarrier
-using POSY2: mass, energy
-using POSY2: Component, model, sim
-using POSY2: capacity
-using POSY2: fixedcost, variablecost, cost
+using Nosy: mass
+using Nosy: Sim, TimeMesh
+using Nosy: VariableCapacity, FixedCapacity
+using Nosy: FixedCapacity, FixedCapacityBehavior
+using Nosy: FixedCost, VariableCost
+using Nosy: BasicConverter, BasicConverterModel
+using Nosy: MassCarrier, EnergyCarrier
+using Nosy: mass, energy
+using Nosy: Component, model, sim
+using Nosy: capacity
+using Nosy: fixedcost, variablecost, cost
 using JuMP: Model, AffExpr
 using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
