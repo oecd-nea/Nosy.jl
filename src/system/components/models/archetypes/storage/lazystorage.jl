@@ -64,7 +64,7 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     # instead, define modifier as the default modifier as the model 
     # and apply the same modifier to all carriers
     if m.data.modifier == defaultmodifier
-        mod = _defaultmodifier(carrierstyle(m.level))
+        mod = _defaultmodifier(carrierstyle(m.data.level))
     else
         mod = m.data.modifier
     end
