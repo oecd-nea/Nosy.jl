@@ -130,5 +130,31 @@ using HiGHS: Optimizer
 
     end
 
+    # some errors can happen due to collections with abstract types
+    # in particular this happens in collections with only one component
+    # if no care is given, the collection assumes the concrete component eltype
+    # we have to force the abstract type instead
+
+    # snapshot with only one component and one node
+    let s = tsim()
+        
+        set_silent(s.model) # deactivate JuMP output
+
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec)
+
+        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), OvernightCost(:overnight, "output", energy, 2.)])
+      
+        connect!(snap, disp, en)
+
+        optimize!(snap, cost)
+
+        # test whether the extraction happened
+        @test extract(snap) isa Snapshot{Float64}
+        @test cost(extract(snap)) == 0.
+
+    end
 
 end

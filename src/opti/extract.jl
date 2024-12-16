@@ -42,6 +42,7 @@ _extract(v::Vector{AbstractJointFlow{AffExpr}}) = convert(Vector{AbstractJointFl
 _extract(v::Vector{AbstractRegularBehavior{AffExpr}}) = convert(Vector{AbstractRegularBehavior{Float64}}, _extract.(v))
 
 _extract(d::AbstractDict) = typeof(d).name.wrapper(k => _extract(v) for (k,v) in d)
+_extract(d::Dict{String,Component{AffExpr}}) = Dict{String,Component{Float64}}(k => _extract(v) for (k,v) in d)
 _extract(d::Dict{String,Node{AffExpr}}) = Dict{String,Node{Float64}}(k => _extract(v) for (k,v) in d)
 _extract(d::Dict{String,Port{AffExpr}}) = Dict{String,Port{Float64}}(k => _extract(v) for (k,v) in d)
 
