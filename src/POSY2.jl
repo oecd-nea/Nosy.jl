@@ -19,6 +19,8 @@ export connect!
 export capacity
 export cost, variablecost, fixedcost
 
+export costs, table
+
 export balance
 export mass, energy, co2
 

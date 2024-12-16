@@ -46,3 +46,19 @@ Return the cost of the Snapshot, defined as the sum of the costs of the componen
 """
 cost(s::Snapshot) = sum(cost(s, cname) for cname in keys(s.components))
 cost(s::Snapshot, type::Symbol) = sum(cost(s, cname, type) for cname in keys(s.components))
+
+
+
+# return a Vector{Symbol} containing all the user-defined cost types of the Snapshot
+function _costtypes(s::Snapshot)
+    ctypes = Vector{Symbol}(undef,0)
+    for (_,c) in s.components
+        for b in getbehaviors(c, AbstractCostBehavior)
+            ctype = _costtype(b)
+            if !(ctype in ctypes)
+                push!(ctypes, ctype)
+            end
+        end
+    end
+    return sort(ctypes) # sort to maintain same order across different snapshots
+end
