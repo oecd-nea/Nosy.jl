@@ -17,8 +17,8 @@ end
     Port(c::AbstractCarrier, s::AbstractVector)
 Construct a Port with a time series populated with expressions. Initial "used" state is false.
 """
-function Port(c::AbstractCarrier, s::AbstractVector)
-    return Port(c, Stepwise(_to_affexpr(s), sim(c).mesh), RefValue(false))
+function Port(c::AbstractCarrier, s::AbstractVector, used::Bool=false)
+    return Port(c, Stepwise(_to_affexpr(s), sim(c).mesh), RefValue(used))
 end
 
 # There is not method besides the natural constructor to construct a Port{Float64,C}.

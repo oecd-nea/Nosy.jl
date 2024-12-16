@@ -9,14 +9,15 @@ struct FixedJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
     carrier::C
     sense::Symbol # sense of the joint flow
     series::Stepwise{Float64}
+    mustconnect::Bool
 
     @doc """
-        FixedJointFlow(name::String, sense::Symbol, carrier::AbstractCarrier, series::AbstractVector{<:Number})
+        FixedJointFlow(name::String, sense::Symbol, carrier::AbstractCarrier, series::AbstractVector{<:Number}; mustconnect::Bool=true)
     Return a FixedJointFlow with name `name`, of sense `sense` of carrier `carrier` associated with flow time series (or scalar) `series`.
     """
-    function FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series)
+    function FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)
         @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"
-        new{typeof(carrier)}(name, carrier, sense, Stepwise(series, sim(carrier).mesh))
+        new{typeof(carrier)}(name, carrier, sense, Stepwise(series, sim(carrier).mesh), mustconnect)
     end  
 end
 
@@ -35,7 +36,7 @@ end
 
 # add the fixed joint flow to the component port structure
 function _addbehavior!(c::Component, j::FixedJointFlowModel)
-    p = Port(j.data.carrier, j.flow)
+    p = Port(j.data.carrier, j.flow, !mustconnect(j))
     if j.data.sense == :input
         addinput!(portstructure(c), j.data.name, p)
     elseif j.data.sense == :output
@@ -46,3 +47,4 @@ end
 
 name(j::FixedJointFlowModel) = j.data.name
 jointflowname(::FixedJointFlowModel) = "fixed"
+mustconnect(j::FixedJointFlowModel) = j.data.mustconnect

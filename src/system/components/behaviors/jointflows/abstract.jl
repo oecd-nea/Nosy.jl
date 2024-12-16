@@ -33,6 +33,7 @@ _apply_constraints!(::Component, ::AbstractJointFlow) = error("This method shoul
 
 jointflowname(::AbstractJointFlow) = error("not implemented")
 name(::AbstractJointFlow) = error("not implemented")
+mustconnect(::AbstractJointFlow) = error("not implemented")
 
 # display joint flow info
 function Base.show(io::IO, b::AbstractJointFlow)

@@ -11,19 +11,20 @@ struct LinkedJointFlow{C<:AbstractCarrier,F<:Function,M<:Function} <: AbstractJo
     baseflow::String # name of the existing flow in the component
     f::F # affine function such that joint flow = f(target flow)
     modifier::M # modifier applied to both flows (existing in component and joint)
+    mustconnect::Bool
 end
 
 """
-    LinkedJointFlow(sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier)
+    LinkedJointFlow(sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
 Return a LinkedJointFlow with following characteristics:
   * `sense`: sense of the joint flow
   * `baseflow`: name of the flow of the target component to evaluate the joint flow from
   * `f`: affine function to calculate the joint flow in function of the `baseflow`
   * `modifier`: modifier applied before `f` to both flows
 """
-function LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier)
+function LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
     @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"
-    LinkedJointFlow(name, carrier, sense, baseflow, f, modifier)
+    LinkedJointFlow(name, carrier, sense, baseflow, f, modifier, mustconnect)
 end
 
 struct LinkedJointFlowModel{T<:VAL,C,F,M} <: AbstractJointFlow{T}
@@ -40,7 +41,7 @@ end
 
 # add the linked joint flow to the component port structure
 function _addbehavior!(c::Component, j::LinkedJointFlowModel)
-    p = Port(j.data.carrier, j.flow)
+    p = Port(j.data.carrier, j.flow, !mustconnect(j))
     if j.data.sense == :input
         addinput!(portstructure(c), j.data.name, p)
     elseif j.data.sense == :output
@@ -51,3 +52,4 @@ end
 
 name(j::LinkedJointFlowModel) = j.data.name
 jointflowname(::LinkedJointFlowModel) = "fixed"
+mustconnect(j::LinkedJointFlowModel) = j.data.mustconnect

@@ -8,14 +8,15 @@ struct FreeJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
     name::String
     carrier::C
     sense::Symbol # sense of the joint flow
+    mustconnect::Bool
 
     @doc """
-        FreeJointFlow(name::String, sense::Symbol, carrier::AbstractCarrier)
+        FreeJointFlow(name::String, sense::Symbol, carrier::AbstractCarrier; mustconnect::Bool=true)
     Return a FreeJointFlow with name `name`, of sense `sense` of carrier `carrier`.
     """
-    function FreeJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol)
+    function FreeJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol; mustconnect::Bool=true)
         @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"
-        new{typeof(carrier)}(name, carrier, sense)
+        new{typeof(carrier)}(name, carrier, sense, mustconnect)
     end
 end
 
@@ -34,7 +35,7 @@ end
 
 # add the free joint flow to the component port structure
 function _addbehavior!(c::Component, j::FreeJointFlowModel)
-    p = Port(j.data.carrier, j.flow)
+    p = Port(j.data.carrier, j.flow, !mustconnect(j))
     if j.data.sense == :input
         addinput!(portstructure(c), j.data.name, p)
     elseif j.data.sense == :output
@@ -45,3 +46,4 @@ end
 
 name(j::FreeJointFlowModel) = j.data.name
 jointflowname(::FreeJointFlowModel) = "free"
+mustconnect(j::FreeJointFlowModel) = j.data.mustconnect

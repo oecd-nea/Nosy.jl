@@ -8,20 +8,22 @@ For connection methods, the convention for sense if taking the component's sense
 # pname: port name
 function _connect!(c::Component{T}, n::Node{T}, sense::Symbol, p::Port) where T<:VAL    
     # check component port is not used
-    @assert !is_used(p) "Port is already used"
+    # @assert !is_used(p) "Port is already used"
 
-    # check carrier is the same
-    @assert carrier(p) == carrier(n) "Carriers of component and node must be the same"
+    if !is_used(p)
+        # check carrier is the same
+        @assert carrier(p) == carrier(n) "Carriers of component and node must be the same"
 
-    # add component port to node
-    if sense == :input
-        _connectinput!(n, p, name(c))
-    elseif sense == :output
-        _connectoutput!(n, p, name(c))
-    else
-        throw(ArgumentError("Sense must be :input or :output"))
+        # add component port to node
+        if sense == :input
+            _connectinput!(n, p, name(c))
+        elseif sense == :output
+            _connectoutput!(n, p, name(c))
+        else
+            throw(ArgumentError("Sense must be :input or :output"))
+        end
+        set_used!(p)
     end
-    set_used!(p)
 end
 
 # cannot connect AffExpr component to Number node and vice versa

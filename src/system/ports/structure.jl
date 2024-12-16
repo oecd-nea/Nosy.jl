@@ -61,10 +61,11 @@ Base.isempty(ps::PortStructure) = all(isempty(d) for d in (ps.input, ps.output, 
 # following implementation is probably not efficient
 # return a tuple with all the ports of a PortStructure
 allports(ps::PortStructure) = (values(ps.input)..., values(ps.output)..., values(ps.level)...)
+externalports(ps::PortStructure) = (values(ps.input)..., values(ps.output)...)
 
-# return true if all the ports of the port structure are used
+# return true if all the input and output ports of the port structure are used
 # return false otherwise
-isfullyconnected(ps::PortStructure) = all(is_used(p) for p in allports(ps))
+isfullyconnected(ps::PortStructure) = all(is_used(p) for p in externalports(ps))
 
 # return true if ps only is associated with one carrier, false otherwise
 function hasuniquecarrier(ps::PortStructure)
