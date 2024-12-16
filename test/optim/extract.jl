@@ -2,7 +2,7 @@ using POSY2: energy
 using POSY2: Sim, TimeMesh, Model
 using POSY2: DispatchableSource, Demand
 using POSY2: EnergyCarrier
-using POSY2: VariableCapacity, OvernightCost
+using POSY2: VariableCapacity, FixedCost
 using POSY2: Component, Node, Snapshot, connect!, optimize!
 using POSY2: cost, capacity, balance
 using POSY2: extract, _extract
@@ -54,7 +54,7 @@ using HiGHS: Optimizer
         ec = EnergyCarrier("e", s)
         en = Node("energy", ec)
 
-        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), OvernightCost(:overnight, "output", energy, 2.)])
+        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), FixedCost(:overnight, "output", energy, 2.)])
         cons = Component("cons", Demand(ec, 10), [])
       
         connect!(snap, cons, en)
@@ -75,8 +75,8 @@ using HiGHS: Optimizer
         @assert disp.behaviors[1] isa POSY2.VariableCapacityBehavior{AffExpr}
         @test _extract(disp.behaviors[1]) isa POSY2.VariableCapacityBehavior{Float64}
 
-        @assert disp.behaviors[2] isa POSY2.OvernightCostBehavior{AffExpr}
-        @test _extract(disp.behaviors[2]) isa POSY2.OvernightCostBehavior{Float64}
+        @assert disp.behaviors[2] isa POSY2.FixedCostBehavior{AffExpr}
+        @test _extract(disp.behaviors[2]) isa POSY2.FixedCostBehavior{Float64}
 
         @assert disp.behaviors isa Vector{POSY2.AbstractRegularBehavior{AffExpr}}
         @test _extract(disp.behaviors) isa Vector{POSY2.AbstractRegularBehavior{Float64}}
@@ -145,7 +145,7 @@ using HiGHS: Optimizer
         ec = EnergyCarrier("e", s)
         en = Node("energy", ec)
 
-        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), OvernightCost(:overnight, "output", energy, 2.)])
+        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), FixedCost(:overnight, "output", energy, 2.)])
       
         connect!(snap, disp, en)
 

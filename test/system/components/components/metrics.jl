@@ -2,13 +2,13 @@ using POSY2: mass
 using POSY2: Sim, TimeMesh
 using POSY2: VariableCapacity, FixedCapacity
 using POSY2: FixedCapacity, FixedCapacityBehavior
-using POSY2: OvernightCost, VariableCost
+using POSY2: FixedCost, VariableCost
 using POSY2: BasicConverter, BasicConverterModel
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: mass, energy
 using POSY2: Component, model, sim
 using POSY2: capacity
-using POSY2: overnightcost, variablecost, cost
+using POSY2: fixedcost, variablecost, cost
 using JuMP: Model, AffExpr
 using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
@@ -31,7 +31,7 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
     let c = makecomp([])
 
         @test capacity(c) == 0.
-        @test overnightcost(c) == 0.
+        @test fixedcost(c) == 0.
         @test cost(c) == 0.
 
     end    
@@ -47,19 +47,19 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
     end
 
-    let c = makecomp([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
+    let c = makecomp([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
 
         @test capacity(c) == AffExpr(5.)
-        @test overnightcost(c) == AffExpr(5. * 10.)
+        @test fixedcost(c) == AffExpr(5. * 10.)
 
         # test selection based on cost type
-        @test overnightcost(c, :overnight) == AffExpr(5. * 10.)
-        @test overnightcost(c, :other) == 0.
+        @test fixedcost(c, :overnight) == AffExpr(5. * 10.)
+        @test fixedcost(c, :other) == 0.
         @test variablecost(c) == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
         @test variablecost(c, :fuel) == sum(energy(getport(c, "input"))) * 2
         @test variablecost(c, :vom) == sum(energy(getport(c, "output"))) * 3
         @test cost(c) == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
-        @test cost(c, :overnight) == overnightcost(c, :overnight)
+        @test cost(c, :overnight) == fixedcost(c, :overnight)
         @test cost(c, :fuel) == variablecost(c, :fuel)
         @test cost(c, :vom) == variablecost(c, :vom)
 

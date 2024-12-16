@@ -1,13 +1,13 @@
 _metrictype(c::AbstractCostBehavior) = _costtype(c)
 
 """
-    overnightcost(c::Component)
-Return the overnight cost of Component `c` as the sum of its overnight costs.
-If the component has no overnight cost, return zero.
+    fixedcost(c::Component)
+Return the fixed cost of Component `c` as the sum of its fixed costs.
+If the component has no fixed cost, return zero.
 """
-overnightcost(c::Component{T}) where T = sumofmetric(c, OvernightCostBehavior{T}, _overnightcost)
+fixedcost(c::Component{T}) where T = sumofmetric(c, FixedCostBehavior{T}, _fixedcost)
 
-overnightcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, OvernightCostBehavior{T}, _overnightcost, type)
+fixedcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, FixedCostBehavior{T}, _fixedcost, type)
 
 """
     variablecost(c::Component)
@@ -18,7 +18,7 @@ variablecost(c::Component{T}) where T = sumofmetric(c, VariableCostBehavior{T}, 
 
 variablecost(c::Component{T}, type::Symbol) where T = sumofmetric(c, VariableCostBehavior{T}, _variablecost, type)
 
-const COST_COMPONENT_METRICS = (overnightcost, variablecost,)
+const COST_COMPONENT_METRICS = (fixedcost, variablecost,)
 
 """
     cost(c::Component)

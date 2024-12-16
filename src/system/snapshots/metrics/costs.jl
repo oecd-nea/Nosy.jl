@@ -1,11 +1,11 @@
 """
-    overnightcost(s::Snapshot, cname::String)
-Return the overnight cost of Component with name `cname` in Snapshot `s`.
-If the component has no overnight cost, return zero.
+    fixedcost(s::Snapshot, cname::String)
+Return the fixed cost of Component with name `cname` in Snapshot `s`.
+If the component has no fixed cost, return zero.
 Throw an error is there is no component with name `cname` in `s`.
 """
-overnightcost(s::Snapshot, cname::String) = _applymetric(s, cname, overnightcost)
-overnightcost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, overnightcost, type)
+fixedcost(s::Snapshot, cname::String) = _applymetric(s, cname, fixedcost)
+fixedcost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, fixedcost, type)
 
 
 """
@@ -27,11 +27,11 @@ cost(s::Snapshot, cname::String) = _applymetric(s, cname, cost)
 cost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, cost, type)
 
 """
-    overnightcost(s::Snapshot)
-Return the overnight cost of Snapshot `s` as the sum of overnight costs of the components of `s`.
+    fixedcost(s::Snapshot)
+Return the fixed cost of Snapshot `s` as the sum of fixed costs of the components of `s`.
 """
-overnightcost(s::Snapshot) = sum(overnightcost(s, cname) for cname in keys(s.components))
-overnightcost(s::Snapshot, type::Symbol) = sum(overnightcost(s, cname, type) for cname in keys(s.components))
+fixedcost(s::Snapshot) = sum(fixedcost(s, cname) for cname in keys(s.components))
+fixedcost(s::Snapshot, type::Symbol) = sum(fixedcost(s, cname, type) for cname in keys(s.components))
 
 """
     variablecost(s::Snapshot)

@@ -2,8 +2,8 @@ using POSY2: mass, energy
 using POSY2: Sim, TimeMesh
 using POSY2: VariableCapacity, FixedCapacity
 using POSY2: BasicConverter
-using POSY2: VariableCost, OvernightCost
-using POSY2: overnightcost, variablecost, cost
+using POSY2: VariableCost, FixedCost
+using POSY2: fixedcost, variablecost, cost
 using POSY2: MassCarrier, EnergyCarrier
 using POSY2: Component, Node, Snapshot, connect!, getcomponent, balance, getport
 using JuMP: Model, AffExpr
@@ -34,10 +34,10 @@ using ArgCheck: ArgumentError
         return sn
     end
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:vom, "input", energy, 2.), VariableCost(:vom, "input", energy, 2.)])
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:vom, "input", energy, 2.), VariableCost(:vom, "input", energy, 2.)])
 
-        # fixed capacity + overnight cost
-        @test overnightcost(s, "comp") == AffExpr(5. * 10.)
+        # fixed capacity + fixed cost
+        @test fixedcost(s, "comp") == AffExpr(5. * 10.)
 
         @test variablecost(s, "comp") == balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
 
@@ -49,20 +49,20 @@ using ArgCheck: ArgumentError
     end
 
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
 
         c = getcomponent(s, "comp")
         
-        @test overnightcost(s, "comp", :overnight) == AffExpr(5. * 10.)
-        @test overnightcost(s, "comp", :other) == 0.
+        @test fixedcost(s, "comp", :overnight) == AffExpr(5. * 10.)
+        @test fixedcost(s, "comp", :other) == 0.
         @test variablecost(s, "comp") == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
         @test variablecost(s, "comp", :fuel) == sum(energy(getport(c, "input"))) * 2
         @test variablecost(s, "comp", :vom) == sum(energy(getport(c, "output"))) * 3
         @test cost(s, "comp") == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
-        @test cost(s, "comp", :overnight) == overnightcost(c, :overnight)
+        @test cost(s, "comp", :overnight) == fixedcost(c, :overnight)
         @test cost(s, "comp", :fuel) == variablecost(c, :fuel)
         @test cost(s, "comp", :vom) == variablecost(c, :vom)
-        @test cost(s, :overnight) == overnightcost(c, :overnight)
+        @test cost(s, :overnight) == fixedcost(c, :overnight)
         @test cost(s, :fuel) == variablecost(c, :fuel)
         @test cost(s, :vom) == variablecost(c, :vom)
 
@@ -72,8 +72,8 @@ using ArgCheck: ArgumentError
 
     let s = makesnapshot([])
 
-        # no overnight costs
-        @test overnightcost(s, "comp") == 0.
+        # no fixed costs
+        @test fixedcost(s, "comp") == 0.
         @test variablecost(s, "comp") == 0.
         @test cost(s, "comp") == 0.
         @test cost(s) == 0.
@@ -84,7 +84,7 @@ using ArgCheck: ArgumentError
     let s = makesnapshot([])
 
         # no component with name `nocomp`
-        @test_throws AssertionError overnightcost(s, "nocomp")
+        @test_throws AssertionError fixedcost(s, "nocomp")
         @test_throws AssertionError variablecost(s, "nocomp")
         @test_throws AssertionError cost(s, "nocomp")
 
@@ -105,7 +105,7 @@ using ArgCheck: ArgumentError
     end
 
 
-    let s = makesnapshot2([FixedCapacity("input", mass, 5.), OvernightCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
+    let s = makesnapshot2([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
 
         # check variable cost is non-zero
         @test (variablecost(s) isa AffExpr) && !iszero(variablecost(s))
@@ -114,12 +114,12 @@ using ArgCheck: ArgumentError
 
         @test variablecost(s, :fuel) == variablecost(s, "comp1", :fuel) + variablecost(s, "comp2", :fuel)
 
-        # check overnight cost is non-zero
-        @test (overnightcost(s) isa AffExpr) && !iszero(overnightcost(s))
+        # check fixed cost is non-zero
+        @test (fixedcost(s) isa AffExpr) && !iszero(fixedcost(s))
 
-        @test overnightcost(s) == overnightcost(s, "comp1") + overnightcost(s, "comp2")
+        @test fixedcost(s) == fixedcost(s, "comp1") + fixedcost(s, "comp2")
 
-        @test overnightcost(s, :overnight) == overnightcost(s, "comp1", :overnight) + overnightcost(s, "comp2", :overnight)
+        @test fixedcost(s, :overnight) == fixedcost(s, "comp1", :overnight) + fixedcost(s, "comp2", :overnight)
 
         # check cost is non-zero
         @test (cost(s) isa AffExpr) && !iszero(cost(s))

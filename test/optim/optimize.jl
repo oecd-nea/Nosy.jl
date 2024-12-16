@@ -2,7 +2,7 @@ using POSY2: energy
 using POSY2: Sim, TimeMesh, Model
 using POSY2: DispatchableSource, Demand
 using POSY2: EnergyCarrier
-using POSY2: VariableCapacity, OvernightCost
+using POSY2: VariableCapacity, FixedCost
 using POSY2: Component, Node, Snapshot, connect!, optimize!
 using POSY2: cost
 
@@ -23,7 +23,7 @@ using HiGHS: Optimizer
         ec = EnergyCarrier("e", s)
         en = Node("energy", ec)
 
-        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), OvernightCost(:overnight, "output", energy, 2.)])
+        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), FixedCost(:overnight, "output", energy, 2.)])
         cons = Component("cons", Demand(ec, 10), [])
       
         connect!(snap, cons, en)

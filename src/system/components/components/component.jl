@@ -40,8 +40,8 @@ function Component(name::String, model::AbstractModelData, behaviors::AbstractVe
     )
 
     # some behaviors must be applied before others
-    # e.g. capacity behavior must come before overnight cost behavior
-    # because overnight cost is based on capacity
+    # e.g. capacity behavior must come before fixed cost behavior
+    # because fixed cost is based on capacity
     # joint flows take highest priority: they are build before the regular behaviors
     # priority within joint flows is given by user input
     vbehaviordata = _sortbehaviordata(behaviors)
