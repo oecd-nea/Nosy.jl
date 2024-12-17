@@ -4,7 +4,7 @@ export TimeMesh, Sim
 export MassCarrier, EnergyCarrier, CO2Carrier
 
 export BasicConverter
-export Demand
+export BasicSink, Demand
 export DispatchableSource, ProfileSource
 export LazyStorage
 

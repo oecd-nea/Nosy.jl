@@ -3,7 +3,7 @@ using JuMP: @variable
 """
 Dispatchable source.
 
-Flexibly generate an output flow.
+Flexibly generate an output flow. Mirrors "BasicSink".
 """
 
 
