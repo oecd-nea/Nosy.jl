@@ -20,6 +20,7 @@ Special _extract methods.
 
 _extract(a::Number) = a
 _extract(a::AffExpr) = value(a)
+_extract(a::Type{AffExpr}) = Float64
 
 _extract(a::Stepwise{AffExpr}) = Stepwise(value.(a.data), a.mesh)
 _extract(a::Stepwise{Float64}) = a
