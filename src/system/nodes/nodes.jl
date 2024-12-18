@@ -7,31 +7,41 @@ Definition of nodes.
 In a node, all flows are associated with the same carrier.
 """
 
+# store dual price
+# will not be accessed often, performance is not required here
+mutable struct DualPrice{T}
+    val
+end
+
 struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     name::String
     carrier::C
     s::PortStructure{T}
     rule::Symbol # :curtailed or :default
+    evalprice::Bool
+    dualprice::DualPrice{T}
 
-    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, rule::Symbol) where T
+    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, rule::Symbol, evalprice::Bool, dualprice::DualPrice{T}) where T
         @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
-        new{T,typeof(carrier)}(name, carrier, s, rule)
+        new{T,typeof(carrier)}(name, carrier, s, rule, evalprice, dualprice)
     end 
 end
 
 const NODE_RULES = [:default, :curtailed]
 
 """
-    Node(name::String, c::Carrier; rule=:default)
+    Node(name::String, c::Carrier; rule::Symbol=:default)
 Construct a Node with name `name` associated with carrier `c`.
 The `rule` defines the node behavior (:default, :curtailed).
 """
-function Node(name::String, c::AbstractCarrier; rule=:default)
+function Node(name::String, c::AbstractCarrier; rule::Symbol=:default, evalprice::Bool=false)
     return Node(
         name,
         c,
         PortStructure{AffExpr}(sim(c)),
-        rule
+        rule,
+        evalprice,
+        DualPrice{AffExpr}(nothing),
     )
 end
 

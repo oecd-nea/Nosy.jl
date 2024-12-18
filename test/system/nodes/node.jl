@@ -4,6 +4,7 @@ using Nosy: Sim, TimeMesh
 using Nosy: Port
 using Nosy: PortStructure, addinput!, addoutput!, addlevel!
 using Nosy: Node, input, output, name, carrier, rule, iscurtailed
+using Nosy: dualprice
 
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
@@ -39,6 +40,9 @@ using ArgCheck: ArgumentError
         # nodes don't have a level
         @test_throws AssertionError addlevel!(n, "p1", p1)
         @test_throws AssertionError addlevel!(n, "p2", p2)
+
+        # model not optimized
+        @test_throws AssertionError dualprice(n)
 
     end
 

@@ -47,6 +47,9 @@ _extract(d::Dict{String,Component{AffExpr}}) = Dict{String,Component{Float64}}(k
 _extract(d::Dict{String,Node{AffExpr}}) = Dict{String,Node{Float64}}(k => _extract(v) for (k,v) in d)
 _extract(d::Dict{String,Port{AffExpr}}) = Dict{String,Port{Float64}}(k => _extract(v) for (k,v) in d)
 
+# dual price
+_extract(a::DualPrice{AffExpr}) = _dualprice(a) # defined in post
+
 """
 General _extract methods.
 """

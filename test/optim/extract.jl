@@ -68,6 +68,8 @@ using HiGHS: Optimizer
         @assert isapprox(objective_value(s.model), 20.) # check optimization is correct
 
         @test _extract(ec) == ec
+
+        @test _extract(en) isa Node{Float64, EnergyCarrier}
         
         @assert disp.model isa Nosy.DispatchableSourceModel{EnergyCarrier,AffExpr}
         @test _extract(disp.model) isa Nosy.DispatchableSourceModel{EnergyCarrier,Float64}

@@ -8,5 +8,6 @@ using Test
     include("simulation/_includes.jl")
     include("system/_includes.jl")
     include("optim/_includes.jl")
+    include("post/_includes.jl")
 
 end
