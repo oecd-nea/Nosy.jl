@@ -9,15 +9,18 @@ struct FixedCapacity{M<:Function} <: AbstractCapacityData
     pname::String
     modifier::M
     val::Float64
+    unitsize::Union{Nothing,Float64}
+end
 
-    @doc """
-        FixedCapacity(pname::String, modifier::Function, val::Number)
-    Return a FixedCapacity behavior data, associated with port name `pname`, modifier `modifier` and fixed value `val`.
-    """
-    function FixedCapacity(pname::String, modifier::Function, val::Number)        
-        @argcheck val >= 0. "Capacity cannot be negative"
-        new{typeof(modifier)}(pname, modifier, Float64(val))
-    end
+"""
+    FixedCapacity(pname::String, modifier::Function, val::Number; unitsize::Union{Nothing,Number})
+Return a FixedCapacity behavior data, associated with port name `pname`, modifier `modifier` and fixed value `val`.
+If unitsize is a number: it is the size of the unit when considering a fleet
+"""
+function FixedCapacity(pname::String, modifier::Function, val::Number; unitsize::Union{Nothing,Number}=nothing)
+    @argcheck val >= 0. "Capacity cannot be negative"
+    unitsize isa Number ? unitsize = Float64(unitsize) : nothing
+    FixedCapacity(pname, modifier, Float64(val), unitsize)
 end
 
 struct FixedCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
@@ -28,7 +31,6 @@ end
 # return a FixedCapacityBehavior
 # NB string is not used as no variable is created
 function buildbehavior(c::Component, b::FixedCapacity{M}) where M
-    #  _assert_model_compat_cap(model(c), b)
     @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     return FixedCapacityBehavior(b, AffExpr(b.val))
@@ -95,3 +97,15 @@ _capacity(c::FixedCapacityBehavior) = c.val
 
 _portname(c::FixedCapacityBehavior) = c.data.pname
 _modifier(c::FixedCapacityBehavior) = c.data.modifier
+
+_unitsize(c::FixedCapacityBehavior) = c.data.unitsize
+
+# evaluate the number of units of the behavior
+# return nothing if the unitsize is not defined
+function _nbunits(c::FixedCapacityBehavior)
+    if isnothing(c.data.unitsize)
+        return nothing
+    else
+        return _capacity(c) / _unitsize(c)
+    end
+end

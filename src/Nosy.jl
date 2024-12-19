@@ -16,7 +16,7 @@ export LinkedJointFlow, FreeJointFlow, FixedJointFlow
 export Component, Node, Snapshot
 export connect!
 
-export capacity
+export capacity, nbunits
 export cost, variablecost, fixedcost
 
 export costs, table

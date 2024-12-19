@@ -16,3 +16,17 @@ If the component has no capacity, return zero.
 function capacity(c::Component{T}) where T
     return _capacity(uniquebehavior(c, AbstractCapacityBehavior{T}), T)
 end
+
+"""
+  nbunits(c::Component)
+Return the number of units of Component `c`, related to its capacity and unit size.
+If `c` has no capacity or no unit size, return nothing.
+"""
+function nbunits(c::Component) 
+    _cap = uniquebehavior(c, AbstractCapacityBehavior)
+    if isnothing(_cap)
+        return nothing
+    else
+        return _nbunits(_cap)
+    end
+end

@@ -1,7 +1,7 @@
 using Nosy: mass
 using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim
 using Nosy: build, buildbehavior
-using Nosy: VariableCapacity, VariableCapacityBehavior, _capacity
+using Nosy: VariableCapacity, VariableCapacityBehavior, _capacity, _nbunits, nbunits
 using Nosy: BasicConverter, ProfileSource, Demand
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
@@ -44,6 +44,21 @@ using ArgCheck: ArgumentError
 
     end
 
+    let m = makecomp()  
+
+        c = VariableCapacity(
+            "input",
+            mass,
+            unitsize=2.5
+        )
+
+        b = buildbehavior(m, c)
+
+        @test _nbunits(b) isa AffExpr
+        @test _nbunits(b) == _capacity(b) / 2.5
+
+    end
+
     @test_throws ArgumentError VariableCapacity(
         "input",
         mass, 
@@ -81,6 +96,19 @@ using ArgCheck: ArgumentError
         @test_throws ArgumentError buildbehavior(m, c)
     end
 
+    let c = makecomp([VariableCapacity("input", mass)])
+
+        @test isnothing(nbunits(c))
+
+    end
+
+    let c = makecomp([VariableCapacity("input", mass, unitsize=2.5)])
+
+        @test nbunits(c) isa AffExpr
+        @test nbunits(c) == capacity(c) / 2.5
+
+    end
+
     # no behaviors, no joint flows
     let c = makecomp([])
        
@@ -113,6 +141,41 @@ using ArgCheck: ArgumentError
 
     end
 
+    # 1 behavior (variable capacity), no joint flows, unit size (not integer)
+    let c = makecomp([VariableCapacity("input", mass, lb=5, ub=Inf64, unitsize=2.5)])
+
+        # model has 10 timesteps
+        # it should have 11 variables 
+        #   flow @ converter @ each step (10),
+        #   capacity (1)
+        # and 21 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        #   converter input flow <= capacity @ each step (10),
+        #   capacity >= cap lower bound (1),
+        # unit size must not change the number of variables or constraints
+        @test nvariables(sim(c)) == 11
+        @test nconstraints(sim(c)) == 21
+
+    end
+
+    # 1 behavior (variable capacity), no joint flows, unit size (integer)
+    let c = makecomp([VariableCapacity("input", mass, lb=5, ub=Inf64, unitsize=2.5, integer=true)])
+
+        # model has 10 timesteps
+        # it should have 11 variables 
+        #   flow @ converter @ each step (10),
+        #   capacity (1)
+        # and 22 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        #   converter input flow <= capacity @ each step (10),
+        #   capacity >= cap lower bound (1),
+        #   number of units is integer (1),
+        @test nvariables(sim(c)) == 11
+        @test nconstraints(sim(c)) == 22
+
+    end
 
     function makecompwjoint(vbehavior=[])
         s = tsim()    

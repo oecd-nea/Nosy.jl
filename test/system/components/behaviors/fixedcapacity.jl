@@ -1,7 +1,7 @@
 using Nosy: mass
 using Nosy: Sim, TimeMesh, nvariables, nconstraints
 using Nosy: build, buildbehavior
-using Nosy: FixedCapacity, FixedCapacityBehavior, _capacity
+using Nosy: FixedCapacity, FixedCapacityBehavior, _capacity, _nbunits, nbunits
 using Nosy: BasicConverter, ProfileSource, Demand
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
@@ -33,6 +33,23 @@ using ArgCheck: ArgumentError
         b = buildbehavior(m, c)
 
         @test _capacity(b) == 5.
+        @test isnothing(_nbunits(b))
+        
+    end
+
+    let m = makecomp()  
+
+        c = FixedCapacity(
+            "input",
+            mass,
+            5, # should be converted to Float by FixedCapacity constructor
+            unitsize=2.5
+        )
+
+        b = buildbehavior(m, c)
+
+        @test _capacity(b) == 5.
+        @test _nbunits(b) == 2.
         
     end
 
@@ -64,6 +81,17 @@ using ArgCheck: ArgumentError
         @test_throws ArgumentError buildbehavior(m, c)
     end
 
+    let c = makecomp([FixedCapacity("input", mass, 5)])
+
+        @test isnothing(nbunits(c))
+
+    end
+
+    let c = makecomp([FixedCapacity("input", mass, 5, unitsize=2.5)])
+
+        @test nbunits(c) == 2.
+
+    end
 
     # no behaviors, no joint flows
     let c = makecomp()
@@ -90,6 +118,22 @@ using ArgCheck: ArgumentError
         #   converter input lower bound = 0 @ each step (10),
         #   converter input upper bound <= Inf @ each step (0),
         #   converter input flow <= capacity @ each step (10),
+        @test nvariables(sim(c)) == 10
+        @test nconstraints(sim(c)) == 20
+
+    end
+
+    # 1 behavior (fixed capacity), no joint flows, unit size
+    let c = makecomp([FixedCapacity("input", mass, 5, unitsize=2.5)])
+
+        # model has 10 timesteps
+        # it should have 10 variables 
+        #   flow @ converter @ each step (10),
+        # and 21 constraints
+        #   converter input lower bound = 0 @ each step (10),
+        #   converter input upper bound <= Inf @ each step (0),
+        #   converter input flow <= capacity @ each step (10),
+        # unit size must not change the number of variables or constraints
         @test nvariables(sim(c)) == 10
         @test nconstraints(sim(c)) == 20
 

@@ -10,19 +10,25 @@ struct VariableCapacity{M<:Function} <: AbstractCapacityData
     modifier::M
     lb::Float64
     ub::Float64
+    unitsize::Union{Nothing,Float64}
+    integer::Bool
+end
 
-    @doc """
-        VariableCapacity(pname::String, modifier::Function; lb=0., ub=Inf)
-    Return a VariableCapacity behavior data, associated with port name `pname` and modifier `modifier`.
-    Optional parameters:
-      * lb: lower bound
-      * ub: upper bound
-    """
-    function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf)        
-        @argcheck lb >= 0. "Capacity cannot be negative"
-        @argcheck lb <= ub "Lower bound is bigger than upper bound"
-        new{typeof(modifier)}(pname, modifier, Float64(lb), Float64(ub))
-    end
+"""
+    VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, unitsize::Union{Nothing,Number}, integer::Bool)
+Return a VariableCapacity behavior data, associated with port name `pname` and modifier `modifier`.
+Optional parameters:
+* lb: lower bound
+* ub: upper bound
+* unitsize: size of the unit when considering a fleet
+* integer: if unitsize is a number, constrains the number of units to be integer
+"""
+function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
+    @argcheck lb >= 0. "Capacity cannot be negative"
+    @argcheck lb <= ub "Lower bound is bigger than upper bound"
+    @argcheck !integer || !isnothing(size) "unitsize must be a Number in order to activate integer number of units"
+    unitsize isa Number ? unitsize = Float64(unitsize) : nothing
+    VariableCapacity(pname, modifier, Float64(lb), Float64(ub), unitsize, integer)
 end
 
 struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
@@ -35,8 +41,16 @@ function buildbehavior(c::Component, b::VariableCapacity)
     # _check_model_compat_cap(model(c), b)
     @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
-    v = @variable(sim(c).model, base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
-    return VariableCapacityBehavior(b, convert(AffExpr, v))
+    if b.unitsize isa Number
+        # variable is number of units
+        v = @variable(sim(c).model, base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        e = v * b.unitsize
+    else
+        # variable is capacity
+        v = @variable(sim(c).model, base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        e = convert(AffExpr, v)
+    end
+    return VariableCapacityBehavior(b, e)
 end
 
 """
@@ -98,3 +112,15 @@ _capacity(c::VariableCapacityBehavior) = c.val
 
 _portname(c::VariableCapacityBehavior) = c.data.pname
 _modifier(c::VariableCapacityBehavior) = c.data.modifier
+
+_unitsize(c::VariableCapacityBehavior) = c.data.unitsize
+
+# evaluate the number of units of the behavior
+# return nothing if the unitsize is not defined
+function _nbunits(c::VariableCapacityBehavior)
+    if isnothing(c.data.unitsize)
+        return nothing
+    else
+        return _capacity(c) / _unitsize(c)
+    end
+end
