@@ -7,11 +7,15 @@ using DataFrames
 """
     table(s::Snapshot, metric::Function)
 Return a table containing the evaluation of the metric `metric` over the components of Snapshot `s`.
+If `removenothing` is true, the values equal to nothing will be discarded.
 """
-function table(s::Snapshot{T}, metric::Function) where T
-    d = Dict{String,T}()
+function table(s::Snapshot{T}, metric::Function; removenothing::Bool=true) where T
+    d = Dict{String,Union{Nothing,T}}()
     for (k,v) in s.components
-        d[k] = metric(v)
+        m = metric(v)
+        if !removenothing || !isnothing(m)
+            d[k] = m
+        end
     end
     return DataFrame(d)
 end
