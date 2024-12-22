@@ -49,7 +49,7 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
     let c = makecomp([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
 
-        @test capacity(c) == AffExpr(5.)
+        @test capacity(c) == 5.
         @test fixedcost(c) == AffExpr(5. * 10.)
 
         # test selection based on cost type

@@ -37,7 +37,7 @@ using ArgCheck: ArgumentError
     let s = makesnapshot([FixedCapacity("input", mass, 5.)])
 
         # fixed capacity
-        @test capacity(s, "comp") == AffExpr(5.)
+        @test capacity(s, "comp") == 5.
 
     end
 
