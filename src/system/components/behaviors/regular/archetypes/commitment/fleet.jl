@@ -22,7 +22,6 @@ struct FleetUnitCommitmentBehavior{T<:VAL,M<:Function} <: AbstractUnitCommitment
     variable::Stepwise{T}
 end
 
-using Infiltrator
 
 function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::AbstractCapacityBehavior)
     s = sim(c)
