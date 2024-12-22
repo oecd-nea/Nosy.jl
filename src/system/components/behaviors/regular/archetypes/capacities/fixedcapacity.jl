@@ -92,8 +92,9 @@ end
 
 behaviorname(::FixedCapacityBehavior) = "fixed capacity"
 
-# return the AffExpr
-_capacity(c::FixedCapacityBehavior) = c.val
+# return a Number
+_capacity(c::FixedCapacityBehavior{AffExpr}) = c.val.constant
+_capacity(c::FixedCapacityBehavior{Float64}) = c.val
 
 _portname(c::FixedCapacityBehavior) = c.data.pname
 _modifier(c::FixedCapacityBehavior) = c.data.modifier
@@ -109,3 +110,7 @@ function _nbunits(c::FixedCapacityBehavior)
         return _capacity(c) / _unitsize(c)
     end
 end
+
+# return the maximum number of units
+# for FixedCapacityBehavior, it is the number of units
+_nbunitsmax(c::FixedCapacityBehavior) = _nbunits(c)

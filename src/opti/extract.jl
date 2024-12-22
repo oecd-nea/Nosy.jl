@@ -34,6 +34,7 @@ _extract(a::Symbol) = a
 _extract(a::Sim) = a
 _extract(a::AbstractCarrier) = a
 _extract(a::Base.RefValue{Bool}) = a
+_extract(a::Function) = a
 
 _extract(v::AbstractVector) = typeof(v).name.wrapper(_extract.(v))
 _extract(v::AbstractVector{Float64}) = v

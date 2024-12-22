@@ -124,3 +124,6 @@ function _nbunits(c::VariableCapacityBehavior)
         return _capacity(c) / _unitsize(c)
     end
 end
+
+# return the maximum number of units
+_nbunitsmax(c::VariableCapacityBehavior) = c.data.ub / _unitsize(c)

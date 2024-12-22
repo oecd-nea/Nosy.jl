@@ -9,6 +9,7 @@ export DispatchableSource, ProfileSource
 export LazyStorage
 
 export VariableCapacity, FixedCapacity
+export UnitCommitment
 export VariableCost, FixedCost
 
 export LinkedJointFlow, FreeJointFlow, FixedJointFlow
