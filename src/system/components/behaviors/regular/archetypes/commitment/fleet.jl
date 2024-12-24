@@ -101,7 +101,7 @@ function _sd(b::FleetUnitCommitmentBehavior{T}) where T
     for step in eachindex(_sd)
         local deltah = 0//1
         local step2 = step + 1
-        while deltah < b.data.startup        
+        while deltah < b.data.shutdown        
             deltah += weight(m, step2)
             _sd[step2] += b.shutdown[step] * b.unitsize * b.data.minratio * _lin_ratio_sd(b.data.shutdown, deltah)
             step2 = step2 + 1
@@ -142,44 +142,49 @@ end
 
 # the constraint below is redundant
 # it may guide the solver, but is not mandatory (already included in the uc flow constraint)
-function _apply_constraints_uc_units!(c::Component, b::FleetUnitCommitmentBehavior)
-    nothing
-    # @constraint(sim(c).model, 
-    #     b.state.data .<= nbunits(c)
-    # )
-end
+# function _apply_constraints_uc_units!(c::Component, b::FleetUnitCommitmentBehavior)
+#     @constraint(sim(c).model, 
+#         b.state.data .<= nbunits(c)
+#     )
+# end
 
 function _apply_constraints_uc_minuptime!(c::Component, b::FleetUnitCommitmentBehavior)
-    if b.data.uptime > 0
         m = sim(c).mesh
         for step in eachindex(b.state)
             val = AffExpr(0.)
             local deltah = 0//1
             local step2 = step - 1
-            while deltah < b.data.uptime        
+            while deltah < b.data.uptime
                 val += b.startup[step2]
                 deltah += weight(m, step2)
                 step2 = step2 - 1
             end
-            @constraint(sim(c).model, val <= b.state[step])
+            if !iszero(val)
+                @constraint(sim(c).model, val <= b.state[step])
+            end
         end
-    end
 end
 
+# the constraint below is tricky
+# first, the downtime actually covers the time of shutdown and startup: their uc state is 0 but their flow is not, by convention.
+# Then startup duration can be 0. But even when it is zero, startup at least takes a step to transition between state=0 to state=1!
+# Same remark for shutdown.
+# The implementation of the constraint is tested for constant time intervals, it will not be correct for variable time intervals.
+# TODO update the implementation to handle variable time intervals
 function _apply_constraints_uc_mindowntime!(c::Component, b::FleetUnitCommitmentBehavior)
-    if b.data.downtime > 0
-        m = sim(c).mesh
-        _units = nbunits(c)
-        for step in eachindex(b.state)
-            val = AffExpr(0.)
-            local deltah = 0//1
-            local step2 = step - 1
-            while deltah <= b.data.downtime + b.data.startup
-                val += b.shutdown[step2]  
-                deltah += weight(m, step2)
-                step2 = step2 - 1
-            end
-            @constraint(sim(c).model, val <= _units - b.state[step])
+    m = sim(c).mesh
+    _units = nbunits(c)
+    for step in eachindex(b.state)
+        val = AffExpr(0.)
+        local step2 = step - 1
+        local deltah = 0//1
+        while deltah < b.data.downtime + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
+            val += b.shutdown[step2]  
+            deltah += weight(m, step2)
+            step2 = step2 - 1
+        end
+        if !iszero(val)
+            @constraint(sim(c).model, val <= _units - b.state[step] + b.startup[step])
         end
     end
 end
@@ -191,6 +196,19 @@ function _apply_constraints_uc_flow!(c::Component, b::FleetUnitCommitmentBehavio
 end
 
 
+function _apply_constraint_su_sd(c::Component, b::FleetUnitCommitmentBehavior)
+    # cannot shutdown more units than committed
+    @constraint(sim(c).model,
+        b.shutdown.data .<= b.state.data
+    )
+
+    # cannot startup more units than not committed
+    # this constraint is not mandatory, but it might guide the solver
+    # @constraint(sim(c).model,
+    #     b.startup.data .<= nbunits(c) .- shift(b.state, -1)
+    # )
+end
+
 function _apply_constraints!(c::Component, b::FleetUnitCommitmentBehavior)
     _apply_constraint_uc_switch!(c, b)
     _apply_constraint_uc_variable_flow!(c, b)
@@ -198,6 +216,7 @@ function _apply_constraints!(c::Component, b::FleetUnitCommitmentBehavior)
     _apply_constraints_uc_minuptime!(c, b)
     _apply_constraints_uc_mindowntime!(c, b)
     _apply_constraints_uc_flow!(c, b)
+    _apply_constraint_su_sd(c, b)
 end
 
 behaviorname(::FleetUnitCommitmentBehavior) = "Fleet unit commitment"
