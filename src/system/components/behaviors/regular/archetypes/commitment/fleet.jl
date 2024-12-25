@@ -135,7 +135,7 @@ end
 function _apply_constraint_uc_variable_flow!(c::Component, b::FleetUnitCommitmentBehavior)
     if b.data.minratio < 1
         @constraint(sim(c).model, 
-            b.variable.data .<= ((b.unitsize * (1. - b.data.minratio)) * b.state).data
+            (b.variable -  b.state * (b.unitsize * (1. - b.data.minratio))).data .<= 0.
         )
     end
 end
@@ -149,20 +149,20 @@ end
 # end
 
 function _apply_constraints_uc_minuptime!(c::Component, b::FleetUnitCommitmentBehavior)
-        m = sim(c).mesh
-        for step in eachindex(b.state)
-            val = AffExpr(0.)
-            local deltah = 0//1
-            local step2 = step - 1
-            while deltah < b.data.uptime
-                val += b.startup[step2]
-                deltah += weight(m, step2)
-                step2 = step2 - 1
-            end
-            if !iszero(val)
-                @constraint(sim(c).model, val <= b.state[step])
-            end
+    m = sim(c).mesh
+    for step in eachindex(b.state)
+        val = AffExpr(0.)
+        local deltah = 0//1
+        local step2 = step - 1
+        while deltah < b.data.uptime
+            addto!(val, b.startup[step2])
+            deltah += weight(m, step2)
+            step2 = step2 - 1
         end
+        if !iszero(val)
+            @constraint(sim(c).model, val <= b.state[step])
+        end
+    end
 end
 
 # the constraint below is tricky
@@ -179,7 +179,7 @@ function _apply_constraints_uc_mindowntime!(c::Component, b::FleetUnitCommitment
         local step2 = step - 1
         local deltah = 0//1
         while deltah < b.data.downtime + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
-            val += b.shutdown[step2]  
+            addto!(val, b.shutdown[step2])  
             deltah += weight(m, step2)
             step2 = step2 - 1
         end
