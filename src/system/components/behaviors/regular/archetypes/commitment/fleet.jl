@@ -131,9 +131,9 @@ function _apply_constraint_uc_switch!(c::Component, b::FleetUnitCommitmentBehavi
     )
 end
 
-# not applied if minratio is 0 (no variable part of flow)
+# not applied if minratio is 1 (no variable part of flow)
 function _apply_constraint_uc_variable_flow!(c::Component, b::FleetUnitCommitmentBehavior)
-    if b.data.minratio > 0
+    if b.data.minratio < 1
         @constraint(sim(c).model, 
             b.variable.data .<= ((b.unitsize * (1. - b.data.minratio)) * b.state).data
         )

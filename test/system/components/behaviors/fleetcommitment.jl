@@ -453,7 +453,7 @@ Some notes and observations:
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [10., 7.5, 5., 2.5, 0., 0., 0., 0., 0., 0.])
+        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [10., 7.5, 5., 2.5, 0., 0., 0., 0., 0., 0.]))
     end
 
     # fine-tune impact of startup, shutdown, uptime, downtime on commitment
