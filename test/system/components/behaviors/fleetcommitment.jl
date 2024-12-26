@@ -68,6 +68,15 @@ Some notes and observations:
     end
 
     let   
+        cap = FixedCapacity("input", mass, 11., unitsize=5.)
+        uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, integer=true)
+        
+        # unit commitment with integer variables not compatible with fixed capacity with non-integer number of units
+        @test_throws ArgumentError makecomp([cap, uc])
+        
+    end
+
+    let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, integer=false)
         

@@ -29,8 +29,17 @@ function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::Abstr
     umax = _nbunitsmax(cap) # max number of units
     vmax = umax * _unitsize(cap) * (1 - b.minratio)  # max variable output
     
+    # check inconsistency between capacity and number of units
+    # not only such cases are inconsistency,
+    # but they tend to be difficult to optimize
+    if cap isa FixedCapacityBehavior && b.integer
+        @argcheck isinteger(umax) "Cannot define integer UC together with non-integer number of units from fixed capacity. Please use a multiple of $(_unitsize(cap))"
+    end
+
     # uc variables
     # all are expressed in nb of units except variable
+    # NB startup xor shutdown can in theory not be integer even if b.integer
+    # however solver performance test showed that it's better to set all as b.integer
     startup = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_su")
     shutdown = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_sd")
     state = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_uc")
