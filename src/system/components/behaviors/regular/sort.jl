@@ -4,7 +4,7 @@ Sort behaviors.
 
 # priority for behaviors
 # priority is highest for first elements
-const BEHAVIORS_PRIORITY = (AbstractJointFlowData, CapacityMultiplier, AbstractCapacityData,)
+const BEHAVIORS_PRIORITY = (AbstractJointFlowData, CapacityMultiplier, AbstractCapacityData, UnitCommitment)
 
 # function _getjointflowdata(v::AbstractVector)
 #     _jointflowdata = Vector{AbstractJointFlowData}(undef,0)
