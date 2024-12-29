@@ -10,6 +10,7 @@ export LazyStorage
 
 export VariableCapacity, FixedCapacity
 export UnitCommitment
+export Ramping
 export VariableCost, FixedCost
 
 export LinkedJointFlow, FreeJointFlow, FixedJointFlow
