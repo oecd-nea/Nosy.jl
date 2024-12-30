@@ -89,4 +89,4 @@ defaultmodifier(p::AbstractPort) = _defaultmodifier(p)(p) # apply the modifier f
 
 # check whether port has a modifier
 # return a boolean
-hasmodifier(p::AbstractPort, modifier) = !isnothing(modifier(carrier(p)))
+hasmodifier(p::AbstractPort, modifier) = hasmodifier(carrier(p), modifier)

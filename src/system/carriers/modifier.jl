@@ -30,3 +30,5 @@ modifiername(::typeof(mass)) = "mass"
 modifiername(::typeof(energy)) = "energy"
 modifiername(::typeof(co2)) = "co2"
 modifiername(::typeof(defaultmodifier)) = "default"
+
+hasmodifier(c::AbstractCarrier, modifier) = !isnothing(modifier(c))

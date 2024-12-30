@@ -6,7 +6,7 @@ export MassCarrier, EnergyCarrier, CO2Carrier
 export BasicConverter
 export BasicSink, Demand
 export DispatchableSource, ProfileSource
-export LazyStorage
+export BasicStorage, LazyStorage
 
 export VariableCapacity, FixedCapacity
 export UnitCommitment
