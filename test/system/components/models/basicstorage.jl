@@ -2,7 +2,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
 using Nosy: portstructure, getport
-using Nosy: input, output, level
+using Nosy: _input, _output, _level
 using Nosy: BasicStorage, BasicStorageModel
 using Nosy: Component
 using Nosy: nvariables, nconstraints
@@ -30,9 +30,9 @@ import HiGHS
         # test on component
         c = Component("sto", m, [])
 
-        @test collect(keys(input(c.s))) == ["input"]
-        @test collect(keys(output(c.s))) == ["output"]
-        @test collect(keys(level(c.s))) == ["level"]
+        @test collect(keys(_input(c.s))) == ["input"]
+        @test collect(keys(_output(c.s))) == ["output"]
+        @test collect(keys(_level(c.s))) == ["level"]
 
         # testing variables and constraints after component is built
         @test nvariables(s) == 30 # storage level, input and output @ each timestep

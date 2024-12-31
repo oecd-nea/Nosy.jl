@@ -3,7 +3,6 @@ using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: BasicConverter, LinkedJointFlow
 using Nosy: Component
-using Nosy: input, output
 using Nosy: balance, _balance
 
 using JuMP: Model, AffExpr

@@ -4,7 +4,6 @@ using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port
 using Nosy: PortStructure, addinput!, addoutput!, addlevel!
-using Nosy: input, output, level
 using Nosy: balance
 
 using JuMP: Model, AffExpr

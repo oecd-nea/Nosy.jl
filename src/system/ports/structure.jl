@@ -52,9 +52,9 @@ hasinput(ps::PortStructure, name::String) = haskey(ps.input, name)
 hasoutput(ps::PortStructure, name::String) = haskey(ps.output, name)
 haslevel(ps::PortStructure, name::String) = haskey(ps.level, name)
 
-input(ps::PortStructure) = ps.input
-output(ps::PortStructure) = ps.output
-level(ps::PortStructure) = ps.level
+_input(ps::PortStructure) = ps.input
+_output(ps::PortStructure) = ps.output
+_level(ps::PortStructure) = ps.level
 
 Base.isempty(ps::PortStructure) = all(isempty(d) for d in (ps.input, ps.output, ps.level))
 
@@ -76,7 +76,7 @@ end
 # return the port associated with name pname
 # return nothing if there is no such port
 function getport(ps::PortStructure, pname::String)
-    for s in (input, output, level)
+    for s in (_input, _output, _level)
         d = s(ps)
         if haskey(d, pname)
             return d[pname]
@@ -87,11 +87,11 @@ end
 # slightly sped-up function with a hint for port sense
 function getport(ps::PortStructure, pname::String, sense::Symbol)
     if sense == :input
-        d = input(ps)
+        d = _input(ps)
     elseif sense == :output
-        d = output(ps)
+        d = _output(ps)
     elseif sense == :level
-        d = level(ps)
+        d = _level(ps)
     else
         throw(ArgumentError("hint must be :input, :output or :level"))
     end
@@ -99,14 +99,14 @@ function getport(ps::PortStructure, pname::String, sense::Symbol)
 end
 
 # return true if the port structure has a port with name pname, return false otherwise
-hasport(ps::PortStructure, pname::String) = any(haskey(s(ps), pname) for s in (input, output, level))
+hasport(ps::PortStructure, pname::String) = any(haskey(s(ps), pname) for s in (_input, _output, _level))
 
 function portsense(ps::PortStructure, pname::String)::Symbol
-    if haskey(input(ps), pname)
+    if haskey(_input(ps), pname)
         return :input
-    elseif haskey(output(ps), pname)
+    elseif haskey(_output(ps), pname)
         return :output
-    elseif haskey(level(ps), pname)
+    elseif haskey(_level(ps), pname)
         return :level
     else
         throw(ArgumentError("The port structure does not contain a node with name $pname"))
@@ -120,8 +120,8 @@ end
 function shallowcopy(ps::PortStructure)
     return PortStructure(
         sim(ps),
-        copy(input(ps)),
-        copy(output(ps)),
-        copy(level(ps))
+        copy(_input(ps)),
+        copy(_output(ps)),
+        copy(_level(ps))
     )
 end

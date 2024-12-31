@@ -5,7 +5,7 @@ using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
-using Nosy: portstructure, input
+using Nosy: portstructure, _input, _output
 using JuMP: Model, AffExpr
 
 @testset "LinkedJointFlow" begin
@@ -38,12 +38,12 @@ using JuMP: Model, AffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == lf
-        @test haskey(input(portstructure(c)), "lf")
-        @test !haskey(output(portstructure(c)), "lf")
+        @test haskey(_input(portstructure(c)), "lf")
+        @test !haskey(_output(portstructure(c)), "lf")
 
-        @test getport(c, "lf") == input(portstructure(c))["lf"] 
+        @test getport(c, "lf") == _input(portstructure(c))["lf"] 
 
-        @test all(mass(input(portstructure(c))["lf"]) .== 1.5 * mass(input(portstructure(c))["input"]))
+        @test all(mass(_input(portstructure(c))["lf"]) .== 1.5 * mass(_input(portstructure(c))["input"]))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
@@ -64,12 +64,12 @@ using JuMP: Model, AffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == lf
-        @test !haskey(input(portstructure(c)), "lf")
-        @test haskey(output(portstructure(c)), "lf")
+        @test !haskey(_input(portstructure(c)), "lf")
+        @test haskey(_output(portstructure(c)), "lf")
 
-        @test getport(c, "lf") == output(portstructure(c))["lf"] 
+        @test getport(c, "lf") == _output(portstructure(c))["lf"] 
 
-        @test all(energy(output(portstructure(c))["lf"]) .== 1.5 * energy(input(portstructure(c))["input"]))
+        @test all(energy(_output(portstructure(c))["lf"]) .== 1.5 * energy(_input(portstructure(c))["input"]))
 
 
     end
@@ -87,12 +87,12 @@ using JuMP: Model, AffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == lf
-        @test !haskey(input(portstructure(c)), "lf")
-        @test haskey(output(portstructure(c)), "lf")
+        @test !haskey(_input(portstructure(c)), "lf")
+        @test haskey(_output(portstructure(c)), "lf")
 
-        @test getport(c, "lf") == output(portstructure(c))["lf"] 
+        @test getport(c, "lf") == _output(portstructure(c))["lf"] 
 
-        @test all(mass(output(portstructure(c))["lf"]) .== 1.5 * energy(output(portstructure(c))["output"]))
+        @test all(mass(_output(portstructure(c))["lf"]) .== 1.5 * energy(_output(portstructure(c))["output"]))
     
     end
 
@@ -113,16 +113,16 @@ using JuMP: Model, AffExpr
         # order of joint flows is as defined by user
         @test [c.jointflows[1].data, c.jointflows[2].data] == [lf, lf2]
 
-        @test haskey(input(portstructure(c)), "lf")
-        @test !haskey(input(portstructure(c)), "lf2")
-        @test !haskey(output(portstructure(c)), "lf")
-        @test haskey(output(portstructure(c)), "lf2")
+        @test haskey(_input(portstructure(c)), "lf")
+        @test !haskey(_input(portstructure(c)), "lf2")
+        @test !haskey(_output(portstructure(c)), "lf")
+        @test haskey(_output(portstructure(c)), "lf2")
 
-        @test getport(c, "lf") == input(portstructure(c))["lf"] 
-        @test getport(c, "lf2") == output(portstructure(c))["lf2"] 
+        @test getport(c, "lf") == _input(portstructure(c))["lf"] 
+        @test getport(c, "lf2") == _output(portstructure(c))["lf2"] 
         
-        @test all(mass(input(portstructure(c))["lf"]) .== 1.5 * mass(input(portstructure(c))["input"]))
-        @test all(energy(output(portstructure(c))["lf2"]) .== 2.0 * energy(input(portstructure(c))["lf"]))
+        @test all(mass(_input(portstructure(c))["lf"]) .== 1.5 * mass(_input(portstructure(c))["input"]))
+        @test all(energy(_output(portstructure(c))["lf2"]) .== 2.0 * energy(_input(portstructure(c))["lf"]))
 
     end
 

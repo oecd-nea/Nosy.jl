@@ -55,8 +55,8 @@ iscurtailed(n::Node) = rule(n) == :curtailed
 portstructure(n::Node) = n.s
 sim(n::Node) = sim(carrier(n))
 
-input(n::Node) = input(portstructure(n))
-output(n::Node) = output(portstructure(n))
+_input(n::Node) = _input(portstructure(n))
+_output(n::Node) = _output(portstructure(n))
 
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)
@@ -79,11 +79,11 @@ addlevel!(::Node{T,C1}, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(Asserti
 
 # display node info
 function Base.show(io::IO, n::Node)
-    nin = length(input(n))
-    nout = length(output(n))
+    nin = length(_input(n))
+    nout = length(_output(n))
     ntype = iscurtailed(n) ? "curtailed" : "not curtailed"
     print(
         io,
-        "Node \"$(name(n))\" ($ntype) with $nin input(s), $nout output(s)"
+        "Node \"$(name(n))\" ($ntype) with $nin _input(s), $nout _output(s)"
     )
 end

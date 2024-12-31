@@ -4,7 +4,7 @@ using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port
 using Nosy: PortStructure, addinput!, addoutput!, addlevel!
-using Nosy: input, output, level
+using Nosy: _input, _output, _level
 using Nosy: _balance
 
 using JuMP: Model, AffExpr
@@ -43,44 +43,44 @@ using JuMP: Model, AffExpr
         addinput!(ps, "p2", p2)
 
         # non-collapsed, non-aggregated balance
-        b = _balance(ps, input, mass, false, false)
+        b = _balance(ps, _input, mass, false, false)
         @test haskey(b, "p1") && b["p1"] == mass(p1)
         @test haskey(b, "p2") && b["p2"] == mass(p2)       
-        @test isempty(_balance(ps, output, mass, false, false))
-        @test isempty(_balance(ps, level, mass, false, false))
+        @test isempty(_balance(ps, _output, mass, false, false))
+        @test isempty(_balance(ps, _level, mass, false, false))
 
-        @test isempty(_balance(ps, input, energy, false, false))
-        @test isempty(_balance(ps, output, energy, false, false))
-        @test isempty(_balance(ps, level, energy, false, false))
+        @test isempty(_balance(ps, _input, energy, false, false))
+        @test isempty(_balance(ps, _output, energy, false, false))
+        @test isempty(_balance(ps, _level, energy, false, false))
 
         # collapsed, non-aggregated balance
-        b = _balance(ps, input, mass, true, false)
+        b = _balance(ps, _input, mass, true, false)
         @test haskey(b, "p1") && b["p1"] == sum(mass(p1))
         @test haskey(b, "p2") && b["p2"] == sum(mass(p2))
-        @test isempty(_balance(ps, output, mass, true, false))
-        @test isempty(_balance(ps, level, mass, true, false))
+        @test isempty(_balance(ps, _output, mass, true, false))
+        @test isempty(_balance(ps, _level, mass, true, false))
 
-        @test isempty(_balance(ps, input, energy, true, false))
-        @test isempty(_balance(ps, output, energy, true, false))
-        @test isempty(_balance(ps, level, energy, true, false))
+        @test isempty(_balance(ps, _input, energy, true, false))
+        @test isempty(_balance(ps, _output, energy, true, false))
+        @test isempty(_balance(ps, _level, energy, true, false))
 
         # non-collapsed, aggregated balance
-        @test _balance(ps, input, mass, false, true) == mass(p1) + mass(p2)
-        @test iszero(_balance(ps, output, mass, false, true))
-        @test iszero(_balance(ps, level, mass, false, true))
+        @test _balance(ps, _input, mass, false, true) == mass(p1) + mass(p2)
+        @test iszero(_balance(ps, _output, mass, false, true))
+        @test iszero(_balance(ps, _level, mass, false, true))
 
-        @test iszero(_balance(ps, input, energy, false, true))
-        @test iszero(_balance(ps, output, energy, false, true))
-        @test iszero(_balance(ps, level, energy, false, true))
+        @test iszero(_balance(ps, _input, energy, false, true))
+        @test iszero(_balance(ps, _output, energy, false, true))
+        @test iszero(_balance(ps, _level, energy, false, true))
 
         # collapsed, aggregated balance
-        @test _balance(ps, input, mass, true, true) == sum(mass(p1)) + sum(mass(p2))
-        @test iszero(_balance(ps, output, mass, true, true))
-        @test iszero(_balance(ps, level, mass, true, true))
+        @test _balance(ps, _input, mass, true, true) == sum(mass(p1)) + sum(mass(p2))
+        @test iszero(_balance(ps, _output, mass, true, true))
+        @test iszero(_balance(ps, _level, mass, true, true))
 
-        @test iszero(_balance(ps, input, energy, true, true))
-        @test iszero(_balance(ps, output, energy, true, true))
-        @test iszero(_balance(ps, level, energy, true, true))
+        @test iszero(_balance(ps, _input, energy, true, true))
+        @test iszero(_balance(ps, _output, energy, true, true))
+        @test iszero(_balance(ps, _level, energy, true, true))
 
     end
 
@@ -103,7 +103,7 @@ using JuMP: Model, AffExpr
         addoutput!(ps, "p5", p5) # 1 co2 output
 
         # non-collapsed, non-aggregated balance
-        let b = _balance(ps, input, mass, false, false)
+        let b = _balance(ps, _input, mass, false, false)
             @test haskey(b, "p1") && b["p1"] == mass(p1)
             @test haskey(b, "p2") && b["p2"] == mass(p2)
             @test haskey(b, "p3") && b["p3"] == mass(p3)
@@ -111,7 +111,7 @@ using JuMP: Model, AffExpr
             @test !haskey(b, "p5") # output
         end
 
-        let b = _balance(ps, output, mass, false, false)
+        let b = _balance(ps, _output, mass, false, false)
             @test !haskey(b, "p1") # input
             @test !haskey(b, "p2") # input
             @test !haskey(b, "p3") # input & no mass
@@ -119,7 +119,7 @@ using JuMP: Model, AffExpr
             @test haskey(b, "p5") && b["p5"] == mass(p5)
         end
         
-        let b = _balance(ps, input, energy, false, false)
+        let b = _balance(ps, _input, energy, false, false)
             @test !haskey(b, "p1") # no energy
             @test !haskey(b, "p2") # no energy
             @test haskey(b, "p3") && b["p3"] == energy(p3)
@@ -127,7 +127,7 @@ using JuMP: Model, AffExpr
             @test !haskey(b, "p5") # no energy
         end
 
-        let b = _balance(ps, output, co2, false, false)
+        let b = _balance(ps, _output, co2, false, false)
             @test !haskey(b, "p1") # input & no co2
             @test !haskey(b, "p2") # input & no co2
             @test !haskey(b, "p3") # input & no co2

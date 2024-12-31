@@ -5,7 +5,7 @@ using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
-using Nosy: portstructure, input
+using Nosy: portstructure, _input, _output
 using JuMP: Model, AffExpr
 
 @testset "FreeJointFlow" begin
@@ -38,13 +38,13 @@ using JuMP: Model, AffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == ff
-        @test haskey(input(portstructure(c)), "ff")
-        @test !haskey(output(portstructure(c)), "ff")
+        @test haskey(_input(portstructure(c)), "ff")
+        @test !haskey(_output(portstructure(c)), "ff")
 
-        @test getport(c, "ff") == input(portstructure(c))["ff"] 
+        @test getport(c, "ff") == _input(portstructure(c))["ff"] 
 
-        @test all(iszero(mass(input(portstructure(c))["ff"])[i].constant) for i in eachstep(sim(mc)))
-        @test all(length(mass(input(portstructure(c))["ff"])[i].terms) == 1 for i in eachstep(sim(mc)))
+        @test all(iszero(mass(_input(portstructure(c))["ff"])[i].constant) for i in eachstep(sim(mc)))
+        @test all(length(mass(_input(portstructure(c))["ff"])[i].terms) == 1 for i in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 20 # time series for converter model + time series for free joint flow

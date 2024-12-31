@@ -40,10 +40,10 @@ using JuMP: Model, AffExpr
         @test length(nodes(sn)) == 1
         @test haskey(nodes(sn), "n")
 
-        @test isempty(input(portstructure(n)))
-        @test length(output(portstructure(n))) == 1
-        @test haskey(output(portstructure(n)), "comp")
-        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+        @test isempty(_input(portstructure(n)))
+        @test length(_output(portstructure(n))) == 1
+        @test haskey(_output(portstructure(n)), "comp")
+        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
 
         @test is_used(getport(c, "input"))
         @test !is_used(getport(c, "output"))
@@ -68,12 +68,12 @@ using JuMP: Model, AffExpr
         @test length(nodes(sn)) == 1
         @test haskey(nodes(sn), "n")
 
-        @test length(input(portstructure(n))) == 1
-        @test haskey(input(portstructure(n)), "comp")
-        @test input(portstructure(n))["comp"] == output(portstructure(c))["output"]
-        @test length(output(portstructure(n))) == 1
-        @test haskey(output(portstructure(n)), "comp")
-        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+        @test length(_input(portstructure(n))) == 1
+        @test haskey(_input(portstructure(n)), "comp")
+        @test _input(portstructure(n))["comp"] == _output(portstructure(c))["output"]
+        @test length(_output(portstructure(n))) == 1
+        @test haskey(_output(portstructure(n)), "comp")
+        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
 
         @test is_used(getport(c, "input"))
         @test is_used(getport(c, "output"))
@@ -98,10 +98,10 @@ using JuMP: Model, AffExpr
         @test length(nodes(sn)) == 1
         @test haskey(nodes(sn), "n")
 
-        @test isempty(input(portstructure(n)))
-        @test length(output(portstructure(n))) == 1
-        @test haskey(output(portstructure(n)), "comp")
-        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+        @test isempty(_input(portstructure(n)))
+        @test length(_output(portstructure(n))) == 1
+        @test haskey(_output(portstructure(n)), "comp")
+        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
 
         @test is_used(getport(c, "input"))
         @test !is_used(getport(c, "output"))
@@ -129,10 +129,10 @@ using JuMP: Model, AffExpr
         @test length(nodes(sn)) == 1
         @test haskey(nodes(sn), "n")
 
-        @test isempty(output(portstructure(n)))
-        @test length(input(portstructure(n))) == 1
-        @test haskey(input(portstructure(n)), "comp")
-        @test input(portstructure(n))["comp"] == output(portstructure(c))["j"]
+        @test isempty(_output(portstructure(n)))
+        @test length(_input(portstructure(n))) == 1
+        @test haskey(_input(portstructure(n)), "comp")
+        @test _input(portstructure(n))["comp"] == _output(portstructure(c))["j"]
 
         @test !is_used(getport(c, "input"))
         @test !is_used(getport(c, "output"))
@@ -161,13 +161,13 @@ using JuMP: Model, AffExpr
         @test length(nodes(sn)) == 1
         @test haskey(nodes(sn), "n")
 
-        @test length(output(portstructure(n))) == 1
-        @test haskey(output(portstructure(n)), "comp")
-        @test output(portstructure(n))["comp"] == input(portstructure(c))["input"]
+        @test length(_output(portstructure(n))) == 1
+        @test haskey(_output(portstructure(n)), "comp")
+        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
         
-        @test length(input(portstructure(n))) == 1
-        @test haskey(input(portstructure(n)), "comp")
-        @test input(portstructure(n))["comp"] == output(portstructure(c))["output"]
+        @test length(_input(portstructure(n))) == 1
+        @test haskey(_input(portstructure(n)), "comp")
+        @test _input(portstructure(n))["comp"] == _output(portstructure(c))["output"]
 
         @test is_used(getport(c, "input"))
         @test is_used(getport(c, "output"))

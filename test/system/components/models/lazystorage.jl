@@ -2,7 +2,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
 using Nosy: portstructure, getport
-using Nosy: input, output, level
+using Nosy: _input, _output, _level
 using Nosy: LazyStorage, LazyStorageModel
 using Nosy: FreeJointFlow
 using Nosy: Component
@@ -26,9 +26,9 @@ using ArgCheck: ArgumentError
         jout = FreeJointFlow("jout", mc, :output)
         c = Component("sto", m, [jin, jout])
 
-        @test collect(keys(input(c.s))) == ["jin"]
-        @test collect(keys(output(c.s))) == ["jout"]
-        @test collect(keys(level(c.s))) == ["level"]
+        @test collect(keys(_input(c.s))) == ["jin"]
+        @test collect(keys(_output(c.s))) == ["jout"]
+        @test collect(keys(_level(c.s))) == ["level"]
 
         # testing variables and constraints after component is built
         @test nvariables(s) == 30 # storage level, jin and jout free joint flows @ each timestep

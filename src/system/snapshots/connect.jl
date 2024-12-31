@@ -84,13 +84,13 @@ Connect all compatible ports of component `c` to node `n` on snapshot `s`.
 """
 function connect!(s::Snapshot, c::Component, n::Node)
     local _connected = false
-    for p in values(input(portstructure(c)))
+    for p in values(_input(portstructure(c)))
         if carrier(p) == carrier(n)
             _connect!(s, c, n, :input, p)
             _connected = true
         end
     end
-    for p in values(output(portstructure(c)))
+    for p in values(_output(portstructure(c)))
         if carrier(p) == carrier(n)
             _connect!(s, c, n, :output, p)
             _connected = true

@@ -2,8 +2,8 @@ using Nosy: MassCarrier
 using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port
-using Nosy: PortStructure, addinput!, addoutput!, addlevel!
-using Nosy: Node, input, output, name, carrier, rule, iscurtailed
+using Nosy: PortStructure, addinput!, addlevel!
+using Nosy: Node, _input, name, carrier, rule, iscurtailed
 using Nosy: dualprice
 
 using JuMP: Model, AffExpr
@@ -32,7 +32,7 @@ using ArgCheck: ArgumentError
         @test !iscurtailed(n) 
 
         addinput!(n, "p1", p1)
-        @test input(n)["p1"] == p1
+        @test _input(n)["p1"] == p1
 
         # wrong carrier
         @test_throws AssertionError addinput!(n, "p2", p2)

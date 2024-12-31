@@ -3,7 +3,7 @@ using OrderedCollections: LittleDict
 """
 Balances on PortStructure.
 
-sense ∈ [input, output, level]
+sense ∈ [_input, _output, _level]
 
 Collapsed: summation over the time series -> return ~yearly sum.
 Agggregated: summation of the times series together -> return value for all time series together
