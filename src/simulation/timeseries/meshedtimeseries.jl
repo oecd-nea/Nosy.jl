@@ -52,6 +52,7 @@ Base.:/(s::AbstractMeshedTimeSeries, n::Number) = typeof(s).name.wrapper(s.data 
 
 # conversion of Number to Float64 to keep symmetry between Hourly and Stepwise and simplify types
 _toVal(v::AbstractVector{Bool}) = v
+_toVal(v::AbstractVector{Float64}) = v
 _toVal(v::AbstractVector{<:Number}) = Float64.(v)
 _toVal(v::AbstractVector{AffExpr}) = convert(Vector{AffExpr}, v)
 _toVal(v::AbstractVector{VariableRef}) = convert(Vector{VariableRef}, v)
@@ -123,12 +124,16 @@ In case the timestep duration is sub-hour, the hour -> step conversion considers
 Convert a Stepwise time series `s` into a Hourly.
 """
 function Hourly(s::Stepwise{T}) where T
-    # this sense is straightforward as all (integer) hours are contained in steps
-    v = Vector{T}(undef,nhours(s))
-    for h in eachhour(s)
-        v[h] = s[step(s.mesh,h)]
+    if isunit(s.mesh)
+        return Hourly(s.data, s.mesh) # faster conversion in case mesh is trivial
+    else
+        # this sense is straightforward as all (integer) hours are contained in steps
+        v = Vector{T}(undef,nhours(s))
+        for h in eachhour(s)
+            v[h] = s[step(s.mesh,h)]
+        end
+        return Hourly(v, s.mesh)
     end
-    return Hourly(v, s.mesh)
 end
 
 """
@@ -136,19 +141,23 @@ end
 Convert a Hourly time series `h` into a Stepwise.
 """
 function Stepwise(h::Hourly{T}) where T
-    # hypothesis: linear trend during the hour
-    # this also includes between last and first step
-    v = Vector{T}(undef, nsteps(h))
-    for s in eachstep(h)
-        curh = hour(h.mesh, s)
-        if isinteger(curh)
-            v[s] = h[Int(curh)]
-        else
-            icurh = Int(floor(curh))
-            v[s] = (icurh + 1 - curh) * h[icurh] + (curh - icurh) * h[icurh+1]
+    if isunit(h.mesh)
+        return Stepwise(h.data, h.mesh) # faster conversion in case mesh is trivial
+    else
+        # hypothesis: linear trend during the hour
+        # this also includes between last and first step
+        v = Vector{T}(undef, nsteps(h))
+        for s in eachstep(h)
+            curh = hour(h.mesh, s)
+            if isinteger(curh)
+                v[s] = h[Int(curh)]
+            else
+                icurh = Int(floor(curh))
+                v[s] = (icurh + 1 - curh) * h[icurh] + (curh - icurh) * h[icurh+1]
+            end
         end
+        return Stepwise(v, h.mesh)
     end
-    return Stepwise(v, h.mesh)
 end
 
 Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)

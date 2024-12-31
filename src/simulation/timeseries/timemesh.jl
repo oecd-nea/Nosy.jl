@@ -19,6 +19,7 @@ struct TimeMesh{T}
     nhour::Int64
     hour_at_step::GenericTimeSeries{T} # vector of size nstep, hour index as a function of step index
     step_at_hour::GenericTimeSeries{Int64} # vector of size nhour, step index as a function of hour index
+    isunit::Bool
 end
 
 const RTimeMesh = TimeMesh{Rational{Int64}} # enforce parametric type of mesh in the general case to avoid parameterizing AbstractMeshedTimeSeries
@@ -56,7 +57,8 @@ function TimeMesh(w::Vector{T}) where T
         nstep, 
         nhour, 
         GenericTimeSeries(hour_at_step), 
-        GenericTimeSeries(step_at_hour)
+        GenericTimeSeries(step_at_hour),
+        all(w .== 1//1)
     )
 end
 
@@ -71,6 +73,8 @@ step(m::TimeMesh, hour::Int) = m.step_at_hour[hour]
 
 eachhour(m) = 1:nhours(m)
 eachstep(m) = 1:nsteps(m)
+
+isunit(m::TimeMesh) = m.isunit
 
 # display mesh info
 function Base.show(io::IO, m::TimeMesh)
