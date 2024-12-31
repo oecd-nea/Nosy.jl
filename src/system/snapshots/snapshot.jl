@@ -31,6 +31,9 @@ nodes(s::Snapshot) = s.nodes
 hascomponent(s::Snapshot, cname::String) = haskey(components(s), cname)
 getcomponent(s::Snapshot, cname::String) = components(s)[cname]
 
+hasnode(s::Snapshot, nname::String) = haskey(nodes(s), nname)
+getnode(s::Snapshot, nname::String) = nodes(s)[nname]
+
 is_finalized(s::Snapshot) = s.finalized[]
 set_finalized!(s::Snapshot) = setindex!(s.finalized, true)
 
