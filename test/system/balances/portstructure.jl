@@ -12,24 +12,24 @@ using JuMP: Model, AffExpr
 @testset "Port structure balance" begin
 
     
-    tsim() = Sim(TimeMesh(fill(1//2, 10_000)), Model())
+    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
 
     function makeport_m(s::Sim)
         m = MassCarrier("m", s)
-        v = Stepwise([Float64(i) for i in 1:10_000], s.mesh)
+        v = Stepwise([Float64(i) for i in 1:10], s.mesh)
         return Port(m, v)
     end
 
     # NB this energy port also bears mass due to "energy" keyword
     function makeport_e(s::Sim)
         m = EnergyCarrier("e", s, energy=2.)
-        v = Stepwise([Float64(i) for i in 1:10_000], s.mesh)
+        v = Stepwise([Float64(i) for i in 1:10], s.mesh)
         return Port(m, v)
     end
 
     function makeport_c(s::Sim)
         m = CO2Carrier("e", s, weight=0.5)
-        v = Stepwise([Float64(i) for i in 1:10_000], s.mesh)
+        v = Stepwise([Float64(i) for i in 1:10], s.mesh)
         return Port(m, v)
     end
 

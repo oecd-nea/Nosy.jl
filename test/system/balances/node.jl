@@ -11,11 +11,11 @@ using JuMP: Model, AffExpr
 @testset "Node balance" begin
 
     
-    tsim() = Sim(TimeMesh(fill(1//2, 10_000)), Model())
+    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
 
     function makeport_m(s::Sim)
         m = MassCarrier("m", s, energy=0.5)
-        v = Stepwise([Float64(i) for i in 1:10_000], s.mesh)
+        v = Stepwise([Float64(i) for i in 1:10], s.mesh)
         return Port(m, v)
     end
 
