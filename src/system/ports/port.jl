@@ -61,6 +61,8 @@ _mass(::AbstractCarrierStyle, p::AbstractPort) = __mass(mass(carrier(p)), p)
 __mass(::Nothing, p::AbstractPort) = throw(AssertionError("Port does not carry mass"))
 __mass(s::Stepwise, p::AbstractPort) = _mult(s::Stepwise, p::AbstractPort)
 
+mass(p::AbstractPort, step::Int) = mass(p.carrier, step) * series(p)[step]
+
 # 
 
 energy(p::AbstractPort) = _energy(carrierstyle(carrier(p)), p)
@@ -70,6 +72,8 @@ _energy(::AbstractCarrierStyle, p::AbstractPort) = __energy(energy(carrier(p)), 
 
 __energy(::Nothing, p::AbstractPort) = throw(AssertionError("Port does not carry energy"))
 __energy(s::Stepwise, p::AbstractPort) = _mult(s::Stepwise, p::AbstractPort)
+
+energy(p::AbstractPort, step::Int) = energy(p.carrier, step) * series(p)[step]
 
 # 
 
@@ -81,12 +85,16 @@ _co2(::AbstractCarrierStyle, p::AbstractPort) = __co2(co2(carrier(p)), p)
 __co2(::Nothing, p::AbstractPort) = throw(AssertionError("Port does not carry mass"))
 __co2(s::Stepwise, p::AbstractPort) = _mult(s::Stepwise, p::AbstractPort)
 
+co2(p::AbstractPort, step::Int) = co2(p.carrier, step) * series(p)[step]
 
 # default modifier
 _defaultmodifier(p::AbstractPort) = _defaultmodifier(carrier(p)) # return the modifier function
 defaultmodifier(p::AbstractPort) = _defaultmodifier(p)(p) # apply the modifier function to the Port
 
+defaultmodifier(p::AbstractPort, step::Int) = defaultmodifier(p.carrier, step) * series(p)[step]
 
 # check whether port has a modifier
 # return a boolean
 hasmodifier(p::AbstractPort, modifier) = hasmodifier(carrier(p), modifier)
+
+_flow(p::AbstractPort, modifier::Function, step::Int) = modifier(p, step)

@@ -84,18 +84,16 @@ function getport(ps::PortStructure, pname::String)
     end
 end
 
+function getportsense(ps::PortStructure, sense::Symbol)
+    sense == :input && return _input(ps)
+    sense == :output && return _output(ps)
+    sense == :level && return _level(ps)
+    throw(ArgumentError("$s must be :input, :output or :level"))
+end
+
 # slightly sped-up function with a hint for port sense
 function getport(ps::PortStructure, pname::String, sense::Symbol)
-    if sense == :input
-        d = _input(ps)
-    elseif sense == :output
-        d = _output(ps)
-    elseif sense == :level
-        d = _level(ps)
-    else
-        throw(ArgumentError("hint must be :input, :output or :level"))
-    end
-    return d[pname]
+    return getportsense(ps, sense)[pname]
 end
 
 # return true if the port structure has a port with name pname, return false otherwise
@@ -124,4 +122,16 @@ function shallowcopy(ps::PortStructure)
         copy(_output(ps)),
         copy(_level(ps))
     )
+end
+
+
+"""
+Flow at a given step.
+"""
+
+# return the flow at a given step (as opposed to given hour)
+function _flow(ps::PortStructure{T}, pname::String, modifier::Function, step::Int)::T where T
+    p = getport(ps, pname)
+    isnothing(p) && throw(AssertionError("No port named $pname"))
+    return modifier(p, step)
 end

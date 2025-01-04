@@ -31,3 +31,17 @@ end
 _to_hourly(s::Stepwise) = Hourly(s)
 _to_hourly(d::AbstractDict{String,<:Stepwise}) = Dict(k => Hourly(v) for (k,v) in d)
 _to_hourly(d) = d
+
+
+"""
+    flow(s::Snapshot, name::String, sense::Symbol, modifier::Function, hour::Int)
+Return the flow of Node or Component with name `name`, in sense `sense`, with modifier `modifier`, at hour `hour`.
+"""
+function flow(s::Snapshot, name::String, sense::Symbol, modifier::Function, hour::Int)
+    if hascomponent(s, name)
+        return flow(getcomponent(s, name), sense, modifier, hour)
+    elseif hasnode(s, name)
+        return flow(getnode(s, name), sense, modifier, hour)
+    end
+    throw(AssertionError("Could not find component or node with name $name"))
+end

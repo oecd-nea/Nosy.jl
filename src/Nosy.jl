@@ -24,7 +24,7 @@ export cost, variablecost, fixedcost
 
 export costs, table
 
-export balance
+export balance, flow
 export mass, energy, co2
 
 export finalize!, optimize!
