@@ -4,7 +4,7 @@ using JuMP: Model, num_constraints, num_variables, list_of_constraint_types, sol
 Sim: data structure containing the information shared with all the simulation.
 """
 struct Sim
-    mesh::TimeMesh
+    mesh::RTimeMesh
     model::Model
     options::Dict{String,Any}
 end
@@ -15,7 +15,7 @@ Return a Sim based on the TimeMesh `mesh` and the JuMP model `model`.
 Optional arguments:
   * `options`: Dict containing options for the simulation
 """
-function Sim(mesh::TimeMesh, model::Model; options::Dict=_defaultoptions())
+function Sim(mesh::RTimeMesh, model::Model; options::Dict=_defaultoptions())
     return Sim(
         mesh,
         model,
