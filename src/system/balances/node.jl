@@ -26,6 +26,8 @@ end
 
 # return the flow of a node port at a given timestep
 _flow(n::Node, pname::String, modifier::Function, step::Int) = _flow(n.s, pname, modifier, step)
+_flow(n::Node, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(n.s, pname, sense, modifier, step)
+
 
 """
     flow(n::Node, pname::String, modifier::Function, hour::Int)
@@ -35,7 +37,13 @@ function flow(n::Node, pname::String, modifier::Function, hour::Int)
     return _flow(n, pname, modifier, step(sim(n).mesh, hour))
 end
 
-
+"""
+    flow(n::Node, pname::String, sense::Symbol, modifier::Function, hour::Int)
+Return the value of the flow of port named `pname` in sense `sense` of node `n` at hour `hour` modified by `modifier`.
+"""
+function flow(n::Node, pname::String, sense::Symbol, modifier::Function, hour::Int)
+    return _flow(n, pname, sense::Symbol, modifier, step(sim(n).mesh, hour))
+end
 
 # No carrier check for each port because all node ports have the same carrier
 # do not throw error if carrier is not compatible - return zero instead

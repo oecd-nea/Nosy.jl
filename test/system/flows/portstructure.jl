@@ -52,4 +52,21 @@ using JuMP: Model, AffExpr
 
     end
 
+    let s = tsim()
+
+        # Test port ambiguity management
+        p1 = makeport_m(s)
+        p2 = makeport_e(s)
+
+        ps = PortStructure{AffExpr}(s)
+        addinput!(ps, "p1", p1)
+        addoutput!(ps, "p1", p2) # same name
+
+        @test_throws AssertionError _flow(ps, "p1", mass, 1)
+
+        @test all((_flow(ps, "p1", :input, energy, step) for step in (1:10)) .== (1:10) .* (1:10))
+        @test all((_flow(ps, "p1", :output, energy, step) for step in (1:10)) .== 1:10)
+
+    end
+
 end

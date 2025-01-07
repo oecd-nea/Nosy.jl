@@ -45,3 +45,29 @@ function flow(s::Snapshot, name::String, sense::Symbol, modifier::Function, hour
     end
     throw(AssertionError("Could not find component or node with name $name"))
 end
+
+"""
+    flow(s::Snapshot, name::String, pname::String, modifier::Function, hour::Int)
+Return the flow of port `pname` of Node or Component with name `name`, with modifier `modifier`, at hour `hour`.
+"""
+function flow(s::Snapshot, name::String, pname::String, modifier::Function, hour::Int)
+    if hascomponent(s, name)
+        return flow(getcomponent(s, name), pname, modifier, hour)
+    elseif hasnode(s, name)
+        return flow(getnode(s, name), pname, modifier, hour)
+    end
+    throw(AssertionError("Could not find component or node with name $name"))
+end
+
+"""
+    flow(s::Snapshot, name::String, pname::String, sense::Symbol, modifier::Function, hour::Int)
+Return the flow of port `pname` of Node or Component with name `name`, in sense `sense`, with modifier `modifier`, at hour `hour`.
+"""
+function flow(s::Snapshot, name::String, pname::String, sense::Symbol, modifier::Function, hour::Int)
+    if hascomponent(s, name)
+        return flow(getcomponent(s, name), pname, sense, modifier, hour)
+    elseif hasnode(s, name)
+        return flow(getnode(s, name), pname, sense, modifier, hour)
+    end
+    throw(AssertionError("Could not find component or node with name $name"))
+end

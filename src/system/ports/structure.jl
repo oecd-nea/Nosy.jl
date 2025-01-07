@@ -75,13 +75,22 @@ end
 
 # return the port associated with name pname
 # return nothing if there is no such port
-function getport(ps::PortStructure, pname::String)
-    for s in (_input, _output, _level)
-        d = s(ps)
+# if checkunique, throw an error if ps contains multiple ports named pname
+function getport(ps::PortStructure, pname::String, checkunique::Bool=false)
+    local found = false
+    local p = nothing
+    for d in (_input(ps), _output(ps), _level(ps))
         if haskey(d, pname)
-            return d[pname]
+            p = d[pname]
+            if checkunique
+                found && throw(AssertionError("Port structure contains multiple ports with name $pname"))
+                found = true
+            else
+                break
+            end
         end
     end
+    return p
 end
 
 function getportsense(ps::PortStructure, sense::Symbol)
@@ -92,8 +101,11 @@ function getportsense(ps::PortStructure, sense::Symbol)
 end
 
 # slightly sped-up function with a hint for port sense
+# no need to check presence of multiple ports with same name: this can't happen when sense is defined
 function getport(ps::PortStructure, pname::String, sense::Symbol)
-    return getportsense(ps, sense)[pname]
+    d = getportsense(ps, sense)
+    @assert haskey(d, pname) "No port named $pname"
+    return d[pname]
 end
 
 # return true if the port structure has a port with name pname, return false otherwise
@@ -130,8 +142,17 @@ Flow at a given step.
 """
 
 # return the flow at a given step (as opposed to given hour)
+#for this method, sense is not given, therefore pname ambiguity must be checked
 function _flow(ps::PortStructure{T}, pname::String, modifier::Function, step::Int)::T where T
-    p = getport(ps, pname)
+    p = getport(ps, pname, true) # throw an error if pname is ambiguous (e.g. exists in both input/output of ps)
+    isnothing(p) && throw(AssertionError("No port named $pname"))
+    return modifier(p, step)
+end
+
+# return the flow at a given step (as opposed to given hour)
+# for this method, sense is given
+function _flow(ps::PortStructure{T}, pname::String, sense::Symbol, modifier::Function, step::Int)::T where T
+    p = getport(ps, pname, sense)
     isnothing(p) && throw(AssertionError("No port named $pname"))
     return modifier(p, step)
 end

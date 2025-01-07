@@ -2,7 +2,7 @@ using Nosy: MassCarrier
 using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port
-using Nosy: PortStructure, addinput!, addoutput!, addlevel!
+using Nosy: PortStructure, addinput!, addoutput!, addlevel!, getport
 using Nosy: hasinput, hasoutput, haslevel, hasport
 using Nosy: allports, hasuniquecarrier, isempty
 using JuMP: Model, AffExpr
@@ -146,6 +146,20 @@ using JuMP: Model, AffExpr
         addlevel!(ps, "p2", p2)
         @test !hasuniquecarrier(ps)
 
+    end  
+
+    let s = tsim()
+
+        p1 = makeport(s)
+        p2 = makeport(s)
+
+        ps = PortStructure{AffExpr}(s)
+
+        #testing ports with same name in input and output
+        addinput!(ps, "p1", p1)
+        addoutput!(ps, "p1", p2) # 
+        @test_throws AssertionError getport(ps, "p1", true) # ambiguous port name check
+        @test getport(ps, "p1", false) == p1 # no check => input has priority
     end  
 
 end
