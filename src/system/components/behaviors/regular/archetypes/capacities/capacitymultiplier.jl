@@ -40,6 +40,8 @@ end
 
 _portname(b::CapacityMultiplierBehavior) = b.data.pname
 
+_mult(b::CapacityMultiplierBehavior) = b.val
+
 # check whether c has compatible capacity behavior
 # enforcing the constraint itself is delegated to the capacity behavior
 function _apply_constraints!(c::Component, m::CapacityMultiplierBehavior) # no inherent constraint; but constraints of FixedCapacity and VariableCapacity are modified

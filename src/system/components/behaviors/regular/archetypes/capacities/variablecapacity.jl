@@ -83,7 +83,7 @@ end
 function _apply_constraints!(c::Component, b::VariableCapacityBehavior, mult::CapacityMultiplierBehavior)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @argcheck _portname(b) == _portname(mult) "the variable capacity and the capacity multiplier do not target the same port"
-    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= (_capacity(b) * mult.val).data)
+    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= capacity(c, _portname(b), multiplier=true).data)
 end
 
 # redirect application of capacity constraint to model
