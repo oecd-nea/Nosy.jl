@@ -52,19 +52,19 @@ using HiGHS
 
         # flow at a given hour
 
-        @test all((flow(c, "input", mass, h) for h in 1:5) .== 1:2:10)
-        @test all((flow(c, "input", energy, h) for h in 1:5) .== ((1:2:10) .* (1:2:10)))
-        @test all((flow(c, "output", energy, h) for h in 1:5) .== ((1:2:10) * 0.5))
+        @test all((flow(c, "input", mass, h) for h in 0:4) .== 1:2:10)
+        @test all((flow(c, "input", energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
+        @test all((flow(c, "output", energy, h) for h in 0:4) .== ((1:2:10) * 0.5))
         
         @test_throws AssertionError flow(c, "input", co2, 1) # CO2 modifier not compatible
         @test_throws AssertionError flow(c, "noname", mass, 1) # no port named "noname"
 
-        @test all((flow(c, :input, mass, h) for h in 1:5) .== (1:2:10))
-        @test all((flow(c, :output, energy, h) for h in 1:5) .== ((1:2:10) * 0.5))
+        @test all((flow(c, :input, mass, h) for h in 0:4) .== (1:2:10))
+        @test all((flow(c, :output, energy, h) for h in 0:4) .== ((1:2:10) * 0.5))
 
-        @test all((flow(c, :input, energy, h) for h in 1:5) .== ((1:2:10) .* (1:2:10)))
+        @test all((flow(c, :input, energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
 
-        @test all(iszero(_flow(c, :output, co2, h)) for h in 1:5)
+        @test all(iszero(_flow(c, :output, co2, h)) for h in 0:4)
 
     end
 
@@ -110,19 +110,19 @@ using HiGHS
 
         @test_throws AssertionError flow(c, "input", mass, 1) # ambiguous port name
 
-        @test all((flow(c, "input", :input, mass, h) for h in 1:5) .== 1:2:10)
-        @test all((flow(c, "input", :input, energy, h) for h in 1:5) .== ((1:2:10) .* (1:2:10)))
-        @test all((flow(c, "output", :output, energy, h) for h in 1:5) .== ((1:2:10) * 0.5))
+        @test all((flow(c, "input", :input, mass, h) for h in 0:4) .== 1:2:10)
+        @test all((flow(c, "input", :input, energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
+        @test all((flow(c, "output", :output, energy, h) for h in 0:4) .== ((1:2:10) * 0.5))
         
         @test_throws AssertionError flow(c, "input", :input, co2, 1) # CO2 modifier not compatible
         @test_throws AssertionError flow(c, "noname", :input, mass, 1) # no port named "noname"
 
-        @test all((flow(c, :input, mass, h) for h in 1:5) .== (1:2:10))
-        @test all((flow(c, :output, energy, h) for h in 1:5) .== ((1:2:10) * 0.5 + (1:2:10) .* (1:2:10)))
+        @test all((flow(c, :input, mass, h) for h in 0:4) .== (1:2:10))
+        @test all((flow(c, :output, energy, h) for h in 0:4) .== ((1:2:10) * 0.5 + (1:2:10) .* (1:2:10)))
 
-        @test all((flow(c, :input, energy, h) for h in 1:5) .== ((1:2:10) .* (1:2:10)))
+        @test all((flow(c, :input, energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
 
-        @test all(iszero(_flow(c, :output, co2, h)) for h in 1:5)
+        @test all(iszero(_flow(c, :output, co2, h)) for h in 0:4)
 
     end
 

@@ -57,20 +57,20 @@ using JuMP: Model, AffExpr
 
         # flow at a given hour
 
-        @test all((flow(n, "p1", mass, h) for h in 1:5) .== 1:2:10)
-        @test all((flow(n, "p1", energy, h) for h in 1:5) .== (1:2:10) * 0.5)
+        @test all((flow(n, "p1", mass, h) for h in 0:4) .== 1:2:10)
+        @test all((flow(n, "p1", energy, h) for h in 0:4) .== (1:2:10) * 0.5)
         
         @test_throws AssertionError flow(n, "p1", co2, 1) # CO2 modifier not compatible
 
         @test_throws AssertionError flow(n, "p4", mass, 1) # no port named "p4"
 
-        @test all((flow(n, :input, mass, h) for h in 1:5) .== (1:2:10) * 2)
-        @test all((flow(n, :output, mass, h) for h in 1:5) .== (1:2:10) * 1)
+        @test all((flow(n, :input, mass, h) for h in 0:4) .== (1:2:10) * 2)
+        @test all((flow(n, :output, mass, h) for h in 0:4) .== (1:2:10) * 1)
 
-        @test all((flow(n, :input, energy, h) for h in 1:5) .== (1:2:10) * 2 * 0.5)
-        @test all((flow(n, :output, energy, h) for h in 1:5) .== (1:2:10) * 1 * 0.5)
+        @test all((flow(n, :input, energy, h) for h in 0:4) .== (1:2:10) * 2 * 0.5)
+        @test all((flow(n, :output, energy, h) for h in 0:4) .== (1:2:10) * 1 * 0.5)
 
-        @test all(iszero(flow(n, :output, co2, h)) for h in 1:5) # CO2 modifier not compatible
+        @test all(iszero(flow(n, :output, co2, h)) for h in 0:4) # CO2 modifier not compatible
 
     end
 
@@ -107,10 +107,10 @@ using JuMP: Model, AffExpr
 
         # flow at a given hour
 
-        @test all((flow(n, "p1", energy, h) for h in 1:5) .== ((1:2:10) .* (1:2:10)))
+        @test all((flow(n, "p1", energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
 
-        @test all((flow(n, :input, energy, h) for h in 1:5) .== ((1:2:10) .* 2 .* (1:2:10)))
-        @test all((flow(n, :output, energy, h) for h in 1:5) .== ((1:2:10) .* 1 .* (1:2:10)))
+        @test all((flow(n, :input, energy, h) for h in 0:4) .== ((1:2:10) .* 2 .* (1:2:10)))
+        @test all((flow(n, :output, energy, h) for h in 0:4) .== ((1:2:10) .* 1 .* (1:2:10)))
 
     end
 
@@ -144,11 +144,11 @@ using JuMP: Model, AffExpr
         
         @test_throws AssertionError flow(n, "p1", energy, 1) # ambiguous port name
 
-        @test all((flow(n, "p1", :input, energy, h) for h in 1:5) .== ((1:2:10) .* (1:2:10)))
-        @test all((flow(n, "p1", :output, energy, h) for h in 1:5) .== ((1:2:10) .* 0.5))
+        @test all((flow(n, "p1", :input, energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
+        @test all((flow(n, "p1", :output, energy, h) for h in 0:4) .== ((1:2:10) .* 0.5))
 
-        @test all((flow(n, :input, energy, h) for h in 1:5) .== ((1:2:10) .* 2 .* (1:2:10)))
-        @test all((flow(n, :output, energy, h) for h in 1:5) .== ((1:2:10) .* 0.5))
+        @test all((flow(n, :input, energy, h) for h in 0:4) .== ((1:2:10) .* 2 .* (1:2:10)))
+        @test all((flow(n, :output, energy, h) for h in 0:4) .== ((1:2:10) .* 0.5))
 
     end
 

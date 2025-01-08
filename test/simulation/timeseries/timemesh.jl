@@ -28,7 +28,7 @@ using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep
         @test nsteps(m) == 8760
         @test all(weight(m, s) == 1 for s in 1:8760)
         @test all(hour(m, s) == s for s in 1:8760)
-        @test all(step(m, h) == h for h in 1:8760)
+        @test all(step(m, h-1) == h for h in 1:8760)
         @test eachhour(m) == 1:8760
         @test eachstep(m) == 1:8760
     
@@ -49,7 +49,7 @@ using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep
         @test nsteps(m) == 8760*2
         @test all(weight(m, s) == 1//2 for s in 1:(8760*2))
         @test all(hour(m, s) == (s+1)/2 for s in 1:(8760*2))
-        @test all(step(m, h) == 2*h-1 for h in 1:8760)
+        @test all(step(m, h-1) == 2*h-1 for h in 1:8760)
         @test eachhour(m) == 1:8760
         @test eachstep(m) == 1:(8760*2)
     
@@ -72,7 +72,7 @@ using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep
         @test all(weight(m, s) == 3//4 for s in 2:2:(8760*2))
         @test all(hour(m, s) == Rational((s-1)/2)+1 for s in 1:2:(8760*2))
         @test all(hour(m, s) == 1//4 + s/2 for s in 2:2:(8760*2))
-        @test all(step(m, h) == 2*h-1 for h in 1:8760)
+        @test all(step(m, h-1) == 2*h-1 for h in 1:8760)
         @test eachhour(m) == 1:8760
         @test eachstep(m) == 1:(8760*2)    
     

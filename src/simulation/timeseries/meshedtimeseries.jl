@@ -129,8 +129,8 @@ function Hourly(s::Stepwise{T}) where T
     else
         # this sense is straightforward as all (integer) hours are contained in steps
         v = Vector{T}(undef,nhours(s))
-        for h in eachhour(s)
-            v[h] = s[step(s.mesh,h)]
+        for h in eachhour(s) # iterating on hour index
+            v[h] = s[step(s.mesh,h-1)] # hour value is hour index -1
         end
         return Hourly(v, s.mesh)
     end

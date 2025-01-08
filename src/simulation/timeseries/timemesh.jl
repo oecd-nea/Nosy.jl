@@ -68,8 +68,15 @@ nsteps(m::TimeMesh) = m.nstep
 weight(m::TimeMesh) = m.weight
 weight(m::TimeMesh, step::Int) = m.weight[step]
 
-hour(m::TimeMesh, step::Int) = m.hour_at_step[step]
-step(m::TimeMesh, hour::Int) = m.step_at_hour[hour]
+# Important note: 
+# hour index denotes the number of the current hour, as vector index, starting at 1
+# hour value denotes the actual value of the current hour, starting at 0
+# in a year, the hour index is between 1:8760
+# in a year, the hour value is between 0:8759
+# hour value at index 1 is 0: "the first hour of the year is between 00:00 and 01:00"
+
+hour(m::TimeMesh, step::Int) = m.hour_at_step[step] # hour INDEX at a given step
+step(m::TimeMesh, hour::Int) = m.step_at_hour[hour+1] # step at a given hour VALUE
 
 eachhour(m) = 1:nhours(m)
 eachstep(m) = 1:nsteps(m)
