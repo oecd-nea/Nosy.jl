@@ -24,6 +24,28 @@ function balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true
     end
 end
 
+# balance applied to only one port of the component
+# this function should not be exported, it is used for behaviors e.g. variable cost
+# this is almost the same method as for components
+function _balance(n::Node, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
+    @argcheck sense in (:input, :output) "sense must be either :input or :output"
+    if sense == :input
+        @argcheck hasinput(n.s, pname) "Node $(name(n)) does not have input $pname"
+        if collapse
+            return _collapse_balance_one(n.s, pname, _input, modifier)
+        else
+            return _balance_one(n.s, pname, _input, modifier)
+        end
+    else # if sense == :output
+        @argcheck hasoutput(n.s, pname) "Node $(name(cn)) does not have output $pname"
+        if collapse
+            return _collapse_balance_one(n.s, pname, _output, modifier)
+        else
+            return _balance_one(n.s, pname, _output, modifier)
+        end
+    end
+end
+
 # return the flow of a node port at a given timestep
 _flow(n::Node, pname::String, modifier::Function, step::Int) = _flow(n.s, pname, modifier, step)
 _flow(n::Node, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(n.s, pname, sense, modifier, step)

@@ -26,6 +26,7 @@ end
 
 # balance applied to only one port of the component
 # this function should not be exported, it is used for behaviors e.g. variable cost
+# this is almost the same method as for nodes
 function _balance(c::Component, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
     @argcheck sense in (:input, :output) "sense must be either :input or :output"
     if sense == :input

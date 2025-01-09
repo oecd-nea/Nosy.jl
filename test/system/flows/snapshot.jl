@@ -106,6 +106,13 @@ using HiGHS
         @test isapprox(sum(flow(s, "source", :output, mass, month=m) for m in 1:12), sum(1:8760)*2/3*1.3)
         @test isapprox(flow(s, "source", :output, mass), sum(1:8760)*2/3*1.3)
 
+        @test all(isapprox.(flow(s, "en", :output, energy, hour=h), h+1) for h in 0:8759)
+        @test isapprox(flow(s, "en", :output, energy, day=1), sum(1:24))
+        @test isapprox(sum(flow(s, "en", :output, energy, day=d) for d in 1:365), sum(1:8760))
+        @test isapprox(flow(s, "en", :output, energy, month=1), sum(1:(24*31)))
+        @test isapprox(sum(flow(s, "en", :output, energy, month=m) for m in 1:12), sum(1:8760))
+        @test isapprox(flow(s, "en", :output, energy), sum(1:8760))
+
 
         # specifying pname
         @test all(isapprox.(flow(s, "demand", "input", :input, energy, hour=h), h+1) for h in 0:8759)
@@ -142,6 +149,14 @@ using HiGHS
         @test isapprox(flow(s, "source", "mc2", :output, mass, month=1), sum(1:(24*31))*2/3*0.3)
         @test isapprox(sum(flow(s, "source", "mc2", :output, mass, month=m) for m in 1:12), sum(1:8760)*2/3*0.3)
         @test isapprox(flow(s, "source", "mc2", :output, mass), sum(1:8760)*2/3*0.3)
+
+        @test all(isapprox.(flow(s, "en", "demand", :output, energy, hour=h), h+1) for h in 0:8759)
+        @test isapprox(flow(s, "en", "demand", :output, energy, day=1), sum(1:24))
+        @test isapprox(sum(flow(s, "en", "demand", :output, energy, day=d) for d in 1:365), sum(1:8760))
+        @test isapprox(flow(s, "en", "demand", :output, energy, month=1), sum(1:(24*31)))
+        @test isapprox(sum(flow(s, "en", "demand", :output, energy, month=m) for m in 1:12), sum(1:8760))
+        @test isapprox(flow(s, "en", "demand", :output, energy), sum(1:8760))
+
     end
 
 end
