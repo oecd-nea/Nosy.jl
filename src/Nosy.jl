@@ -9,6 +9,7 @@ export DispatchableSource, ProfileSource
 export BasicStorage, LazyStorage
 
 export VariableCapacity, FixedCapacity
+export CapacityMultiplier
 export UnitCommitment
 export Ramping
 export YearlySum
