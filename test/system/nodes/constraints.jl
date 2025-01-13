@@ -11,7 +11,7 @@ using JuMP: Model, AffExpr
 @testset "Node constraints" begin
 
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     function makecomp(name, mc, ec, vbehavior=[])   
         d = BasicConverter(mc, ec)

@@ -14,7 +14,7 @@ using HiGHS
 @testset "Snapshot flow" begin
 
     function makesnapshot()
-        sim = Sim(TimeMesh(fill(1//1,8760)), Model(HiGHS.Optimizer))
+        sim = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(1//1,8760)))
         set_silent(sim.model)
 
         mc = MassCarrier("mc", sim, energy=3.)

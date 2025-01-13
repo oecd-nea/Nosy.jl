@@ -12,7 +12,7 @@ using ArgCheck: ArgumentError
 
 @testset "Snapshot capacity" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     function makeconv(s, vb)
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])

@@ -11,7 +11,7 @@ using ArgCheck: ArgumentError
 
 @testset "FixedCapacity" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     function makecomp(vbehavior=[])
         s = tsim()    

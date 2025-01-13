@@ -10,12 +10,13 @@ struct Sim
 end
 
 """
-    Sim(mesh::TimeMesh, model::Model; options)
-Return a Sim based on the TimeMesh `mesh` and the JuMP model `model`.
+    Sim(model::Model; mesh::RTimeMesh=TimeMesh(), options::Dict=_defaultoptions())
+Return a Sim based on the JuMP model `model`.
 Optional arguments:
+  * `mesh`: TimeMesh for the simulation (default: 8760 hours, 1 step per hour)
   * `options`: Dict containing options for the simulation
 """
-function Sim(mesh::RTimeMesh, model::Model; options::Dict=_defaultoptions())
+function Sim(model::Model; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh())
     return Sim(
         mesh,
         model,

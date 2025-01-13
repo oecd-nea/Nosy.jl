@@ -14,7 +14,7 @@ using HiGHS: Optimizer
 
 @testset "CapacityMultiplier" begin
 
-    tsim(model=nothing) = Sim(TimeMesh(fill(1//2, 10)), JuMP.Model(model))
+    tsim(model=nothing) = Sim(JuMP.Model(model), mesh=TimeMesh(fill(1//2, 10)))
 
     function makeconv(model=nothing)
         s = tsim(model)

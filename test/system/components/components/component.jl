@@ -11,7 +11,7 @@ using JuMP: Model, AffExpr
 
 @testset "Component" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     getvariable(e::AffExpr) = first(e.terms)[1]
 

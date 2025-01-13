@@ -25,7 +25,7 @@ using ArgCheck: ArgumentError
     # no negative cost
     @test_throws ArgumentError FixedCost(:overnight, "input", mass, -5.)
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     function makeconv(vb)
         s = tsim()    

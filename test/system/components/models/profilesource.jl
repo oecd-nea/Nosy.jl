@@ -10,7 +10,7 @@ using JuMP: Model
 
 @testset "ProfileSource" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
 
     let profile = collect(1:10) / 10 # ~stepwise profile

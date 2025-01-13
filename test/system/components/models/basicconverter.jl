@@ -10,7 +10,7 @@ using ArgCheck: ArgumentError
 
 @testset "BasicConverter" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     # energy modifier, scalar ratio
     let s = tsim()

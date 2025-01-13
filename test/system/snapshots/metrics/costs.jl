@@ -11,7 +11,7 @@ using ArgCheck: ArgumentError
 
 @testset "Snapshot costs" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     # snapshot with one component
     function makeconv(s, vb, cname="comp")

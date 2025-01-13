@@ -62,6 +62,9 @@ function TimeMesh(w::Vector{T}) where T
     )
 end
 
+# default TimeMesh (8760 hours, 1 step per hour)
+TimeMesh() = TimeMesh(fill(1//1, 8760))
+
 nhours(m::TimeMesh) = m.nhour
 nsteps(m::TimeMesh) = m.nstep
 

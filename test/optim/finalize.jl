@@ -9,7 +9,7 @@ using JuMP: Model
 
 @testset "Snapshot finalization" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     # # snapshot with one node and 2 components, no joint flows
     let s = tsim()

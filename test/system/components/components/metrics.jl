@@ -14,7 +14,7 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
 @testset "Component metrics" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     getvariable(e::AffExpr) = first(e.terms)[1]
 

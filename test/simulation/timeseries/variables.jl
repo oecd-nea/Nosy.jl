@@ -7,7 +7,7 @@ using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound, is_binar
 
 @testset "Stepwise variables" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     # get variable from a one-variable AffExpr (does not work if AffExpr has multiple terms)
     getvariable(e::AffExpr) = first(e.terms)[1]

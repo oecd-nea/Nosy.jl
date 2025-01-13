@@ -15,7 +15,7 @@ import HiGHS
 
 @testset "BasicStorage" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model(HiGHS.Optimizer))
+    tsim() = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(1//2, 10)))
 
     let s = tsim()
 

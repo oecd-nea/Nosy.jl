@@ -10,7 +10,7 @@ using JuMP: Model, AffExpr
 @testset "Port flow" begin
 
     
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     function makeport_m(s::Sim)
         m = MassCarrier("m", s, energy=collect(1:10))

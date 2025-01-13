@@ -12,7 +12,7 @@ using HiGHS: Optimizer
 
 @testset "Snapshot extraction" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model(Optimizer))
+    tsim() = Sim(Model(Optimizer), mesh=TimeMesh(fill(1//2, 10)))
 
     # test on basic elements
     # _extract should return the element itself, not a copy

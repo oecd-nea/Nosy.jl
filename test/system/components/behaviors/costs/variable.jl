@@ -13,7 +13,7 @@ using ArgCheck: ArgumentError
 
 @testset "VariableCost" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     function makeconv(vb)
         s = tsim()    

@@ -9,7 +9,7 @@ using JuMP: Model
 
 @testset "DispatchableSource" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     let s = tsim()
 

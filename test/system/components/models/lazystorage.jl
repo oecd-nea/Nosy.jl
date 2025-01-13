@@ -13,7 +13,7 @@ using ArgCheck: ArgumentError
 
 @testset "LazyStorage" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model())
+    tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
     # energy modifier, scalar ratio
     let s = tsim()

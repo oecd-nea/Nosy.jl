@@ -13,7 +13,7 @@ using HiGHS: Optimizer
 
 @testset "Dual price" begin
 
-    tsim() = Sim(TimeMesh(fill(1//2, 10)), Model(Optimizer))
+    tsim() = Sim(Model(Optimizer), mesh=TimeMesh(fill(1//2, 10)))
 
 
     # simple problem that can be solved analytically: deploy same capacity of source as demand
