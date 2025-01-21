@@ -3,14 +3,23 @@ Extraction of solution.
 """
 
 using JuMP: AffExpr, value, is_solved_and_feasible
+using JuMP: termination_status, OPTIMIZE_NOT_CALLED
 
 """
     extract(s::Snapshot)
 Return a Snapshot populated with values corresponding to the optimized system.
 """
 function extract(s::Snapshot{AffExpr})
-    @assert is_solved_and_feasible(sim(s).model) "System is not optimized"
-    return _extract(s)
+    m = sim(s).model
+    if is_solved_and_feasible(m)
+        return _extract(s)
+    elseif termination_status(m) == OPTIMIZE_NOT_CALLED
+        throw(AssertionError("Optimizer was not called"))
+    else
+        println("Termination status: ", termination_status(m))
+        @warn "System is not optimized. Returning the problem instead of the result."
+        return s
+    end
 end
 extract(::Snapshot{Float64}) = throw(ArgumentError("Snapshot is already extracted"))
 
