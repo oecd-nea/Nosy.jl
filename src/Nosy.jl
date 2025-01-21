@@ -1,6 +1,8 @@
 module Nosy
 
 export TimeMesh, Sim, sim
+export Model
+
 export MassCarrier, EnergyCarrier, CO2Carrier
 
 export BasicConverter
