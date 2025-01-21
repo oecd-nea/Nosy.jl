@@ -31,6 +31,7 @@ export balance, flow
 export mass, energy, co2
 
 export finalize!, optimize!
+export conflicts
 export extract
 
 include("simulation/_includes.jl")
