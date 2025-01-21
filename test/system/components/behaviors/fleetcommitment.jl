@@ -1,7 +1,7 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim, nsteps
 using Nosy: VariableCapacity, FixedCapacity, capacity
-using Nosy: UnitCommitment, FleetUnitCommitmentBehavior
+using Nosy: UnitCommitment, FleetUnitCommitmentBehavior, _up
 using Nosy: getbehaviors
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
@@ -47,6 +47,7 @@ Some notes and observations:
         df[!,"st"] = uc.startup.data
         df[!,"sd"] = uc.shutdown.data
         df[!,"v"] = uc.variable.data
+        df[!, "up"] = _up(uc)
         df[!,"b"] = balance(c, :output, energy, collapse=false)
         return df
     end
@@ -87,18 +88,19 @@ Some notes and observations:
 
     end
 
-
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	0.0
-    # 2	    2.0	2.0	2.0	5.0	10.0
-    # 3	    0.0	0.0	0.0	0.0	0.0
-    # 4	    2.0	2.0	0.0	5.0	10.0
-    # 5	    2.0	0.0	0.0	5.0	10.0
-    # 6	    2.0	0.0	0.0	5.0	10.0
-    # 7	    2.0	0.0	0.0	5.0	10.0
-    # 8	    2.0	0.0	0.0	5.0	10.0
-    # 9	    2.0	0.0	0.0	5.0	10.0
-    # 10	2.0	0.0	2.0	5.0	10.0
+    #=
+        t	uc	st	sd	v	up	b
+        1	0.0	0.0	0.0	0.0	0.0	0.0
+        2	2.0	2.0	2.0	5.0	2.0	10.0
+        3	0.0	0.0	0.0	0.0	0.0	0.0
+        4	2.0	2.0	0.0	5.0	2.0	10.0
+        5	2.0	0.0	0.0	5.0	2.0	10.0
+        6	2.0	0.0	0.0	5.0	2.0	10.0
+        7	2.0	0.0	0.0	5.0	2.0	10.0
+        8	2.0	0.0	0.0	5.0	2.0	10.0
+        9	2.0	0.0	0.0	5.0	2.0	10.0
+        10	2.0	0.0	2.0	5.0	2.0	10.0
+    =#
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, integer=false)
@@ -136,20 +138,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [0., 10., 0., 10., 10., 10., 10., 10., 10., 10.])
+        @test all(_up(_m.behaviors[2]) .== [0, 2, 0, 2, 2, 2, 2, 2, 2, 2])
     end
 
-
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	0.0
-    # 2	    0.0	0.0	0.0	0.0	0.0
-    # 3	    0.0	0.0	0.0	0.0	0.0
-    # 4	    0.0	0.0	0.0	0.0	0.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	0.0
-    # 9	    0.0	0.0	0.0	0.0	0.0
-    # 10	0.0	0.0	0.0	0.0	0.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	0.0	0.0
+    2	0.0	0.0	0.0	0.0	0.0	0.0
+    3	0.0	0.0	0.0	0.0	0.0	0.0
+    4	0.0	0.0	0.0	0.0	0.0	0.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	0.0	0.0
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	0.0	0.0
+    =#
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=3, shutdown=2, uptime=0, downtime=0, integer=false)
@@ -167,20 +171,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== 0.)
+        @test all(_up(_m.behaviors[2]) .== 0.)
     end
 
-
-    # t	    uc	st	sd	v	b
-    # 1	    1.0	0.0	0.0	0.0	5.0
-    # 2	    1.0	0.0	0.0	0.0	5.0
-    # 3	    1.0	0.0	1.0	0.0	5.0
-    # 4	    0.0	0.0	0.0	0.0	2.5
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	2.5
-    # 7	    1.0	1.0	0.0	0.0	5.0
-    # 8	    1.0	0.0	0.0	0.0	5.0
-    # 9	    1.0	0.0	0.0	0.0	5.0
-    # 10	1.0	0.0	0.0	0.0	5.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	1.0	0.0	0.0	0.0	1.0	5.0
+    2	1.0	0.0	0.0	0.0	1.0	5.0
+    3	1.0	0.0	1.0	0.0	1.0	5.0
+    4	0.0	0.0	0.0	0.0	1.0	2.5
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	1.0	2.5
+    7	1.0	1.0	0.0	0.0	1.0	5.0
+    8	1.0	0.0	0.0	0.0	1.0	5.0
+    9	1.0	0.0	0.0	0.0	1.0	5.0
+    10	1.0	0.0	0.0	0.0	1.0	5.0
+    =#
     let   
         cap = FixedCapacity("input", mass, 5., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=1, shutdown=1, uptime=0, downtime=0, integer=false)
@@ -198,20 +204,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [5., 5., 5., 2.5, 0., 2.5, 5., 5., 5., 5.])
+        @test all(_up(_m.behaviors[2]) .== [1, 1, 1, 1, 0, 1, 1, 1, 1, 1])
     end
 
-
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	0.0
-    # 2	    0.0	0.0	0.0	0.0	0.0
-    # 3	    0.0	0.0	0.0	0.0	0.0
-    # 4	    0.0	0.0	0.0	0.0	2.5
-    # 5	    2.0	2.0	0.0	5.0	10.0
-    # 6	    2.0	0.0	0.0	0.0	5.0
-    # 7	    2.0	0.0	0.0	0.0	5.0
-    # 8	    2.0	0.0	2.0	0.0	5.0
-    # 9	    0.0	0.0	0.0	0.0	2.5
-    # 10	0.0	0.0	0.0	0.0	0.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	0.0	0.0
+    2	0.0	0.0	0.0	0.0	0.0	0.0
+    3	0.0	0.0	0.0	0.0	0.0	0.0
+    4	0.0	0.0	0.0	0.0	2.0	2.5
+    5	2.0	2.0	0.0	5.0	2.0	10.0
+    6	2.0	0.0	0.0	0.0	2.0	5.0
+    7	2.0	0.0	2.0	0.0	2.0	5.0
+    8	0.0	0.0	0.0	0.0	2.0	2.5
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	0.0	0.0
+    =#
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=1, shutdown=1, uptime=1, downtime=0, integer=true)
@@ -228,20 +236,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 2.5, 10., 5., 5., 2.5, 0., 0.])
+        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 2., 2., 2., 2., 2., 0., 0.])
     end
 
-
-    # t	    uc	st	sd	v	b
-    # 1	    2.0	0.0	0.0	5.0	10.0
-    # 2	    2.0	0.0	0.0	5.0	10.0
-    # 3	    2.0	0.0	2.0	5.0	10.0
-    # 4	    0.0	0.0	0.0	0.0	2.5
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	2.5
-    # 9	    2.0	2.0	0.0	5.0	10.0
-    # 10	2.0	0.0	0.0	5.0	10.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	2.0	0.0	0.0	5.0	2.0	10.0
+    2	2.0	0.0	0.0	5.0	2.0	10.0
+    3	2.0	0.0	2.0	5.0	2.0	10.0
+    4	0.0	0.0	0.0	0.0	2.0	2.5
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	2.0	2.5
+    9	2.0	2.0	0.0	5.0	2.0	10.0
+    10	2.0	0.0	0.0	5.0	2.0	10.0
+    =#
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=1, shutdown=1, uptime=0, downtime=1, integer=true)
@@ -258,20 +268,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 2.5, 0., 0., 0., 2.5, 10., 10.])
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 2., 2., 2.])
     end
 
-
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	5.0
-    # 2	    0.0	0.0	0.0	0.0	7.5
-    # 3	    2.0	2.0	2.0	0.0	10.0
-    # 4	    0.0	0.0	0.0	0.0	5.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	0.0
-    # 9	    0.0	0.0	0.0	0.0	0.0
-    # 10	0.0	0.0	0.0	0.0	2.5
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	2.0	5.0
+    2	0.0	0.0	0.0	0.0	2.0	7.5
+    3	2.0	2.0	2.0	0.0	2.0	10.0
+    4	0.0	0.0	0.0	0.0	2.0	5.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	0.0	0.0
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	2.0	2.5
+    =#
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=2, shutdown=1, uptime=0, downtime=2, integer=true)
@@ -288,21 +300,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [5., 7.5, 10., 5., 0., 0., 0., 0., 0., 2.5])
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
     
-
-    # compatibility with variable capacity (no variable flow)
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	5.0
-    # 2	    0.0	0.0	0.0	0.0	7.5
-    # 3	    2.0	2.0	2.0	0.0	10.0
-    # 4	    0.0	0.0	0.0	0.0	5.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	0.0
-    # 9	    0.0	0.0	0.0	0.0	0.0
-    # 10	0.0	0.0	0.0	0.0	2.5
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	2.0	5.0
+    2	0.0	0.0	0.0	0.0	2.0	7.5
+    3	2.0	2.0	2.0	0.0	2.0	10.0
+    4	0.0	0.0	0.0	0.0	2.0	5.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	0.0	0.0
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	2.0	2.5
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=10., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=2, shutdown=1, uptime=0, downtime=2, integer=true)
@@ -319,21 +332,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [5., 7.5, 10., 5., 0., 0., 0., 0., 0., 2.5])
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
-
-    # compatibility with variable capacity (with variable flow)
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	2.5
-    # 2	    0.0	0.0	0.0	0.0	3.75
-    # 3	    2.0	2.0	2.0	5.0	10.0
-    # 4	    0.0	0.0	0.0	0.0	2.5
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	0.0
-    # 9	    0.0	0.0	0.0	0.0	0.0
-    # 10	0.0	0.0	0.0	0.0	1.25
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	2.0	2.5
+    2	0.0	0.0	0.0	0.0	2.0	3.75
+    3	2.0	2.0	2.0	5.0	2.0	10.0
+    4	0.0	0.0	0.0	0.0	2.0	2.5
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	0.0	0.0
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	2.0	1.25
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=2, shutdown=1, uptime=0, downtime=2, integer=true)
@@ -372,21 +386,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [2.5, 3.75, 10., 2.5, 0., 0., 0., 0., 0., 1.25])
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
-
-    # fine-tune impact of startup, shutdown, uptime, downtime on commitment
-    # t	    uc	st	sd	v	b
-    # 1	    1.0	0.0	1.0	0.0	5.0
-    # 2	    0.0	0.0	0.0	0.0	2.5
-    # 3	    0.0	0.0	0.0	0.0	0.0
-    # 4	    0.0	0.0	0.0	0.0	0.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	2.5
-    # 7	    1.0	1.0	0.0	0.0	5.0
-    # 8	    1.0	0.0	0.0	0.0	5.0
-    # 9	    1.0	0.0	0.0	0.0	5.0
-    # 10	1.0	0.0	0.0	0.0	5.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	1.0	0.0	1.0	0.0	1.0	5.0
+    2	0.0	0.0	0.0	0.0	1.0	2.5
+    3	0.0	0.0	0.0	0.0	0.0	0.0
+    4	0.0	0.0	0.0	0.0	0.0	0.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	1.0	2.5
+    7	1.0	1.0	0.0	0.0	1.0	5.0
+    8	1.0	0.0	0.0	0.0	1.0	5.0
+    9	1.0	0.0	0.0	0.0	1.0	5.0
+    10	1.0	0.0	0.0	0.0	1.0	5.0
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=1, shutdown=1, uptime=1, downtime=1, integer=true)
@@ -402,21 +417,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [5., 2.5, 0., 0., 0., 2.5, 5., 5., 5., 5.])
+        @test all(_up(_m.behaviors[2]) .== [1., 1., 0., 0., 0., 1., 1., 1., 1., 1.])
     end
 
-
-    # fine-tune impact of startup, shutdown, uptime, downtime on commitment
-    # t	    uc	st	sd	v	b
-    # 1	    2.0	2.0	0.0	0.0	10.0
-    # 2	    2.0	0.0	0.0	0.0	10.0
-    # 3	    2.0	0.0	2.0	0.0	10.0
-    # 4	    0.0	0.0	0.0	0.0	5.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	0.0
-    # 9	    0.0	0.0	0.0	0.0	0.0
-    # 10	0.0	0.0	0.0	0.0	5.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	2.0	2.0	0.0	0.0	2.0	10.0
+    2	2.0	0.0	0.0	0.0	2.0	10.0
+    3	2.0	0.0	2.0	0.0	2.0	10.0
+    4	0.0	0.0	0.0	0.0	2.0	5.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	0.0	0.0
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	2.0	5.0
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=10., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=1, shutdown=1, uptime=1, downtime=1, integer=true)
@@ -433,21 +449,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 5., 0., 0., 0., 0., 0., 5.])
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
-
-    # fine-tune impact of startup, shutdown, uptime, downtime on commitment
-    # t	    uc	st	sd	v	b
-    # 1	    2.0	2.0	2.0	0.0	10.0
-    # 2	    0.0	0.0	0.0	0.0	7.5
-    # 3	    0.0	0.0	0.0	0.0	5.0
-    # 4	    0.0	0.0	0.0	0.0	2.5
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	0.0
-    # 9	    0.0	0.0	0.0	0.0	0.0
-    # 10	0.0	0.0	0.0	0.0	0.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	2.0	2.0	2.0	0.0	2.0	10.0
+    2	0.0	0.0	0.0	0.0	2.0	7.5
+    3	0.0	0.0	0.0	0.0	2.0	5.0
+    4	0.0	0.0	0.0	0.0	2.0	2.5
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	0.0	0.0
+    9	0.0	0.0	0.0	0.0	0.0	0.0
+    10	0.0	0.0	0.0	0.0	0.0	0.0
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=10., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=0, shutdown=2., uptime=0, downtime=0, integer=true)
@@ -463,20 +480,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(isapprox.(balance(_m, :output, energy, collapse=false), [10., 7.5, 5., 2.5, 0., 0., 0., 0., 0., 0.]))
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 0.])
     end
 
-    # fine-tune impact of startup, shutdown, uptime, downtime on commitment
-    # t	    uc	st	sd	v	b
-    # 1	    2.0	2.0	0.0	0.0	10.0
-    # 2	    2.0	0.0	2.0	0.0	10.0
-    # 3	    0.0	0.0	0.0	0.0	5.0
-    # 4	    0.0	0.0	0.0	0.0	0.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	0.0
-    # 7	    0.0	0.0	0.0	0.0	0.0
-    # 8	    0.0	0.0	0.0	0.0	2.5
-    # 9	    0.0	0.0	0.0	0.0	5.0
-    # 10	0.0	0.0	0.0	0.0	7.5
+    #=
+    t	uc	st	sd	v	up	b
+    1	2.0	2.0	0.0	0.0	2.0	10.0
+    2	2.0	0.0	2.0	0.0	2.0	10.0
+    3	0.0	0.0	0.0	0.0	2.0	5.0
+    4	0.0	0.0	0.0	0.0	0.0	0.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	0.0	0.0
+    7	0.0	0.0	0.0	0.0	0.0	0.0
+    8	0.0	0.0	0.0	0.0	2.0	2.5
+    9	0.0	0.0	0.0	0.0	2.0	5.000000000000001 # numeric error here
+    10	0.0	0.0	0.0	0.0	2.0	7.5
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=10., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=2, shutdown=1, uptime=0.5, downtime=1, integer=true)
@@ -492,21 +511,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(isapprox.(balance(_m, :output, energy, collapse=false), [10., 10., 5., 0., 0., 0., 0., 2.5, 5., 7.5]))
+        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 0., 0., 0., 0., 2., 2., 2.])
     end
 
-
-    # fine-tune impact of startup, shutdown, uptime, downtime on commitment
-    # t	    uc	st	sd	v	b
-    # 1	    1.0	0.0	1.0	0.0	5.0
-    # 2	    0.0	0.0	0.0	0.0	0.0
-    # 3	    0.0	0.0	0.0	0.0	0.0
-    # 4	    0.0	0.0	0.0	0.0	0.0
-    # 5	    0.0	0.0	0.0	0.0	0.0
-    # 6	    0.0	0.0	0.0	0.0	1.25
-    # 7	    0.0	0.0	0.0	0.0	2.5
-    # 8	    0.0	0.0	0.0	0.0	3.75
-    # 9	    1.0	1.0	0.0	0.0	5.0
-    # 10	1.0	0.0	0.0	0.0	5.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	1.0	0.0	1.0	0.0	1.0	5.0
+    2	0.0	0.0	0.0	0.0	0.0	0.0
+    3	0.0	0.0	0.0	0.0	0.0	0.0
+    4	0.0	0.0	0.0	0.0	0.0	0.0
+    5	0.0	0.0	0.0	0.0	0.0	0.0
+    6	0.0	0.0	0.0	0.0	1.0	1.25
+    7	0.0	0.0	0.0	0.0	1.0	2.5
+    8	0.0	0.0	0.0	0.0	1.0	3.75
+    9	1.0	1.0	0.0	0.0	1.0	5.0
+    10	1.0	0.0	0.0	0.0	1.0	5.0
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
         uc = UnitCommitment("input", 1., startup=2., shutdown=0., uptime=0., downtime=1.5, integer=true)
@@ -522,20 +542,22 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(isapprox.(balance(_m, :output, energy, collapse=false), [5., 0., 0., 0., 0., 1.25, 2.5, 3.75, 5., 5.]))
+        @test all(_up(_m.behaviors[2]) .== [1., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
     end
 
-    # fine-tune impact of startup, shutdown, uptime, downtime on commitment
-    # t	    uc	st	sd	v	b
-    # 1	    0.0	0.0	0.0	0.0	0.0
-    # 2	    0.0	0.0	0.0	0.0	0.0
-    # 3	    0.0	0.0	0.0	0.0	0.0
-    # 4	    0.0	0.0	0.0	0.0	0.0
-    # 5	    1.0	1.0	0.0	0.0	5.0
-    # 6	    1.0	0.0	0.0	0.0	5.0
-    # 7	    1.0	0.0	0.0	0.0	5.0
-    # 8	    1.0	0.0	0.0	0.0	5.0
-    # 9	    1.0	0.0	1.0	0.0	5.0
-    # 10	0.0	0.0	0.0	0.0	0.0
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	0.0	0.0
+    2	0.0	0.0	0.0	0.0	0.0	0.0
+    3	0.0	0.0	0.0	0.0	0.0	0.0
+    4	0.0	0.0	0.0	0.0	0.0	0.0
+    5	1.0	1.0	0.0	0.0	1.0	5.0
+    6	1.0	0.0	0.0	0.0	1.0	5.0
+    7	1.0	0.0	0.0	0.0	1.0	5.0
+    8	1.0	0.0	0.0	0.0	1.0	5.0
+    9	1.0	0.0	1.0	0.0	1.0	5.0
+    10	0.0	0.0	0.0	0.0	0.0	0.0
+    =#
     let   
         cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
         # uc = UnitCommitment("input", 1., startup=0., shutdown=1.5, uptime=0.5, downtime=0.5, integer=true)
@@ -552,6 +574,7 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 5., 5., 5., 5., 5., 0.]))
+        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 1., 1., 1., 1., 1., 0.])
     end
 
 end

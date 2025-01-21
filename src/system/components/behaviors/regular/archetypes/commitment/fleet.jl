@@ -122,6 +122,42 @@ end
 _flow(b::FleetUnitCommitmentBehavior) = _com(b) + _var(b) + _su(b) + _sd(b)
 
 
+# return the "up" state, which is either unit is committed, or is in startup or shutdown process
+# in other words, if and only if the unit is doing something, the "up" state is positive.
+function _up(b::FleetUnitCommitmentBehavior{T}) where T
+    m = b.startup.mesh
+
+    _up = Stepwise(differentzerovector(T, nsteps(m)), m)
+    for step in eachindex(_up)
+
+        # number of units committed
+        _val = b.state[step]
+        
+        # number of units in shutdown procedure
+        local deltah = weight(m, step)
+        local step2 = step - 1
+        while deltah < b.data.shutdown
+            deltah += weight(m, step2)
+            _val += b.shutdown[step2]
+            step2 = step2 - 1
+        end
+
+        # number of units in startup procedure
+        local deltah = weight(m, step)
+        local step2 = step + 1
+        while deltah < b.data.startup
+            deltah += weight(m, step2)
+            _val += b.startup[step2]
+            step2 = step2 + 1
+        end
+
+        _up[step] = _val
+    end
+
+    return _up
+end
+
+
 """
 Unit commitment constraints:
   * switch: next step in function of previous step and startup/shutdown
@@ -227,6 +263,9 @@ function _apply_constraints!(c::Component, b::FleetUnitCommitmentBehavior)
     _apply_constraints_uc_flow!(c, b)
     _apply_constraint_su_sd(c, b)
 end
+
+portname(uc::FleetUnitCommitmentBehavior) = uc.data.pname
+
 
 behaviorname(::FleetUnitCommitmentBehavior) = "Fleet unit commitment"
 
