@@ -85,7 +85,8 @@ using JuMP: Model
         
         @test_throws ArgumentError ProfileSource(mc, [-0.1, 0.2, 0.3, 0.4, 0.5]) # profile has a negative value
         
-        @test_throws ArgumentError ProfileSource(mc, [0.1, 0.2, 0.3, 0.4, 1.5]) # profile has a value > 1
+        # test that a warning is generated
+        @test (@test_logs (:warn, "Some profiles have values superior to 1." ) ProfileSource(mc, [0.1, 0.2, 0.3, 0.4, 1.5])) isa ProfileSource # profile has a value > 1
 
     end
     

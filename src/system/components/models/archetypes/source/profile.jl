@@ -23,7 +23,9 @@ NB: the profile is not renormalized.
 """
 function ProfileSource(carrier::AbstractCarrier, profile)
     @argcheck all(profile .>= 0.) "The profile cannot be negative"
-    @argcheck all(profile .<= 1.) "The profile cannot be superior to 1."
+    if !all(profile .<= 1.) 
+       @warn "Some profiles have values superior to 1." 
+    end
     s = sim(carrier)
     return ProfileSource(s, carrier, Stepwise(profile, s.mesh))
 end
