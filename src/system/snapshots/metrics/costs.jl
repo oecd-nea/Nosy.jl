@@ -18,6 +18,15 @@ variablecost(s::Snapshot, cname::String) = _applymetric(s, cname, variablecost)
 variablecost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, variablecost, type)
 
 """
+    noloadcost(s::Snapshot, cname::String)
+Return the no-load cost of Component with name `cname` in Snapshot `s`.
+If the component has no no-load cost, return zero.
+Throw an error is there is no component with name `cname` in `s`.
+"""
+noloadcost(s::Snapshot, cname::String) = _applymetric(s, cname, noloadcost)
+noloadcost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, noloadcost, type)
+
+"""
     cost(s::Snapshot, cname::String)
 Return the cost of Component with name `cname` in Snapshot `s`.
 If the component has no cost, return zero.
@@ -39,6 +48,13 @@ Return the variable cost of Snapshot `s` as the sum of variable costs of the com
 """
 variablecost(s::Snapshot) = sum(variablecost(s, cname) for cname in keys(s.components))
 variablecost(s::Snapshot, type::Symbol) = sum(variablecost(s, cname, type) for cname in keys(s.components))
+
+"""
+    noloadcost(s::Snapshot)
+Return the no-load cost of Snapshot `s` as the sum of no-load costs of the components of `s`.
+"""
+noloadcost(s::Snapshot) = sum(noloadcost(s, cname) for cname in keys(s.components))
+noloadcost(s::Snapshot, type::Symbol) = sum(noloadcost(s, cname, type) for cname in keys(s.components))
 
 """
     cost(s::Snapshot)

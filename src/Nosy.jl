@@ -13,7 +13,7 @@ export CapacityMultiplier
 export UnitCommitment
 export Ramping
 export YearlySum
-export VariableCost, FixedCost
+export VariableCost, FixedCost, NoLoadCost
 
 export LinkedJointFlow, FreeJointFlow, FixedJointFlow
 
@@ -21,7 +21,7 @@ export Component, Node, Snapshot
 export connect!
 
 export capacity, nbunits
-export cost, variablecost, fixedcost
+export cost, variablecost, fixedcost, noloadcost
 
 export costs, table
 

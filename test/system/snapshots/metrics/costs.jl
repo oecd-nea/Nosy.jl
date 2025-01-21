@@ -1,9 +1,9 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: VariableCapacity, FixedCapacity
+using Nosy: VariableCapacity, FixedCapacity, UnitCommitment
 using Nosy: BasicConverter
-using Nosy: VariableCost, FixedCost
-using Nosy: fixedcost, variablecost, cost
+using Nosy: VariableCost, FixedCost, NoLoadCost
+using Nosy: fixedcost, variablecost, noloadcost, cost
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!, getcomponent, balance, getport
 using JuMP: Model, AffExpr
@@ -49,7 +49,14 @@ using ArgCheck: ArgumentError
     end
 
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
+    let s = makesnapshot([
+        FixedCapacity("input", mass, 5., unitsize=1.), 
+        UnitCommitment("input", 0.5),
+        FixedCost(:overnight, "input", mass, 10.), 
+        VariableCost(:fuel, "input", energy, 2.), 
+        VariableCost(:vom, "output", energy, 3.),
+        NoLoadCost(:noload, "input", 2.),
+        ])
 
         c = getcomponent(s, "comp")
         
@@ -58,14 +65,16 @@ using ArgCheck: ArgumentError
         @test variablecost(s, "comp") == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
         @test variablecost(s, "comp", :fuel) == sum(energy(getport(c, "input"))) * 2
         @test variablecost(s, "comp", :vom) == sum(energy(getport(c, "output"))) * 3
-        @test cost(s, "comp") == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        # noload cost tested separately, in behavior tests
+        @test cost(s, "comp") == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3 + noloadcost(s, "comp")
         @test cost(s, "comp", :overnight) == fixedcost(c, :overnight)
         @test cost(s, "comp", :fuel) == variablecost(c, :fuel)
         @test cost(s, "comp", :vom) == variablecost(c, :vom)
+        @test cost(s, "comp", :noload) == noloadcost(c, :noload)
         @test cost(s, :overnight) == fixedcost(c, :overnight)
         @test cost(s, :fuel) == variablecost(c, :fuel)
         @test cost(s, :vom) == variablecost(c, :vom)
-
+        @test cost(s, :noload) == noloadcost(c, :noload)
 
     end
 
@@ -105,8 +114,14 @@ using ArgCheck: ArgumentError
     end
 
 
-    let s = makesnapshot2([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
-
+    let s = makesnapshot2([
+        FixedCapacity("input", mass, 5., unitsize=1), 
+        UnitCommitment("input", 0.5),
+        FixedCost(:overnight, "input", mass, 10.), 
+        VariableCost(:fuel, "input", energy, 2.), 
+        VariableCost(:vom, "output", energy, 3.),
+        NoLoadCost(:noload, "input", 2.)
+    ])
         # check variable cost is non-zero
         @test (variablecost(s) isa AffExpr) && !iszero(variablecost(s))
 
@@ -121,6 +136,13 @@ using ArgCheck: ArgumentError
 
         @test fixedcost(s, :overnight) == fixedcost(s, "comp1", :overnight) + fixedcost(s, "comp2", :overnight)
 
+        # check no-laod cost is non-zero
+        @test (noloadcost(s) isa AffExpr) && !iszero(noloadcost(s))
+
+        @test noloadcost(s) == noloadcost(s, "comp1") + noloadcost(s, "comp2")
+
+        @test noloadcost(s, :noload) == noloadcost(s, "comp1", :noload) + noloadcost(s, "comp2", :noload)
+
         # check cost is non-zero
         @test (cost(s) isa AffExpr) && !iszero(cost(s))
 
@@ -129,6 +151,8 @@ using ArgCheck: ArgumentError
         @test cost(s, :overnight) == cost(s, "comp1", :overnight) + cost(s, "comp2", :overnight)
 
         @test cost(s, :fuel) == cost(s, "comp1", :fuel) + cost(s, "comp2", :fuel)
+
+        @test cost(s, :noload) == cost(s, "comp1", :noload) + cost(s, "comp2", :noload)
 
     end
 
