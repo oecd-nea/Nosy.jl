@@ -8,18 +8,25 @@ struct VariableCost{M<:Function,V} <: AbstractCostBehaviorData
     pname::String
     modifier::M
     val::V # Float64 or Vector{Float64}
+    style::Symbol
 
     @doc """
-        VariableCost(type::Symbol, pname::String, modifier::Function, val)
+        VariableCost(type::Symbol, pname::String, modifier::Function, val; style::Symbol=:step)
     Return an VariableCost behavior data, associated with port name `pname`, modifier `modifier` and cost `val`.
     `val` must be either a Number or an AbstractVector{<:Number} with length equal to number of steps or hours.
+    If `val` is a vector, then `style` determines how it must be interpreted:
+      * if style = `:step`, the cost is assumed to be a step function
+      * if style = `:linear`, the cost is assumed to vary linearly between timesteps.
+    If `val` is a number, `style` has no effect.
     """
-    function VariableCost(type::Symbol, pname::String, modifier::Function, val) 
+    function VariableCost(type::Symbol, pname::String, modifier::Function, val; style::Symbol=:step) 
+        @assert style in (:step, :linear) "`style` must be :step or :linear"
+        
         # NB variable cost can be negative.
         if val isa AbstractVector{<:Number}
-            return new{typeof(modifier),Vector{Float64}}(type, pname, modifier, convert(Vector{Float64}, val))
+            return new{typeof(modifier),Vector{Float64}}(type, pname, modifier, convert(Vector{Float64}, val), style)
         elseif val isa Number
-            return new{typeof(modifier),Float64}(type, pname, modifier, convert(Float64, val))
+            return new{typeof(modifier),Float64}(type, pname, modifier, convert(Float64, val), style)
         else
             throw(ArgumentError("`val` must be a Number or a AbstractVector{<:Number}"))
         end
@@ -40,10 +47,17 @@ end
 
 function buildbehavior(c::Component, b::VariableCost{M,Vector{Float64}}) where M
     @assert (length(b.val) == nsteps(sim(c)) || length(b.val) == nhours(sim(c))) "The length of variable cost vector must be equal to $(nsteps(sim(c))) or $(nhours(sim(c)))"
-    # following result is integration of power * cost over time interval
-    # we consider that both flow and price vary linearly between steps
-    vc = Stepwise(b.val, sim(c).mesh)
-    _cost = sum(Stepwise(_balance_one(c.s, b.pname, b.modifier) .* (2/3 * vc + 1/6 * shift(vc, -1) + 1/6 * shift(vc, 1)), sim(c).mesh))
+    _cost = Stepwise(b.val, sim(c).mesh)
+    _flow = _balance_one(c.s, b.pname, b.modifier)
+
+    # here we assume, as for the rest of the model, that the flow (~power) is linear between steps
+    # integration of power * cost over time depends on the shape of cost
+    if b.style == :step # integrate power * cost over time assuming cost is a step function
+        _cost = sum(Stepwise(_cost .* (1/2 * _flow + 1/2 * shift(_flow, 1)), sim(c).mesh))
+    elseif b.style == :linear # integrate power * cost over time assuming cost is a linear function
+        _cost = sum(1/3 * (_flow .* _cost) + 1/6 * (_flow .* shift(_cost, 1)) + 1/6 * (shift(_flow, 1) .* _cost) + 1/3 * (shift(_flow, 1) .* shift(_cost, 1))) # NB as there is summation, the formula could be simplified but we leave it this way for clarity
+    end
+
     return VariableCostBehavior(b, _cost)
 end
 
