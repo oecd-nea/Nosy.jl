@@ -1,6 +1,6 @@
 """
 No-load cost behavior.
-No-laod cost requires unit commitment.
+No-load cost requires unit commitment.
 """
 
 struct NoLoadCost <: AbstractCostBehaviorData
