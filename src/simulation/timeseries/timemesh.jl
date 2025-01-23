@@ -81,8 +81,8 @@ weight(m::TimeMesh, step::Int) = m.weight[step]
 hour(m::TimeMesh, step::Int) = m.hour_at_step[step] # hour INDEX at a given step
 step(m::TimeMesh, hour::Int) = m.step_at_hour[hour+1] # step at a given hour VALUE
 
-eachhour(m) = 1:nhours(m)
-eachstep(m) = 1:nsteps(m)
+eachhour(m) = eachindex(m.step_at_hour)
+eachstep(m) = eachindex(m.hour_at_step)
 
 isunit(m::TimeMesh) = m.isunit
 
