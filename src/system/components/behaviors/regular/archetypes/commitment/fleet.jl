@@ -7,6 +7,13 @@ UC rules:
   * shutdown = 1 at the moment the unit effectively begins shutting down process. state decrements at the step after shutdown is 1. shutdown is 0 otherwise.
 """
 
+"""
+Warning
+The UC switch variables (startup, shutdown) are not designed to be converted to Hourly, because they do not represent flows but switches.
+For instance, some startups will not appear if the series is converted to Hourly.
+Therefore, special care must be applied when manipulating these series. For instance: see StartupCost behavior.
+However, the UC flows (including evaluated with _su and _sd functions) can be converted to Hourly and integrated.
+"""
 
 struct FleetUnitCommitmentBehavior{T<:VAL,M<:Function} <: AbstractUnitCommitmentBehavior{T}
     data::UnitCommitment

@@ -42,6 +42,19 @@ If the component has no no-load cost, return zero.
 """
 noloadcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, NoLoadCostBehavior{T}, _noloadcost, type)
 
+"""
+    startupcost(c::Component)
+Return the startup cost of Component `c`.
+If the component has no startup cost, return zero.
+"""
+startupcost(c::Component{T}) where T = sumofmetric(c, StartupCostBehavior{T}, _startupcost)
+
+"""
+    startupcost(c::Component, type::Symbol)
+Return the startup cost of type `type` of Component `c`.
+If the component has no startup cost, return zero.
+"""
+startupcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, StartupCostBehavior{T}, _startupcost, type)
 
 # dict containing the cost metrics (other than costs)
 # these metrics must be such that their sum is equal to cost
@@ -49,6 +62,7 @@ const COST_COMPONENT_METRICS = Dict(
     variablecost => "variable cost",
     fixedcost => "fixed cost",
     noloadcost => "no-load cost",
+    startupcost => "startup cost",
 )
 
 
