@@ -43,7 +43,16 @@ Apply capacity constraints.
 # general expression of capacity constraint
 # can target model port or joint flow port
 function __apply_constraint_general!(c::Component, b::FixedCapacityBehavior)
-    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
+    flow = b.data.modifier(getport(c, b.data.pname)).data
+    cap = _capacity(b)
+
+    for s in eachindex(flow)
+        if _is_equivalent_to_variable(flow[s])
+            set_upper_bound(flow[s], cap)
+        else
+            @constraint(sim(c).model, flow[s] <= cap)
+        end
+    end
 end
 
 # special case - ProfileSourceModel: apply constraint at each timestep
@@ -62,11 +71,22 @@ function __apply_constraints!(c::Component, b::FixedCapacityBehavior)
     end
 end
 
+
 # special case: any model, but presence of capacity multiplier behavior
 function _apply_constraints!(c::Component, b::FixedCapacityBehavior, mult::CapacityMultiplierBehavior)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @argcheck _portname(b) == _portname(mult) "the fixed capacity and the capacity multiplier do not target the same port"
-    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= capacity(c, _portname(b), multiplier=true).data)
+
+    flow = b.data.modifier(getport(c, b.data.pname)).data
+    cap = capacity(c, _portname(b), multiplier=true).data
+
+    for s in eachindex(flow)
+        if _is_equivalent_to_variable(flow[s])
+            set_upper_bound(flow[s], cap[s])
+        else
+            @constraint(sim(c).model, flow[s] <= cap[s])
+        end
+    end
 end
 
 # redirect application of capacity constraint to model
