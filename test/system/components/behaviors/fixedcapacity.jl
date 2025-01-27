@@ -114,7 +114,7 @@ using ArgCheck: ArgumentError
         # model has 10 timesteps
         # it should have 10 variables 
         #   flow @ converter @ each step (10),
-        # and 21 constraints
+        # and 20 constraints
         #   converter input lower bound = 0 @ each step (10),
         #   converter input upper bound <= Inf @ each step (0),
         #   converter input flow <= capacity @ each step (10),
@@ -129,7 +129,7 @@ using ArgCheck: ArgumentError
         # model has 10 timesteps
         # it should have 10 variables 
         #   flow @ converter @ each step (10),
-        # and 21 constraints
+        # and 20 constraints
         #   converter input lower bound = 0 @ each step (10),
         #   converter input upper bound <= Inf @ each step (0),
         #   converter input flow <= capacity @ each step (10),
@@ -155,7 +155,7 @@ using ArgCheck: ArgumentError
         # model has 10 timesteps
         # it should have 10 variables 
         #   flow @ converter @ each step (10),
-        # and 21 constraints
+        # and 20 constraints
         #   converter input lower bound = 0 @ each step (10),
         #   converter input upper bound <= Inf @ each step (0),
         #   converter joint flow <= capacity @ each step (10),
