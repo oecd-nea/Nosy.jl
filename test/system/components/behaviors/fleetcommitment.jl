@@ -54,10 +54,17 @@ Some notes and observations:
 
 
     @test_throws ArgumentError UnitCommitment("input", -0.5) # negative minratio not allowed
+    @test_throws ArgumentError UnitCommitment("input", 1.5) # minratio superior to 1 not allowed
     @test_throws ArgumentError UnitCommitment("input", 0.5, startup=-1) # negative startup not allowed
     @test_throws ArgumentError UnitCommitment("input", 0.5, shutdown=-1) # negative shutdown not allowed
     @test_throws ArgumentError UnitCommitment("input", 0.5, uptime=-1) # negative uptime not allowed
     @test_throws ArgumentError UnitCommitment("input", 0.5, downtime=-1) # negative downtime not allowed
+    @test_throws ArgumentError UnitCommitment("input", 0.5, startupratio=-0.5) # startup ratio cannot be negative
+    @test_throws ArgumentError UnitCommitment("input", 0.5, startupratio=1.25) # startup ratio cannot be superior to 1
+    @test_throws ArgumentError UnitCommitment("input", 0.5, startupratio=0.25) # startup ratio cannot be lower than minratio
+    @test_throws ArgumentError UnitCommitment("input", 0.5, shutdownratio=-0.5) # shutdown ratio cannot be lower than minratio
+    @test_throws ArgumentError UnitCommitment("input", 0.5, shutdownratio=1.25) # shutdown ratio cannot be superior to 1
+    @test_throws ArgumentError UnitCommitment("input", 0.5, shutdownratio=0.25) # shutdown ratio cannot be lower than minratio
 
 
     let   
@@ -575,6 +582,70 @@ Some notes and observations:
         # _uctable(_m)
         @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 5., 5., 5., 5., 5., 0.]))
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 1., 1., 1., 1., 1., 0.])
+    end
+   
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	0.0	0.0
+    2	0.0	0.0	0.0	0.0	0.0	0.0
+    3	0.0	0.0	0.0	0.0	1.0	0.625
+    4	0.0	0.0	0.0	0.0	1.0	1.25
+    5	0.0	0.0	0.0	0.0	1.0	1.875
+    6	1.0	1.0	0.0	0.0	1.0	5.0
+    7	1.0	0.0	0.0	0.0	1.0	5.0
+    8	1.0	0.0	0.0	0.0	1.0	5.0
+    9	1.0	0.0	1.0	0.0	1.0	5.0
+    10	0.0	0.0	0.0	0.0	0.0	0.0
+    =#
+    let   
+        cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
+        # uc = UnitCommitment("input", 1., startup=0., shutdown=1.5, uptime=0.5, downtime=0.5, integer=true)
+        uc = UnitCommitment("input", .5, startup=2., shutdown=0., uptime=0., downtime=1., startupratio = 0.5, shutdownratio = 1., integer=true)
+        
+        m = makecomp([cap, uc])
+        
+        # test: startup and shutdown + downtime
+        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+
+        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        JuMP.set_silent(sim(m).model)
+        JuMP.optimize!(sim(m).model)
+        _m = _extract(m)
+        # _uctable(_m)
+        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5., 0.]))
+        @test all(_up(_m.behaviors[2]) .== [0., 0., 1., 1., 1., 1., 1., 1., 1., 0.])
+    end
+
+    #=
+    t	uc	st	sd	v	up	b
+    1	0.0	0.0	0.0	0.0	0.0	0.0
+    2	0.0	0.0	0.0	0.0	0.0	0.0
+    3	0.0	0.0	0.0	0.0	0.0	0.0
+    4	0.0	0.0	0.0	0.0	1.0	0.625
+    5	0.0	0.0	0.0	0.0	1.0	1.25
+    6	0.0	0.0	0.0	0.0	1.0	1.875
+    7	1.0	1.0	1.0	2.5	1.0	5.0
+    8	0.0	0.0	0.0	0.0	1.0	2.8125
+    9	0.0	0.0	0.0	0.0	1.0	1.875
+    10	0.0	0.0	0.0	0.0	1.0	0.9375
+    =#
+    let   
+        cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
+        # uc = UnitCommitment("input", 1., startup=0., shutdown=1.5, uptime=0.5, downtime=0.5, integer=true)
+        uc = UnitCommitment("input", 0.5, startup=2., shutdown=2., uptime=0., downtime=1., startupratio = 0.5, shutdownratio = 0.75, integer=true)
+        
+        m = makecomp([cap, uc])
+        
+        # test: startup and shutdown + downtime
+        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+
+        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        JuMP.set_silent(sim(m).model)
+        JuMP.optimize!(sim(m).model)
+        _m = _extract(m)
+        # _uctable(_m)
+        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 2.8125, 1.875, 0.9375]))
+        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
     end
 
 end

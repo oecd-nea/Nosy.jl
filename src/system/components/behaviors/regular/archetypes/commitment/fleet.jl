@@ -94,7 +94,7 @@ function _su(b::FleetUnitCommitmentBehavior{T}) where T
         local step2 = step - 1
         while deltah < b.data.startup        
             deltah += weight(m, step2)
-            _su[step2] += b.startup[step] * b.unitsize * b.data.minratio * _lin_ratio_su(b.data.startup, deltah)
+            _su[step2] += b.startup[step] * b.unitsize * b.data.startupratio * _lin_ratio_su(b.data.startup, deltah)
             step2 = step2 - 1
         end
     end
@@ -119,7 +119,7 @@ function _sd(b::FleetUnitCommitmentBehavior{T}) where T
         local step2 = step + 1
         while deltah < b.data.shutdown        
             deltah += weight(m, step2)
-            _sd[step2] += b.shutdown[step] * b.unitsize * b.data.minratio * _lin_ratio_sd(b.data.shutdown, deltah)
+            _sd[step2] += b.shutdown[step] * b.unitsize * b.data.shutdownratio * _lin_ratio_sd(b.data.shutdown, deltah)
             step2 = step2 + 1
         end
     end
