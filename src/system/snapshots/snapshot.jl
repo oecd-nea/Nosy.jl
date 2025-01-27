@@ -57,6 +57,13 @@ function addcomponent!(s::Snapshot, c::Component)
     end
 end
 
+# add loss output to nodes with losses
+function add_nodelosses!(s::Snapshot)
+    for (_,n) in nodes(s)
+        addlosses!(n)
+    end
+end
+
 # apply remaining constraints associated with a snapshot
 function apply_constraints!(s::Snapshot)
     # component constraints are already applied when constructing the components

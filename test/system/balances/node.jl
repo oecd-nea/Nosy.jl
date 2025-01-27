@@ -28,7 +28,7 @@ using JuMP: Model, AffExpr
         addinput!(ps, "p1", p1)
         addinput!(ps, "p2", p2)
         addoutput!(ps, "p3", p3)
-        return (Node("n", p1.carrier, ps, :default, false, Nosy.DualPrice{AffExpr}(nothing)), p1, p2, p3)
+        return (Node("n", p1.carrier, ps, 0., :default, false, Nosy.DualPrice{AffExpr}(nothing)), p1, p2, p3)
     end
 
     let s = tsim()

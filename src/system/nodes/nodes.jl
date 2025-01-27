@@ -17,13 +17,15 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     name::String
     carrier::C
     s::PortStructure{T}
+    losses::Number
     rule::Symbol # :curtailed or :default
     evalprice::Bool
     dualprice::DualPrice{T}
 
-    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, rule::Symbol, evalprice::Bool, dualprice::DualPrice{T}) where T
+    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::DualPrice{T}) where T
         @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
-        new{T,typeof(carrier)}(name, carrier, s, rule, evalprice, dualprice)
+        @argcheck 0 <= losses <= 1 "Losses must be be between 0 and 1"
+        new{T,typeof(carrier)}(name, carrier, s, losses, rule, evalprice, dualprice)
     end 
 end
 
@@ -33,12 +35,14 @@ const NODE_RULES = [:default, :curtailed]
     Node(name::String, c::Carrier; rule::Symbol=:default)
 Construct a Node with name `name` associated with carrier `c`.
 The `rule` defines the node behavior (:default, :curtailed).
+The `losses` is a ratio (between 0 and 1) of the sum of the input that is lost.
 """
-function Node(name::String, c::AbstractCarrier; rule::Symbol=:default, evalprice::Bool=false)
+function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false)
     return Node(
         name,
         c,
         PortStructure{AffExpr}(sim(c)),
+        losses,
         rule,
         evalprice,
         DualPrice{AffExpr}(nothing),
@@ -58,6 +62,9 @@ sim(n::Node) = sim(carrier(n))
 _input(n::Node) = _input(portstructure(n))
 _output(n::Node) = _output(portstructure(n))
 
+_haslosses(n::Node) = !iszero(n.losses)
+_lossesratio(n::Node) = n.losses
+
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)
 function addinput!(n::Node{T,C}, name::String, p::Port{T,C}) where {T,C}
@@ -68,6 +75,17 @@ end
 function addoutput!(n::Node{T,C}, name::String, p::Port{T,C}) where {T,C}
     @assert carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
     addoutput!(n.s, name, p)
+end
+
+# add losses to a node
+# we add an additional output, which is equal to the node input multiplied by a ratio
+# NB this must be done after nodes are defined -> called during finalization of snapshot
+function addlosses!(n::Node)
+    if _haslosses(n)
+        # losses = (node losses ratio) * (sum of input of node)
+        _in = balance(n, :input, _defaultmodifier(n.carrier), aggregate=true, collapse=false)
+        addoutput!(n, "losses", Port(n.carrier, _in * n.losses, true))
+    end
 end
 
 # throw exception when carriers are different between node and port
