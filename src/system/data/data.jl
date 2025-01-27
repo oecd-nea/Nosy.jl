@@ -21,3 +21,17 @@ _to_affexpr(v::AbstractVector{VariableRef}) = _to_affexpr.(v)
 #  * only one variable
 #  * linear coefficient is 1.
 _is_equivalent_to_variable(e::AffExpr) = iszero(e.constant) && isone(length(e.terms)) && isone(first(e.terms)[2])
+
+
+
+
+"""
+Reserved names.
+"""
+
+# reserved names cannot be used when naming new components
+const RESERVED_COMPONENT_NAMES = (
+    "losses", # used when modeling node losses
+    )
+
+_is_reserved_component_name(name::String) = name in RESERVED_COMPONENT_NAMES

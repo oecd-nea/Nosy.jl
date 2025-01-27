@@ -29,6 +29,8 @@ Component constructor. Return a Component with name `name`, based on model `mode
 """
 function Component(name::String, model::AbstractModelData, behaviors::AbstractVector)
     
+    @argcheck !_is_reserved_component_name(name) "Cannot name component $name (reserved name)"
+
     m = build(model, name)
     
     c = Component(

@@ -15,14 +15,16 @@ using JuMP: Model, AffExpr
 
     getvariable(e::AffExpr) = first(e.terms)[1]
 
-    function makecomp(vbehavior)
+    function makecomp(vbehavior, cname::String="comp")
         s = tsim()    
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
         d = BasicConverter(mc, ec)
-        c = Component("comp", d, vbehavior)
+        c = Component(cname, d, vbehavior)
         return c
     end
+
+    @test_throws ArgumentError makecomp([], "losses") # "losses" is a reserved name
 
     # no behaviors, no joint flows
     let c = makecomp([])
