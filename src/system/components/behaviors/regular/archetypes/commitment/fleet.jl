@@ -34,7 +34,12 @@ function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::Abstr
     s = sim(c)
     
     umax = _nbunitsmax(cap) # max number of units
-    vmax = umax * _unitsize(cap) * (1 - b.minratio)  # max variable output
+    
+    if b.minratio == 1.
+        vmax = 0. # remove ambiguity when minratio == 1 and umax == Inf
+    else
+        vmax = Float64(umax * _unitsize(cap) * (1 - b.minratio))  # max variable output
+    end
     
     # check inconsistency between capacity and number of units
     # not only such cases are inconsistency,
