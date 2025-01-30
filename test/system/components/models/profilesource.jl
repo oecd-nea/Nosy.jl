@@ -86,9 +86,21 @@ using JuMP: Model
         @test_throws ArgumentError ProfileSource(mc, [-0.1, 0.2, 0.3, 0.4, 0.5]) # profile has a negative value
         
         # test that a warning is generated
-        @test (@test_logs (:warn, "Some profiles have values superior to 1." ) ProfileSource(mc, [0.1, 0.2, 0.3, 0.4, 1.5])) isa ProfileSource # profile has a value > 1
+        @test (@test_logs (:warn, "There is no cutoff and some profiles have values superior to 1 - production will exceed capacity") ProfileSource(mc, [0.1, 0.2, 0.3, 0.4, 1.5])) isa ProfileSource # profile has a value > 1
 
     end
     
+    let profile = collect(1:10) / 5 # ~stepwise profile, some values are > 1
+
+        s = tsim()
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+
+        d = ProfileSource(mc, profile, cutoff=1.)
+
+        m = build(d, "profile")
+
+        @test all(mass(getport(m, "output")) .== m.cap * [0.2, 0.4, 0.6, 0.8, 1., 1., 1., 1., 1., 1.]) # checking cutoff
+
+    end
 
 end
