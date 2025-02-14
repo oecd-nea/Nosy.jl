@@ -34,6 +34,8 @@ export finalize!, optimize!
 export conflicts
 export extract
 
+export tag!, hastag, getnodes, getcomponents
+
 include("simulation/_includes.jl")
 include("system/_includes.jl")
 include("opti/_includes.jl")

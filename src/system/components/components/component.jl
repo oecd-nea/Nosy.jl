@@ -7,6 +7,7 @@ struct Component{T<:VAL,M<:AbstractModel} <: AbstractComponent{T}
     model::M
     behaviors::Vector{AbstractRegularBehavior{T}} # NB this is an abstract type, performance impact
     jointflows::Vector{AbstractJointFlow{T}}
+    tags::Vector{Symbol} # lightweight tagging system for post-processing etc.
     s::PortStructure{T} # shallow copy of the port structure of the underlying model
 end
 
@@ -17,6 +18,9 @@ sim(c::Component) = sim((model(c)))
 
 hasport(c::Component, pname::String) = hasport(c.s, pname)
 
+tag!(c::Component, tag::Symbol) = tag in c.tags ? nothing : push!(c.tags, tag)
+hastag(c::Component, tag::Symbol) = tag in c.tags
+
 # build behavior from behavior data and component
 # and add it to component behaviors
 function _addbehavior!(c::Component, b::AbstractBehavior)
@@ -24,10 +28,10 @@ function _addbehavior!(c::Component, b::AbstractBehavior)
 end
 
 """
-    Component(name::String, model::AbstractModelData, behaviors::AbstractVector)
-Component constructor. Return a Component with name `name`, based on model `model` and bearing behaviors `behaviors`.
+    Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Vector{Symbol}=Symbol[])
+Component constructor. Return a Component with name `name`, based on model `model` and bearing behaviors `behaviors`, tagged with `tags`.
 """
-function Component(name::String, model::AbstractModelData, behaviors::AbstractVector)
+function Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Vector{Symbol}=Symbol[])
     
     @argcheck !_is_reserved_component_name(name) "Cannot name component $name (reserved name)"
 
@@ -38,6 +42,7 @@ function Component(name::String, model::AbstractModelData, behaviors::AbstractVe
         m,
         Vector{AbstractRegularBehavior{AffExpr}}(undef,0),
         Vector{AbstractJointFlow{AffExpr}}(undef,0),
+        copy(tags),
         shallowcopy(portstructure(m))
     )
 

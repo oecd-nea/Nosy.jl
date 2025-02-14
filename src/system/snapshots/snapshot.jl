@@ -3,6 +3,7 @@ A snapshot contains nodes and components.
 """
 
 using Base: RefValue
+using OrderedCollections: LittleDict
 
 struct Snapshot{T} <: AbstractElement{T}
     sim::Sim
@@ -30,6 +31,29 @@ nodes(s::Snapshot) = s.nodes
 
 hascomponent(s::Snapshot, cname::String) = haskey(components(s), cname)
 getcomponent(s::Snapshot, cname::String) = components(s)[cname]
+
+_getwithtags(s::Snapshot, f::Function, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = sort(LittleDict([(k,v) for (k,v) in f(s) if (all(hastag(v, tag) for tag in withtags) && !any(hastag(v, tag) for tag in withouttags))]))
+
+getcomponents(s::Snapshot, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = _getwithtags(s, components, withtags, withouttags)
+
+"""
+    getcomponents(s::Snapshot, nodename::String, tags...)
+Return a Dict of components with tags `tags` connected to Node named `nodename` in Snapshot `s`.
+"""
+function getcomponents(s::Snapshot, nodename::String, withtags::Vector{Symbol}, withouttags::Vector{Symbol}=Symbol[])
+    d0 = getcomponents(s, withtags, withouttags)
+    n = getnode(s, nodename)
+    d = LittleDict{String,AbstractComponent}()
+    for (k,v) in d0
+        if !haskey(d, k) && (haskey(_input(n), k) || haskey(_output(n), k))
+            d[k] = v
+        end
+    end
+    return d
+end
+
+
+getnodes(s::Snapshot, withtags::Vector{Symbol}, withouttags::Vector{Symbol}=Symbol[]) = _getwithtags(s, nodes, withtags, withouttags)
 
 hasnode(s::Snapshot, nname::String) = haskey(nodes(s), nname)
 getnode(s::Snapshot, nname::String) = nodes(s)[nname]

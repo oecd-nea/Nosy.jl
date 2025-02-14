@@ -21,11 +21,12 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     rule::Symbol # :curtailed or :default
     evalprice::Bool
     dualprice::DualPrice{T}
+    tags::Vector{Symbol}
 
-    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::DualPrice{T}) where T
+    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::DualPrice{T}, tags::Vector{Symbol}) where T
         @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
         @argcheck 0 <= losses <= 1 "Losses must be be between 0 and 1"
-        new{T,typeof(carrier)}(name, carrier, s, losses, rule, evalprice, dualprice)
+        new{T,typeof(carrier)}(name, carrier, s, losses, rule, evalprice, dualprice, tags)
     end 
 end
 
@@ -36,8 +37,9 @@ const NODE_RULES = [:default, :curtailed]
 Construct a Node with name `name` associated with carrier `c`.
 The `rule` defines the node behavior (:default, :curtailed).
 The `losses` is a ratio (between 0 and 1) of the sum of the input that is lost.
+The `tags` are the node tags.
 """
-function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false)
+function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
     return Node(
         name,
         c,
@@ -46,6 +48,7 @@ function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=
         rule,
         evalprice,
         DualPrice{AffExpr}(nothing),
+        copy(tags),
     )
 end
 
@@ -64,6 +67,9 @@ _output(n::Node) = _output(portstructure(n))
 
 _haslosses(n::Node) = !iszero(n.losses)
 _lossesratio(n::Node) = n.losses
+
+tag!(n::Node, tag::Symbol) = tag in n.tags ? nothing : push!(n.tags, tag)
+hastag(n::Node, tag::Symbol) = tag in n.tags
 
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)

@@ -30,7 +30,7 @@ using JuMP: Model, AffExpr
         addinput!(ps, "p1", p1)
         addinput!(ps, "p2", p2)
         addoutput!(ps, "p3", p3)
-        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing)) # not usual constructor, to avoid connection stage
+        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[]) # not usual constructor, to avoid connection stage
     end
 
     let s = tsim()
@@ -89,7 +89,7 @@ using JuMP: Model, AffExpr
         addinput!(ps, "p1", p1)
         addinput!(ps, "p2", p2)
         addoutput!(ps, "p3", p3)
-        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing))
+        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[])
     end
 
     # test case where carrier mass to energy ratio is not constant
@@ -122,7 +122,7 @@ using JuMP: Model, AffExpr
         addinput!(ps, "p1", p1)
         addinput!(ps, "p2", p2)
         addoutput!(ps, "p1", p3) # p1 also present in input
-        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing))
+        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[])
     end
 
     # test ambiguous port names
