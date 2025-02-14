@@ -51,6 +51,7 @@ Division by scalar operator for AbstractMeshedTimeSeries.
 Base.:/(s::AbstractMeshedTimeSeries, n::Number) = typeof(s).name.wrapper(s.data / n, s.mesh)
 
 # conversion of Number to Float64 to keep symmetry between Hourly and Stepwise and simplify types
+_toVal(v::AbstractVector{Nothing}) = v
 _toVal(v::AbstractVector{Bool}) = v
 _toVal(v::AbstractVector{Float64}) = v
 _toVal(v::AbstractVector{<:Number}) = Float64.(v)
