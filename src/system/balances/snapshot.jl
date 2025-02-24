@@ -17,6 +17,8 @@ function balance(s::Snapshot, name::String, sense::Symbol, modifier::Function; c
         c = getcomponent(s, name)
     elseif hasnode(s, name)
         c = getnode(s, name)
+    else
+        throw(AssertionError("The snapshot does not contain node or component with name $name"))
     end
     
     b = balance(c, sense, modifier, collapse=collapse, aggregate=aggregate)
