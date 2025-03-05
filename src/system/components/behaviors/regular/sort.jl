@@ -6,20 +6,17 @@ Sort behaviors.
 # priority is highest for first elements
 const BEHAVIORS_PRIORITY = (AbstractJointFlowData, CapacityMultiplier, AbstractCapacityData, UnitCommitment)
 
-# function _getjointflowdata(v::AbstractVector)
-#     _jointflowdata = Vector{AbstractJointFlowData}(undef,0)
-#     for b in v
-#         if b isa AbstractJointFlowData
-#             push!(_jointflowdata, b)
-#         end
-#     end
-#     return _jointflowdata
-# end
+# for ProfileSource, the capacity must be defined before joint flows
+# because their flow is undefined before it is associated with a capacity
+const BEHAVIORS_PRIORITY_PROFILE = (CapacityMultiplier, AbstractCapacityData, AbstractJointFlowData, UnitCommitment)
+
+_sort_order(::AbstractModel) = BEHAVIORS_PRIORITY
+_sort_order(::ProfileSourceModel) = BEHAVIORS_PRIORITY_PROFILE
 
 # sort the behaviors using BEHAVIORS_PRIORITY as a priority list for behavior type
-function _sortbehaviordata(v::AbstractVector)
+function _sortbehaviordata(v::AbstractVector, m::AbstractModel)
     _sorted = Vector{AbstractBehaviorData}(undef,0)
-    for B in BEHAVIORS_PRIORITY
+    for B in _sort_order(m)
         for b in v
             if b isa B
                 push!(_sorted, b)

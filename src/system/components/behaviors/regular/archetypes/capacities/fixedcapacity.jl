@@ -1,4 +1,4 @@
-using JuMP: @variable, AffExpr
+using JuMP: @variable, GenericAffExpr
 using ArgCheck: @argcheck
 
 """
@@ -33,8 +33,20 @@ end
 function buildbehavior(c::Component, b::FixedCapacity{M}) where M
     @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
-    return FixedCapacityBehavior(b, AffExpr(b.val))
+    return FixedCapacityBehavior(b, _to_affexpr(b.val, sim(c).model))
 end
+
+
+# for ProfileSource, we need to "apply" the behavior here
+# the reason is that this behavior must be enforce before the call to other behaviors
+# in particular: before call to VariableCost, which requires the flow being defined
+function _addbehavior!(c::Component, b::FixedCapacityBehavior, m::ProfileSourceModel)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
+    balance(c, :output, defaultmodifier, collapse=false, aggregate=false)["output"] .= _capacity(b) * _profile(m)
+    # _output(m.s)["output"].series .= _capacity(b) * _profile(m)
+    push!(c.behaviors, b)
+end
+
 
 """
 Apply capacity constraints.
@@ -50,16 +62,13 @@ function __apply_constraint_general!(c::Component, b::FixedCapacityBehavior)
         if _is_equivalent_to_variable(flow[s])
             set_upper_bound(flow[s], cap)
         else
-            @constraint(sim(c).model, flow[s] <= cap)
+            @constraint(uppermodel(sim(c)), flow[s] <= cap)
         end
     end
 end
 
-# special case - ProfileSourceModel: apply constraint at each timestep
-function __apply_constraints_profile!(c::Component, b::FixedCapacityBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
-    @constraint(sim(c).model, c.model.cap == b.val)
-end
+# special case - ProfileSourceModel: behavior is enforced throuhg _addbehavior!
+function __apply_constraints_profile!(::Component, ::FixedCapacityBehavior) end
 
 # general case: apply constraint at each timestep
 # dispatch to either general case or model = profile source case
@@ -84,7 +93,7 @@ function _apply_constraints!(c::Component, b::FixedCapacityBehavior, mult::Capac
         if _is_equivalent_to_variable(flow[s])
             set_upper_bound(flow[s], cap[s])
         else
-            @constraint(sim(c).model, flow[s] <= cap[s])
+            @constraint(uppermodel(sim(c)), flow[s] <= cap[s])
         end
     end
 end
@@ -113,7 +122,7 @@ end
 behaviorname(::FixedCapacityBehavior) = "fixed capacity"
 
 # return a Number
-_capacity(c::FixedCapacityBehavior{AffExpr}) = c.val.constant
+_capacity(c::FixedCapacityBehavior{<:GenericAffExpr}) = c.val.constant
 _capacity(c::FixedCapacityBehavior{Float64}) = c.val
 
 _portname(c::FixedCapacityBehavior) = c.data.pname

@@ -21,9 +21,12 @@ hasport(c::Component, pname::String) = hasport(c.s, pname)
 tag!(c::Component, tag::Symbol) = tag in c.tags ? nothing : push!(c.tags, tag)
 hastag(c::Component, tag::Symbol) = tag in c.tags
 
+# dispatch on model (e.g. ProfileSource has a different implementation)
+_addbehavior!(c::Component, b::AbstractBehavior) = _addbehavior!(c, b, model(c))
+
 # build behavior from behavior data and component
 # and add it to component behaviors
-function _addbehavior!(c::Component, b::AbstractBehavior)
+function _addbehavior!(c::Component, b::AbstractBehavior, ::AbstractModel)
     push!(c.behaviors, b)
 end
 
@@ -40,8 +43,8 @@ function Component(name::String, model::AbstractModelData, behaviors::AbstractVe
     c = Component(
         name, 
         m,
-        Vector{AbstractRegularBehavior{AffExpr}}(undef,0),
-        Vector{AbstractJointFlow{AffExpr}}(undef,0),
+        Vector{AbstractRegularBehavior{exptype(sim(m))}}(undef,0),
+        Vector{AbstractJointFlow{exptype(sim(m))}}(undef,0),
         copy(tags),
         shallowcopy(portstructure(m))
     )
@@ -51,8 +54,7 @@ function Component(name::String, model::AbstractModelData, behaviors::AbstractVe
     # because fixed cost is based on capacity
     # joint flows take highest priority: they are build before the regular behaviors
     # priority within joint flows is given by user input
-    vbehaviordata = _sortbehaviordata(behaviors)
-
+    vbehaviordata = _sortbehaviordata(behaviors, m)
     for b in vbehaviordata
         # build behavior from behavior data
         # then append it to c.behaviors
@@ -84,7 +86,7 @@ _apply_constraints!(::AbstractComponent, m::AbstractModel) = _apply_constraints!
 # constraints are from:
 #  * the model
 #  * the behaviors
-function _apply_constraints!(c::Component{AffExpr})
+function _apply_constraints!(c::Component{<:GenericAffExpr})
 
     # model constraints
     _apply_constraints!(c, model(c))

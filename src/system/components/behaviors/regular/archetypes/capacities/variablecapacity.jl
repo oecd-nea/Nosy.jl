@@ -1,4 +1,4 @@
-using JuMP: @variable, AffExpr
+using JuMP: @variable, GenericAffExpr, set_upper_bound, set_lower_bound
 using ArgCheck: @argcheck
 
 """
@@ -43,14 +43,24 @@ function buildbehavior(c::Component, b::VariableCapacity)
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     if b.unitsize isa Number
         # variable is number of units
-        v = @variable(sim(c).model, base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
         e = v * b.unitsize
     else
         # variable is capacity
-        v = @variable(sim(c).model, base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
-        e = convert(AffExpr, v)
+        v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        e = _to_affexpr(v, sim(c).model)
     end
     return VariableCapacityBehavior(b, e)
+end
+
+# for ProfileSource, we need to "apply" the behavior here
+# the reason is that this behavior must be enforce before the call to other behaviors
+# in particular: before call to VariableCost, which requires the flow being defined
+function _addbehavior!(c::Component, b::VariableCapacityBehavior, m::ProfileSourceModel)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
+    balance(c, :output, defaultmodifier, collapse=false, aggregate=false)["output"] .= _capacity(b) * _profile(m)
+    #_output(m.s)["output"].series .= _capacity(b) * _profile(m)
+    push!(c.behaviors, b)
 end
 
 """
@@ -60,14 +70,32 @@ Apply capacity constraints.
 # general expression of capacity constraint
 # can target model port or joint flow port
 function __apply_constraint_general!(c::Component, b::VariableCapacityBehavior)
-    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
+    @constraint(uppermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
+
+    # set upper bounds for the flow
+    # makes the problem more tight (possibly better for MIP) but makes the matrix less sparse (possibly worse for LP)
+    # _cap = _capacity(b)
+    # if (length(_cap.terms) == 1) && iszero(_cap.constant)
+    #     if has_upper_bound(first(_cap.terms)[1])
+    #         _ubcap = upper_bound(first(_cap.terms)[1]) * first(_cap.terms)[2]
+    #         vf = b.data.modifier(getport(c, b.data.pname)).data
+    #         # check first element, assume others are built the same way
+    #         if iszero(first(vf).constant) && length(first(vf).terms) == 1
+    #             for e in vf
+    #                 var = first(e.terms)[1]
+    #                 ub = _ubcap / first(e.terms)[2]
+    #                 if (!has_upper_bound(var)) || upper_bound(var) > ub 
+    #                     set_upper_bound(var, ub, force=true)
+    #                 end
+    #             end
+    #         end
+    #     end
+    # end
+
 end
 
-# special case - ProfileSourceModel: apply constraint at each timestep
-function __apply_constraints_profile!(c::Component, b::VariableCapacityBehavior)
-    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
-    @constraint(sim(c).model, c.model.cap == b.val)
-end
+# special case - ProfileSourceModel: behavior is enforced throuhg _addbehavior!
+function __apply_constraints_profile!(::Component, ::VariableCapacityBehavior) end
 
 # general case: apply constraint at each timestep
 # dispatch to either general case or model = profile source case
@@ -83,7 +111,7 @@ end
 function _apply_constraints!(c::Component, b::VariableCapacityBehavior, mult::CapacityMultiplierBehavior)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @argcheck _portname(b) == _portname(mult) "the variable capacity and the capacity multiplier do not target the same port"
-    @constraint(sim(c).model, b.data.modifier(getport(c, b.data.pname)).data .<= capacity(c, _portname(b), multiplier=true).data)
+    @constraint(uppermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= capacity(c, _portname(b), multiplier=true).data)
 end
 
 # redirect application of capacity constraint to model
@@ -107,7 +135,7 @@ end
 
 behaviorname(::VariableCapacityBehavior) = "variable capacity"
 
-# return the AffExpr
+# return the GenericAffExpr
 _capacity(c::VariableCapacityBehavior) = c.val
 
 _portname(c::VariableCapacityBehavior) = c.data.pname
