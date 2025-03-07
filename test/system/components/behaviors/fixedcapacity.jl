@@ -6,7 +6,7 @@ using Nosy: BasicConverter, ProfileSource, Demand
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
-using JuMP: Model, AffExpr, lower_bound, upper_bound, has_lower_bound, has_upper_bound
+using JuMP: Model, lower_bound, upper_bound, has_lower_bound, has_upper_bound
 using ArgCheck: ArgumentError
 
 @testset "FixedCapacity" begin
@@ -177,8 +177,8 @@ using ArgCheck: ArgumentError
 
     let m = makeprofilesource()  
 
-        @test nvariables(sim(m)) == 1 # profile source inner capacity
-        @test nconstraints(sim(m)) == 2 # profile source inner cap lb, equality of inner cap and fixed cap
+        @test nvariables(sim(m)) == 0 # no variable
+        @test nconstraints(sim(m)) == 0 # no constraint
 
     end
     

@@ -6,7 +6,7 @@ using Nosy: mass, energy
 using Nosy: Component, Node, connect!, apply_constraints!
 using Nosy: Snapshot, components, nodes, connect!
 
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "Node constraints" begin
 

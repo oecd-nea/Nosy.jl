@@ -6,7 +6,7 @@ using Nosy: Component
 using Nosy: _flow, flow
 using Nosy: _extract
 
-using JuMP: Model, AffExpr, @constraint, set_objective, set_silent
+using JuMP: Model, GenericAffExpr, @constraint, set_objective, set_silent
 import JuMP: MAX_SENSE
 
 using HiGHS

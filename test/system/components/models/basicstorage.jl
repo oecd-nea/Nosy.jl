@@ -1,9 +1,10 @@
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
+using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: portstructure, getport
 using Nosy: _input, _output, _level
 using Nosy: BasicStorage, BasicStorageModel
+using Nosy: FixedCapacity
 using Nosy: Component
 using Nosy: nvariables, nconstraints
 using Nosy: _extract

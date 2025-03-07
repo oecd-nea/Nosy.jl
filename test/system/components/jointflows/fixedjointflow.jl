@@ -7,13 +7,13 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
 using Nosy: portstructure, _input, getport
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "FixedJointFlow" begin
 
     tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
-    getvariable(e::AffExpr) = first(e.terms)[1]
+    getvariable(e::GenericAffExpr) = first(e.terms)[1]
 
     function makeconvdata()  
         s = tsim()

@@ -179,7 +179,7 @@ using JuMP: AffExpr
 
     let
 
-        # summation of Hourly and Stepwise - AffExpr version
+        # summation of Hourly and Stepwise - GenericAffExpr version
         v = [AffExpr(i) for i in 1:200]
         m = TimeMesh(repeat([1//2, 1//2], 100))
 

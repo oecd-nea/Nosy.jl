@@ -1,12 +1,12 @@
-using Nosy: MassCarrier, EnergyCarrier
+using Nosy: MassCarrier, EnergyCarrier, carrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Stepwise
-using Nosy: getport, hasinput, hasoutput
+using Nosy: getport, hasinput, hasoutput, hasport
 using Nosy: build
-using Nosy: ProfileSource, ProfileSourceModel
+using Nosy: ProfileSource, ProfileSourceModel, _profile
 
-using JuMP: Model
+using JuMP: Model, AffExpr
 
 @testset "ProfileSource" begin
 
@@ -29,8 +29,7 @@ using JuMP: Model
         @test hasport(m, "output")
         @test !hasport(m, "level")
 
-        @test m.cap isa AffExpr
-        @test all(mass(getport(m, "output")) .== m.cap * profile) # hidden capacity is applied to default modifier
+        @test all(_profile(m) .== profile)
 
         @test sim(m) == s
 
@@ -55,8 +54,7 @@ using JuMP: Model
         @test hasport(m, "output")
         @test !hasport(m, "level")
 
-        @test m.cap isa AffExpr
-        @test all(mass(getport(m, "output")) .== m.cap * Stepwise(profile, s.mesh)) # hidden capacity is applied to default modifier
+        @test all(_profile(m) .== Stepwise(profile, s.mesh))
 
         @test sim(m) == s
 
@@ -74,7 +72,7 @@ using JuMP: Model
 
         m = build(d, "profile")
 
-        @test all(mass(getport(m, "output")) .== m.cap * profile) # hidden capacity is applied to default modifier
+        @test all(_profile(m) .==  profile)
 
     end
 
@@ -86,7 +84,7 @@ using JuMP: Model
         @test_throws ArgumentError ProfileSource(mc, [-0.1, 0.2, 0.3, 0.4, 0.5]) # profile has a negative value
         
         # test that a warning is generated
-        @test (@test_logs (:warn, "There is no cutoff and some profiles have values superior to 1 - production will exceed capacity") ProfileSource(mc, [0.1, 0.2, 0.3, 0.4, 1.5])) isa ProfileSource # profile has a value > 1
+        @test (@test_logs (:warn, "Some profiles have values superior to 1 and there is no cutoff") ProfileSource(mc, [0.1, 0.2, 0.3, 0.4, 1.5])) isa ProfileSource # profile has a value > 1
 
     end
     
@@ -99,7 +97,7 @@ using JuMP: Model
 
         m = build(d, "profile")
 
-        @test all(mass(getport(m, "output")) .== m.cap * [0.2, 0.4, 0.6, 0.8, 1., 1., 1., 1., 1., 1.]) # checking cutoff
+        @test all(_profile(m) .== [0.2, 0.4, 0.6, 0.8, 1., 1., 1., 1., 1., 1.]) # checking cutoff
 
     end
 

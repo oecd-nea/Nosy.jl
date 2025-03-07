@@ -5,7 +5,7 @@ using Nosy: Sim, TimeMesh
 using Nosy: Port
 using Nosy: _flow
 
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "Port flow" begin
 

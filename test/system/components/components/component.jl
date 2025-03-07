@@ -7,13 +7,13 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, model, sim
 using Nosy: behaviors, uniquebehavior, hasbehavior
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "Component" begin
 
     tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
-    getvariable(e::AffExpr) = first(e.terms)[1]
+    getvariable(e::GenericAffExpr) = first(e.terms)[1]
 
     function makecomp(vbehavior, cname::String="comp")
         s = tsim()    

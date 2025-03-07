@@ -33,16 +33,16 @@ struct YearlySumBehavior{T,M} <: AbstractRegularBehavior{T}
     val::T
 end
 
-buildbehavior(::Component, b::YearlySum) = YearlySumBehavior(b, AffExpr(b.val))
+buildbehavior(c::Component, b::YearlySum) = YearlySumBehavior(b, exptype(sim(c))(b.val))
 
 function _apply_constraints!(c::Component, b::YearlySumBehavior)
     f = sum(b.data.modifier(getport(c, b.data.pname)))
     if b.data.type == :equal
-        @constraint(sim(c).model, f == b.val)
+        @constraint(lowermodel(sim(c)), f == b.val)
     elseif b.data.type == :max
-        @constraint(sim(c).model, f <= b.val)
+        @constraint(lowermodel(sim(c)), f <= b.val)
     elseif b.data.type == :min
-        @constraint(sim(c).model, f >= b.val)
+        @constraint(lowermodel(sim(c)), f >= b.val)
     end
 end
 

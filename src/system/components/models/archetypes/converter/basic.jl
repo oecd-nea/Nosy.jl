@@ -45,7 +45,7 @@ function build(m::BasicConverter, mname::String)
     vin = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(m.modifier) * "_in")
     vout = m.ratio .* m.modifier(m.input) ./ m.modifier(m.output) .* vin
 
-    ps = PortStructure{AffExpr}(m.sim)
+    ps = PortStructure{exptype(m.sim)}(m.sim)
     addinput!(ps, "input", Port(m.input, vin))
     addoutput!(ps, "output", Port(m.output, vout))
 

@@ -30,7 +30,7 @@ end
 
 # return a FixedJointFlowBehavior
 function buildjointflow(c::Component, j::FixedJointFlow)
-    f = Stepwise(AffExpr.(j.series), sim(c).mesh)
+    f = Stepwise(exptype(sim(c)).(j.series), sim(c).mesh)
     return FixedJointFlowModel(j, f)
 end
 

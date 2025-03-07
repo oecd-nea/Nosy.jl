@@ -26,7 +26,7 @@ function _connect!(c::Component{T}, n::Node{T}, sense::Symbol, p::Port) where T<
     end
 end
 
-# cannot connect AffExpr component to Number node and vice versa
+# cannot connect GenericAffExpr component to Number node and vice versa
 function _connect!(c::Component{T1}, n::Node{T2}, ::Symbol, ::Port) where {T1,T2}
     throw(AssertionError("Cannot connect $(name(c)) with $(name(n)): value types don't match"))    
 end

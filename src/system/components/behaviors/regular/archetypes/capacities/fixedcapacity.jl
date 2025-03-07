@@ -58,11 +58,13 @@ function __apply_constraint_general!(c::Component, b::FixedCapacityBehavior)
     flow = b.data.modifier(getport(c, b.data.pname)).data
     cap = _capacity(b)
 
+    lm = lowermodel(sim(c)) # type unstable, don't access it in loop
+
     for s in eachindex(flow)
         if _is_equivalent_to_variable(flow[s])
             set_upper_bound(flow[s], cap)
         else
-            @constraint(uppermodel(sim(c)), flow[s] <= cap)
+            @constraint(lm, flow[s] <= cap)
         end
     end
 end
@@ -89,11 +91,13 @@ function _apply_constraints!(c::Component, b::FixedCapacityBehavior, mult::Capac
     flow = b.data.modifier(getport(c, b.data.pname)).data
     cap = capacity(c, _portname(b), multiplier=true).data
 
+    lm = lowermodel(sim(c)) # type unstable, don't access it in loop
+
     for s in eachindex(flow)
         if _is_equivalent_to_variable(flow[s])
             set_upper_bound(flow[s], cap[s])
         else
-            @constraint(uppermodel(sim(c)), flow[s] <= cap[s])
+            @constraint(lm, flow[s] <= cap[s])
         end
     end
 end

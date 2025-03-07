@@ -1,4 +1,4 @@
-using JuMP: AffExpr
+using JuMP: GenericAffExpr
 using ArgCheck: @argcheck
 
 """
@@ -43,11 +43,11 @@ function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=
     return Node(
         name,
         c,
-        PortStructure{AffExpr}(sim(c)),
+        PortStructure{exptype(sim(c))}(sim(c)),
         losses,
         rule,
         evalprice,
-        DualPrice{AffExpr}(nothing),
+        DualPrice{exptype(sim(c))}(nothing),
         copy(tags),
     )
 end

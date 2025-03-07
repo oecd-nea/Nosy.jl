@@ -6,7 +6,7 @@ using Nosy: VariableCost, FixedCost, NoLoadCost, StartupCost
 using Nosy: fixedcost, variablecost, noloadcost, startupcost, cost
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!, getcomponent, balance, getport
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 using ArgCheck: ArgumentError
 
 @testset "Snapshot costs" begin
@@ -128,35 +128,35 @@ using ArgCheck: ArgumentError
         StartupCost(:startup, "input", 5.)
     ])
         # check variable cost is non-zero
-        @test (variablecost(s) isa AffExpr) && !iszero(variablecost(s))
+        @test (variablecost(s) isa GenericAffExpr) && !iszero(variablecost(s))
 
         @test variablecost(s) == variablecost(s, "comp1") + variablecost(s, "comp2")
 
         @test variablecost(s, :fuel) == variablecost(s, "comp1", :fuel) + variablecost(s, "comp2", :fuel)
 
         # check fixed cost is non-zero
-        @test (fixedcost(s) isa AffExpr) && !iszero(fixedcost(s))
+        @test (fixedcost(s) isa GenericAffExpr) && !iszero(fixedcost(s))
 
         @test fixedcost(s) == fixedcost(s, "comp1") + fixedcost(s, "comp2")
 
         @test fixedcost(s, :overnight) == fixedcost(s, "comp1", :overnight) + fixedcost(s, "comp2", :overnight)
 
         # check no-load cost is non-zero
-        @test (noloadcost(s) isa AffExpr) && !iszero(noloadcost(s))
+        @test (noloadcost(s) isa GenericAffExpr) && !iszero(noloadcost(s))
 
         @test noloadcost(s) == noloadcost(s, "comp1") + noloadcost(s, "comp2")
 
         @test noloadcost(s, :noload) == noloadcost(s, "comp1", :noload) + noloadcost(s, "comp2", :noload)
 
         # check startup cost is non-zero
-        @test (startupcost(s) isa AffExpr) && !iszero(startupcost(s))
+        @test (startupcost(s) isa GenericAffExpr) && !iszero(startupcost(s))
 
         @test startupcost(s) == startupcost(s, "comp1") + startupcost(s, "comp2")
 
         @test startupcost(s, :startup) == startupcost(s, "comp1", :startup) + startupcost(s, "comp2", :startup)    
 
         # check cost is non-zero
-        @test (cost(s) isa AffExpr) && !iszero(cost(s))
+        @test (cost(s) isa GenericAffExpr) && !iszero(cost(s))
 
         @test cost(s) == cost(s, "comp1") + cost(s, "comp2")
 

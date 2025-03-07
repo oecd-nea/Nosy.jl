@@ -6,7 +6,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, Node, portstructure, isfullyconnected, is_used, getport
 using Nosy: Snapshot, components, nodes, connect!, assertconnected
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "Connect" begin
 

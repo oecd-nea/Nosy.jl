@@ -71,7 +71,7 @@ Some notes and observations:
         uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, integer=false)
              
         # unit commitment requires capacity
-        @test_throws AssertionError m = makecomp([uc])
+        @test_throws AssertionError makecomp([uc])
 
     end
 

@@ -1,7 +1,7 @@
 
 using LinearAlgebra: dot # scalar product
 using ArgCheck
-using JuMP: AffExpr, VariableRef
+using JuMP: GenericAffExpr, VariableRef
 
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
@@ -55,7 +55,7 @@ _toVal(v::AbstractVector{Nothing}) = v
 _toVal(v::AbstractVector{Bool}) = v
 _toVal(v::AbstractVector{Float64}) = v
 _toVal(v::AbstractVector{<:Number}) = Float64.(v)
-_toVal(v::AbstractVector{AffExpr}) = convert(Vector{AffExpr}, v)
+_toVal(v::AbstractVector{<:GenericAffExpr}) = convert(Vector{eltype(v)}, v)
 _toVal(v::AbstractVector{VariableRef}) = convert(Vector{VariableRef}, v)
 
 # Stepwise: time series based on a timestep possibly inferior to hour
@@ -165,8 +165,8 @@ Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)
 
 
 # The sum of a Stepwise series is evaluated as the sum of stepwise elements weighted by timesteps durations.
-function Base.sum(s::Stepwise{AffExpr})
-    _res = zero(AffExpr)
+function Base.sum(s::Stepwise{<:GenericAffExpr})
+    _res = zero(eltype(s))
     for i in eachindex(s)
         add_to_expression!(_res, s[i] * weight(s.mesh, i))
     end
@@ -177,8 +177,8 @@ Base.sum(s::Stepwise{Float64}) = dot(s.data, s.mesh.weight)
 
 # The sum of a Hourly is a regular sum
 # We use addto! just to make it faster, it doesn't change the result
-function Base.sum(h::Hourly{AffExpr})
-    _res = zero(AffExpr)
+function Base.sum(h::Hourly{<:GenericAffExpr})
+    _res = zero(eltype(h))
     for e in h
         add_to_expression!(_res, e)
     end

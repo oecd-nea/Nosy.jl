@@ -39,7 +39,7 @@ using HiGHS: Optimizer
         # scalar multiplier
         let cb = buildbehavior(c, CapacityMultiplier("input", 0.5))
 
-            @test cb isa CapacityMultiplierBehavior{AffExpr, Float64} # verifying parametric type is AffExpr when building through component
+            @test cb isa CapacityMultiplierBehavior{AffExpr, Float64} # verifying parametric type is GenericAffExpr when building through component
         
         end
 

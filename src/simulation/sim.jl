@@ -5,22 +5,22 @@ Sim: data structure containing the information shared with all the simulation.
 """
 struct Sim
     mesh::RTimeMesh
-    model::Model
+    model::JuMP.AbstractModel # abstract type, would be unpractical to have parametric Sim
     options::Dict{String,Any}
 end
 
 """
-    Sim(model::Model; mesh::RTimeMesh=TimeMesh(), options::Dict=_defaultoptions())
+    Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh())
 Return a Sim based on the JuMP model `model`.
 Optional arguments:
   * `mesh`: TimeMesh for the simulation (default: 8760 hours, 1 step per hour)
   * `options`: Dict containing options for the simulation
 """
-function Sim(model::Model; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh())
+function Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh())
     return Sim(
         mesh,
         model,
-        options
+        convert(Dict{String,Any}, options)
     )
 end
 
@@ -29,9 +29,23 @@ nhours(s::Sim) = nhours(s.mesh)
 eachstep(s::Sim) = eachstep(s.mesh)
 eachhour(s::Sim) = eachhour(s.mesh)
 
+lowermodel(s::Sim) = Lower(s.model)
+uppermodel(s::Sim) = Upper(s.model)
+
+exptype(s::Sim) = _exptype(s.model)
+_exptype(::JuMP.Model) = AffExpr
+_exptype(::BilevelJuMP.BilevelModel) = BilevelJuMP.BilevelAffExpr
+
 # count the constraints of a Sim
 # snippet from: https://discourse.julialang.org/t/num-constraints-to-return-the-total-number-of-constraints/65488
-_nconstraints(m::Model) = sum(num_constraints(m, F, S) for (F, S) in list_of_constraint_types(m))
+function _nconstraints(m::Model) 
+    l = list_of_constraint_types(m)
+    if isempty(l)
+        return 0
+    else
+        return sum(num_constraints(m, F, S) for (F, S) in l)
+    end
+end
 nconstraints(s::Sim) = _nconstraints(s.model)
 
 # count the variables of a Sim

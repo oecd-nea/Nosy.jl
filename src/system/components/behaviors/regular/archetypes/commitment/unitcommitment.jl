@@ -1,4 +1,3 @@
-using JuMP: @variable, AffExpr
 using ArgCheck: @argcheck
 
 """

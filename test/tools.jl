@@ -2,12 +2,12 @@
 Tools for tests.
 """
 
-using JuMP: AffExpr
+using JuMP: GenericAffExpr
 
-# quick evaluation of whether 2 AffExpr are approximately the same
+# quick evaluation of whether 2 GenericAffExpr are approximately the same
 # they must have the same variables (keys)
 # and values (coeffs) must be approx
-function Base.isapprox(a::AffExpr, b::AffExpr)
+function Base.isapprox(a::GenericAffExpr, b::GenericAffExpr)
     if !isapprox(a.constant, b.constant)
         return false
     end

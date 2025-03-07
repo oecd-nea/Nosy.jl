@@ -6,7 +6,7 @@ using Nosy: Port
 using Nosy: PortStructure, addinput!, addoutput!, addlevel!
 using Nosy: _flow
 
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "Port structure flow" begin
 

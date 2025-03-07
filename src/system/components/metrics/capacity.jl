@@ -4,7 +4,7 @@ Component metrics.
 
 # barrier function to lower allocations as behavior concrete type is not known
 # reduces @btime from 450 ns to ~140 ns on Julia 1.11.1 / i7 1365U
-_capacity(::Nothing, T::DataType) = 0. # type inference fail still less expensive than AffExpr(0.)
+_capacity(::Nothing, T::DataType) = 0. # type inference fail still less expensive than GenericAffExpr(0.)
 _capacity(c::AbstractCapacityBehavior, ::DataType) = _capacity(c)
 
 

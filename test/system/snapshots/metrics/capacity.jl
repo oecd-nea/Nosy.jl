@@ -7,7 +7,7 @@ using Nosy: capacity
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, Node, Snapshot, connect!
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 using ArgCheck: ArgumentError
 
 @testset "Snapshot capacity" begin
@@ -44,7 +44,7 @@ using ArgCheck: ArgumentError
     let s = makesnapshot([VariableCapacity("input", mass)])
 
         # variable capacity
-        @test capacity(s, "comp") isa AffExpr
+        @test capacity(s, "comp") isa GenericAffExpr
 
     end
 

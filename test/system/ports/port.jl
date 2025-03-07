@@ -4,7 +4,7 @@ using Nosy: defaultmodifier, mass, energy, co2
 using Nosy: _defaultmodifier
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Port, is_used, set_used!, hasmodifier
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 
 

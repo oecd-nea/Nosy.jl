@@ -58,7 +58,7 @@ Tools for time series.
     differentzerovector(T::DataType, m::Integer)
 Return a vector of zeros of type T. Each element of the vector is a different object.
 """
-function differentzerovector(T::DataType, m::Integer) # when initializing an AffExpr zero vector with zeros function, all elements point to the same AffExpr zero
+function differentzerovector(T::DataType, m::Integer) # when initializing an GenericAffExpr zero vector with zeros function, all elements point to the same GenericAffExpr zero
     v = Vector{T}(undef, m)
     for t in eachindex(v)
         v[t] = zero(T)

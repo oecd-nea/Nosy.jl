@@ -28,7 +28,7 @@ end
 function buildbehavior(c::Component, b::FixedCost)
     # get the associated capacity behavior
     cap = getcapacitybehavior(c, b.pname, b.modifier)
-    cost = convert(AffExpr, _capacity(cap) * b.val)
+    cost = convert(exptype(sim(c)), _capacity(cap) * b.val)
     return FixedCostBehavior(b, cost)
 end
 

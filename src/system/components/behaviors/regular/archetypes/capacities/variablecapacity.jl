@@ -43,11 +43,11 @@ function buildbehavior(c::Component, b::VariableCapacity)
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     if b.unitsize isa Number
         # variable is number of units
-        v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
         e = v * b.unitsize
     else
         # variable is capacity
-        v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
         e = _to_affexpr(v, sim(c).model)
     end
     return VariableCapacityBehavior(b, e)
@@ -70,7 +70,7 @@ Apply capacity constraints.
 # general expression of capacity constraint
 # can target model port or joint flow port
 function __apply_constraint_general!(c::Component, b::VariableCapacityBehavior)
-    @constraint(uppermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
+    @constraint(lowermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
 
     # set upper bounds for the flow
     # makes the problem more tight (possibly better for MIP) but makes the matrix less sparse (possibly worse for LP)
@@ -111,7 +111,7 @@ end
 function _apply_constraints!(c::Component, b::VariableCapacityBehavior, mult::CapacityMultiplierBehavior)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, b.data.pname)))) "no modifier conversion allowed between component and capacity"
     @argcheck _portname(b) == _portname(mult) "the variable capacity and the capacity multiplier do not target the same port"
-    @constraint(uppermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= capacity(c, _portname(b), multiplier=true).data)
+    @constraint(lowermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= capacity(c, _portname(b), multiplier=true).data)
 end
 
 # redirect application of capacity constraint to model

@@ -1,5 +1,4 @@
 using Base: RefValue
-using JuMP:AffExpr
 
 """
 Definition of ports.
@@ -18,11 +17,11 @@ end
 Construct a Port with a time series populated with expressions. Initial "used" state is false.
 """
 function Port(c::AbstractCarrier, s::AbstractVector, used::Bool=false)
-    return Port(c, Stepwise(_to_affexpr(s), sim(c).mesh), RefValue(used))
+    return Port(c, Stepwise(_to_affexpr.(s, sim(c).model), sim(c).mesh), RefValue(used))
 end
 
 # There is not method besides the natural constructor to construct a Port{Float64,C}.
-# During the formulation of the optimization problem, all ports should be of types Port{AffExpr,C}, even if they only carry numbers.
+# During the formulation of the optimization problem, all ports should be of types Port{<:GenericAffExpr,C}, even if they only carry numbers.
 
 carrier(p::AbstractPort) = p.carrier
 series(p::AbstractPort) = p.series
@@ -45,6 +44,10 @@ function set_used!(p::Port)
     end
     setindex!(p.used, true)
 end
+
+Base.similar(p::Port) = typeof(p)(p.carrier, Stepwise(zeros(eltype(p.series.data), length(p.series.data)), p.series.mesh), p.used)
+
+shallowcopy(p::Port) = typeof(p)(p.carrier, Stepwise(p.series.data, p.series.mesh), p.used)
 
 """
 Apply modification to ports.

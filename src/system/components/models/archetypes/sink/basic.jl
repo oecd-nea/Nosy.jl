@@ -29,7 +29,7 @@ end
 function build(m::BasicSink, mname::String)
     vin = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(_defaultmodifier(carrierstyle(m.carrier))) * "_in")
 
-    ps = PortStructure{AffExpr}(m.sim)
+    ps = PortStructure{exptype(m.sim)}(m.sim)
     addinput!(ps, "input", Port(m.carrier, vin))
 
     return BasicSinkModel(m, ps)

@@ -38,7 +38,7 @@ end
 # return a DemandModel using Demand data
 function build(m::Demand, ::String) # no variable -> no use of name
 
-    ps = PortStructure{AffExpr}(m.sim)
+    ps = PortStructure{exptype(m.sim)}(m.sim)
     addinput!(ps, "input", Port(m.carrier, m.series))
 
     return DemandModel(m, ps)

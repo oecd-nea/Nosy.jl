@@ -63,7 +63,7 @@ function build(m::BasicStorage, mname::String)
     _output = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(m.modifier) * "_output")
     _level = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(m.modifier) * "_level")
     
-    ps = PortStructure{AffExpr}(m.sim)
+    ps = PortStructure{exptype(m.sim)}(m.sim)
     addinput!(ps, "input", Port(m.input, _input))
     addoutput!(ps, "output", Port(m.output, _output))
     addlevel!(ps, "level", Port(m.level, _level))
@@ -85,7 +85,7 @@ function _apply_constraints!(c::AbstractComponent, m::BasicStorageModel)
     
     # constraint: conservation of modified, efficiency-weighted flows & storage
     # we consider flow varies linearly during a timestep
-    @constraint(sim(c).model, 
+    @constraint(lowermodel(sim(c)), 
         (shift(_level,1) - _level).data .== (((shift(_in,1) + _in) * m.data.eff_i - (shift(_out,1) + _out) / m.data.eff_o) .* weight(sim(c).mesh) / 2.).data
     )
 

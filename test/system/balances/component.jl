@@ -38,14 +38,14 @@ using JuMP: Model, AffExpr
 
         # collapsed, non-aggregated balance, mass
         bm = balance(c, :input, mass, collapse=true, aggregate=false)
-        @test haskey(bm, "input") && bm["input"] == sum(c.s.input["input"].series) # NB sum of AffExpr is weighted
+        @test haskey(bm, "input") && bm["input"] == sum(c.s.input["input"].series) # NB sum of GenericAffExpr is weighted
         @test isempty(balance(c, :output, mass, collapse=true, aggregate=false))
 
         # collapsed, non-aggregated balance, energy
         bei = balance(c, :input, energy, collapse=true, aggregate=false)
         @test haskey(bei, "input") && bei["input"] == sum(energy(c.s.input["input"]))
         beo = balance(c, :output, energy, collapse=true, aggregate=false)
-        @test haskey(beo, "output") && beo["output"] == sum(c.s.output["output"].series) # NB sum of AffExpr is weighted
+        @test haskey(beo, "output") && beo["output"] == sum(c.s.output["output"].series) # NB sum of GenericAffExpr is weighted
 
     end
 

@@ -18,8 +18,8 @@ defaultsnapshotoptions() = Dict()
 function Snapshot(sim::Sim, options::Dict=defaultsnapshotoptions())
     Snapshot(
         sim,
-        Dict{String,Component{AffExpr}}(),
-        Dict{String,Node{AffExpr}}(),
+        Dict{String,Component{exptype(sim)}}(),
+        Dict{String,Node{exptype(sim)}}(),
         options,
         RefValue(false)
     )

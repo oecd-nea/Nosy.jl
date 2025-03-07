@@ -6,7 +6,7 @@ using Nosy: getport, hasinput, hasoutput
 using Nosy: build
 using Nosy: Demand, DemandModel
 
-using JuMP: Model
+using JuMP: Model, AffExpr
 
 @testset "Demand" begin
 

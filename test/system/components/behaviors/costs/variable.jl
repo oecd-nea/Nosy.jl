@@ -8,7 +8,7 @@ using Nosy: variablecost, _variablecost
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, balance
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 using ArgCheck: ArgumentError
 
 @testset "VariableCost" begin

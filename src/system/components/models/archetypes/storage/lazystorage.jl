@@ -46,7 +46,7 @@ end
 function build(m::LazyStorage, mname::String)
     level = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(m.modifier) * "_level")
     
-    ps = PortStructure{AffExpr}(m.sim)
+    ps = PortStructure{exptype(m.sim)}(m.sim)
     addlevel!(ps, "level", Port(m.level, level))
 
     return LazyStorageModel(m, ps)
@@ -75,9 +75,9 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     _level = mod(getport(m, "level"))
     
     # constraint: conservation of modified, efficiency-weighted flows & storage
-    # constraint is multiplied by 2 both sides to reduce number of operations on AffExpr
+    # constraint is multiplied by 2 both sides to reduce number of operations on GenericAffExpr
     # we consider flow varies linearly during a timestep
-    @constraint(sim(m).model, 2. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
+    @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
 
 end
 

@@ -58,7 +58,7 @@ function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::Abstr
         
     # if there is no variable part for the output, we don't generate a variable for it
     if iszero(vmax)
-        variable = Stepwise(zeros(AffExpr, nsteps(s)), s.mesh) # warning: all elements link to same AffExpr. This is on purpose, to reduce allocation.
+        variable = Stepwise(zeros(exptype(s), nsteps(s)), s.mesh) # warning: all elements link to same GenericAffExpr. This is on purpose, to reduce allocation.
     else
         variable = Stepwise(s, lb=0, ub=vmax, basename=name(c) * "_var") # deactivate ub=ub(vmax) because constraint is mandatory
     end
@@ -183,7 +183,7 @@ NB the startup and shutdown duration are not constraints, they are used to compu
 """
 
 function _apply_constraint_uc_switch!(c::Component, b::FleetUnitCommitmentBehavior)
-    @constraint(sim(c).model,
+    @constraint(lowermodel(sim(c)),
         b.state.data .== (shift(b.state, -1) + b.startup - shift(b.shutdown, -1)).data
     )
 end
@@ -191,7 +191,7 @@ end
 # not applied if minratio is 1 (no variable part of flow)
 function _apply_constraint_uc_variable_flow!(c::Component, b::FleetUnitCommitmentBehavior)
     if b.data.minratio < 1
-        @constraint(sim(c).model, 
+        @constraint(lowermodel(sim(c)), 
             (b.variable -  b.state * (b.unitsize * (1. - b.data.minratio))).data .<= 0.
         )
     end
@@ -200,15 +200,18 @@ end
 # the constraint below is redundant
 # it may guide the solver, but is not mandatory (already included in the uc flow constraint)
 # function _apply_constraints_uc_units!(c::Component, b::FleetUnitCommitmentBehavior)
-#     @constraint(sim(c).model, 
+#     @constraint(lowermodel(sim(c)), 
 #         b.state.data .<= nbunits(c)
 #     )
 # end
 
 function _apply_constraints_uc_minuptime!(c::Component, b::FleetUnitCommitmentBehavior)
     m = sim(c).mesh
+
+    lm = lowermodel(sim(c)) # type unstable, don't access it in loop
+
     for step in eachindex(b.state)
-        val = AffExpr(0.)
+        val = exptype(sim(c))(0.)
         local deltah = 0//1
         local step2 = step - 1
         while deltah < b.data.uptime
@@ -217,7 +220,7 @@ function _apply_constraints_uc_minuptime!(c::Component, b::FleetUnitCommitmentBe
             step2 = step2 - 1
         end
         if !iszero(val)
-            @constraint(sim(c).model, val <= b.state[step])
+            @constraint(lm, val <= b.state[step])
         end
     end
 end
@@ -231,8 +234,11 @@ end
 function _apply_constraints_uc_mindowntime!(c::Component, b::FleetUnitCommitmentBehavior)
     m = sim(c).mesh
     _units = nbunits(c)
+
+    lm = lowermodel(sim(c)) # type unstable, don't access it in loop
+
     for step in eachindex(b.state)
-        val = AffExpr(0.)
+        val = exptype(sim(c))(0.)
         local step2 = step - 1
         local deltah = 0//1
         while deltah < b.data.downtime + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
@@ -241,13 +247,13 @@ function _apply_constraints_uc_mindowntime!(c::Component, b::FleetUnitCommitment
             step2 = step2 - 1
         end
         if !iszero(val)
-            @constraint(sim(c).model, val <= _units - b.state[step] + b.startup[step])
+            @constraint(lm, val <= _units - b.state[step] + b.startup[step])
         end
     end
 end
 
 function _apply_constraints_uc_flow!(c::Component, b::FleetUnitCommitmentBehavior)
-    @constraint(sim(c).model, 
+    @constraint(lowermodel(sim(c)), 
         b.modifier(getport(c, b.data.pname)).data .== _flow(b).data
     )
 end
@@ -255,13 +261,13 @@ end
 
 function _apply_constraint_su_sd(c::Component, b::FleetUnitCommitmentBehavior)
     # cannot shutdown more units than committed
-    @constraint(sim(c).model,
+    @constraint(lowermodel(sim(c)),
         b.shutdown.data .<= b.state.data
     )
 
     # cannot startup more units than not committed
     # this constraint is not mandatory, but it might guide the solver
-    # @constraint(sim(c).model,
+    # @constraint(lowermodel(sim(c)),
     #     b.startup.data .<= nbunits(c) .- shift(b.state, -1)
     # )
 end

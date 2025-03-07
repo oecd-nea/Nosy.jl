@@ -8,7 +8,7 @@ using Nosy: Node
 using Nosy: DualPrice
 using Nosy: _flow, flow
 
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 
 @testset "Node flow" begin
 

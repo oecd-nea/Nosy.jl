@@ -9,14 +9,14 @@ using Nosy: mass, energy
 using Nosy: Component, model, sim
 using Nosy: capacity
 using Nosy: fixedcost, variablecost, cost
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
 
 @testset "Component metrics" begin
 
     tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
-    getvariable(e::AffExpr) = first(e.terms)[1]
+    getvariable(e::GenericAffExpr) = first(e.terms)[1]
 
     function makecomp(vbehavior)
         s = tsim()    

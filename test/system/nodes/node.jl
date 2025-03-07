@@ -1,12 +1,13 @@
-using Nosy: MassCarrier
+using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port, hasport
 using Nosy: PortStructure, addinput!, addoutput!, addlevel!, addlosses!, hasoutput
 using Nosy: Node, _input, _output, name, carrier, rule, iscurtailed
 using Nosy: dualprice
+using Nosy: balance, energy
 
-using JuMP: Model, AffExpr
+using JuMP: Model, GenericAffExpr
 using ArgCheck: ArgumentError
 
 @testset "Node" begin

@@ -14,7 +14,7 @@ using ArgCheck: ArgumentError
 
     tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
-    getvariable(e::AffExpr) = first(e.terms)[1]
+    getvariable(e::GenericAffExpr) = first(e.terms)[1]
 
     function makecomp(vbehavior=[])
         s = tsim()    
@@ -36,7 +36,7 @@ using ArgCheck: ArgumentError
 
         b = buildbehavior(m, c)
 
-        @test _capacity(b) isa AffExpr
+        @test _capacity(b) isa GenericAffExpr
 
         var = getvariable(_capacity(b))
         @test lower_bound(var) == 5.
@@ -54,7 +54,7 @@ using ArgCheck: ArgumentError
 
         b = buildbehavior(m, c)
 
-        @test _nbunits(b) isa AffExpr
+        @test _nbunits(b) isa GenericAffExpr
         @test _nbunits(b) == _capacity(b) / 2.5
 
     end
@@ -104,7 +104,7 @@ using ArgCheck: ArgumentError
 
     let c = makecomp([VariableCapacity("input", mass, unitsize=2.5)])
 
-        @test nbunits(c) isa AffExpr
+        @test nbunits(c) isa GenericAffExpr
         @test nbunits(c) == capacity(c) / 2.5
 
     end
@@ -217,8 +217,8 @@ using ArgCheck: ArgumentError
 
     let m = makeprofilesource()  
 
-        @test nvariables(sim(m)) == 2 # profile source inner capacity, variable capacity
-        @test nconstraints(sim(m)) == 3 # profile source inner cap lb, variable cap lb, equality of both
+        @test nvariables(sim(m)) == 1 # variable capacity
+        @test nconstraints(sim(m)) == 1 # variable cap lb
 
     end
     
