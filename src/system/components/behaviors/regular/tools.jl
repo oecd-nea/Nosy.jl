@@ -13,6 +13,17 @@ function getbehaviors(c::Component, B)
     return v
 end
 
+# return true if c has a port name d pname associated with a capacity behavior
+# return false otherwise
+function hascapacitybehavior(c::Component, pname::String)
+    for b in getbehaviors(c, AbstractCapacityBehavior)
+        if _portname(b) == pname
+            return true
+        end
+    end
+    return false
+end
+
 # return a capacity behavior associated with port named pname
 function getcapacitybehavior(c::Component, pname::String)
     for b in getbehaviors(c, AbstractCapacityBehavior)
