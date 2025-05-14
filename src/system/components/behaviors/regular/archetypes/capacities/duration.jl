@@ -4,8 +4,6 @@ Duration behavior.
 Used for storage-like models, to link together the flow capacity (input, output etc.) and the level.
 """
 
-using Infiltrator
-
 struct Duration <: AbstractBehaviorData
     hours::Float64
     inputpname::String
