@@ -38,7 +38,22 @@ If the component has no capacity associated with port `pname`, return zero.
 """
 function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where T
     @assert hasport(c.s, pname) "Component $(name(c)) has no port named $pname"
-    cap = getcapacitybehavior(c, pname)
+    if hascapacitybehavior(c, pname)
+        cap = getcapacitybehavior(c, pname)
+    elseif hasbehavior(c, DurationBehavior) # special case: if component (from storage model) has duration, then capacity for pname is evaluated on the fly
+        d = first(getbehaviors(c, DurationBehavior))
+        cappname = _capacitypname(d)
+        cap = getcapacitybehavior(c, cappname)
+        if pname in ("input", "output") && cappname in ("input", "output")
+            nothing # proceed to evaluate multiplier
+        elseif pname == "level"
+            return _capacity(cap) * _hours(d) # not managing multiplier for level
+        elseif cappname == "level"
+            return _capacity(cap) / _hours(d) # not managing multiplier for level
+        end
+    else
+        throw(AssertionError("Component $(c.name) has no capacity associated with port $pname"))
+    end
     local m = 1.
     if multiplier
         # look for a capacity multiplier

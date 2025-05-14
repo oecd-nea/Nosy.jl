@@ -1,4 +1,5 @@
 include("abstract.jl")
 include("capacitymultiplier.jl")
+include("duration.jl")
 include("variablecapacity.jl")
 include("fixedcapacity.jl")
