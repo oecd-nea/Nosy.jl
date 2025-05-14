@@ -17,6 +17,9 @@ struct Duration <: AbstractBehaviorData
     Duration(hours::Number; inputpname::String="input", outputpname::String="output", levelpname::String="level") = new(Float64(hours), inputpname, outputpname, levelpname)
 end
 
+_inputpname(b::Duration) = b.inputpname
+_outputpname(b::Duration) = b.outputpname
+_levelpname(b::Duration) = b.levelpname
 
 struct DurationBehavior{T} <: AbstractRegularBehavior{T}
     data::Duration
