@@ -45,7 +45,7 @@ function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=fal
 end
 
 # accelerate sum of GenericAffExpr elements
-function addto!(e1::GenericAffExpr, e2::GenericAffExpr)
+function addto!(e1::GenericAffExpr, e2::Union{GenericAffExpr,Number})
     add_to_expression!(e1, e2)
     return e1
 end

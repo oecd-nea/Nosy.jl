@@ -5,6 +5,7 @@ using JuMP: GenericAffExpr, VariableRef
 
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
+parenttype(s::AbstractMeshedTimeSeries) = (typeof(s)).name.wrapper
 
 """
 AbstractMeshedTimeSeries interface (on top of AbstractTimeSeries)
@@ -23,12 +24,15 @@ AbstractMeshedTimeSeries algebra.
 Addition operator for AbstractMeshedTimeSeries.
 """
 function Base.:+(s1::T, s2::T) where T<:AbstractMeshedTimeSeries  
-    @argcheck s1.mesh === s2.mesh "Time series are associated with the same mesh"
+    @argcheck s1.mesh == s2.mesh "Time series must be associated with the same mesh"
     return T.name.wrapper(s1.data + s2.data, s1.mesh)
 end
 
 # Addition of different types of time series is forbidden
-Base.:+(::T1, ::T2) where {T1<:AbstractMeshedTimeSeries, T2<:AbstractMeshedTimeSeries}  = error("Time series have different types")
+function Base.:+(s1::T1, s2::T2) where {T1<:AbstractMeshedTimeSeries, T2<:AbstractMeshedTimeSeries}
+    @assert parenttype(s1) == parenttype(s2) "Time series have different types"
+    return +(promote(s1, s2)...)
+end
 
 """
 Multiplication by scalar operator for AbstractMeshedTimeSeries.
@@ -86,6 +90,11 @@ mesh(s::Stepwise) = s.mesh
 Return a Stepwise time series based on Number `v` and mesh `mesh`.    
 """
 Stepwise(v::Number, m::TimeMesh) = Stepwise(fill(Float64(v), nsteps(m)), m)
+
+
+import Base: promote_rule, convert
+promote_rule(::Type{Stepwise{T}}, ::Type{Stepwise{S}}) where {T,S} = Stepwise{promote_type(T,S)} # no need to add symmetrical function (handled by promote_type)
+convert(::Type{Stepwise{T}}, s::Stepwise) where T = Stepwise(convert.(T, s.data), s.mesh)
 
 # Hourly: time series based on a hourly timestep
 struct Hourly{T} <: AbstractMeshedTimeSeries{T}

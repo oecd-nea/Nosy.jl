@@ -86,6 +86,12 @@ eachstep(m) = eachindex(m.hour_at_step)
 
 isunit(m::TimeMesh) = m.isunit
 
+import Base: ==
+function ==(t1::TimeMesh, t2::TimeMesh)
+    (t1 === t2) && return true # this is the same time mesh (normal case, only 1 sim)
+    return all(t1.weight .== t2.weight) # very inefficient, but rare (cross-sim)
+end
+
 # display mesh info
 function Base.show(io::IO, m::TimeMesh)
     nh = nhours(m)

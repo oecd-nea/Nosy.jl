@@ -137,7 +137,7 @@ using JuMP: AffExpr
         h = Hourly(v, m)
         s = Stepwise(h)
 
-        @test_throws ErrorException s + h
+        @test_throws AssertionError s + h
 
     end
 
