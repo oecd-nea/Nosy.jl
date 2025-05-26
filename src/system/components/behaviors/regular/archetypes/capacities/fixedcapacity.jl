@@ -42,8 +42,7 @@ end
 # in particular: before call to VariableCost, which requires the flow being defined
 function _addbehavior!(c::Component, b::FixedCapacityBehavior, m::ProfileSourceModel)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
-    balance(c, :output, defaultmodifier, collapse=false, aggregate=false)["output"] .= _capacity(b) * _profile(m)
-    # _output(m.s)["output"].series .= _capacity(b) * _profile(m)
+    c.model.s.output["output"].series .= convert.(AffExpr, _capacity(b) * _profile(m))
     push!(c.behaviors, b)
 end
 

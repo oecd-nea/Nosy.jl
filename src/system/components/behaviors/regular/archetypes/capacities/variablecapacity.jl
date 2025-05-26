@@ -45,6 +45,14 @@ function buildbehavior(c::Component, b::VariableCapacity)
         # variable is number of units
         v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
         e = v * b.unitsize
+
+        # alternative implementation
+        # can be used if solver complains objective range is too large
+        # NB may make crossover phase of Barrier algorithm much longer
+        # v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        # e = _to_affexpr(v, sim(c).model)
+        # u = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        # @constraint(lowermodel(sim(c)), v == u * b.unitsize)
     else
         # variable is capacity
         v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
@@ -58,8 +66,7 @@ end
 # in particular: before call to VariableCost, which requires the flow being defined
 function _addbehavior!(c::Component, b::VariableCapacityBehavior, m::ProfileSourceModel)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
-    balance(c, :output, defaultmodifier, collapse=false, aggregate=false)["output"] .= _capacity(b) * _profile(m)
-    #_output(m.s)["output"].series .= _capacity(b) * _profile(m)
+    c.model.s.output["output"].series .= convert.(AffExpr, _capacity(b) * _profile(m))
     push!(c.behaviors, b)
 end
 
