@@ -4,11 +4,11 @@ Sort behaviors.
 
 # priority for behaviors
 # priority is highest for first elements
-const BEHAVIORS_PRIORITY = (AbstractJointFlowData, CapacityMultiplier, AbstractCapacityData, Duration, UnitCommitment)
+const BEHAVIORS_PRIORITY = (AbstractJointFlowData, CapacityMultiplier, AbstractCapacityData, Duration, AbstractUnitCommitmentData)
 
 # for ProfileSource, the capacity must be defined before joint flows
 # because their flow is undefined before it is associated with a capacity
-const BEHAVIORS_PRIORITY_PROFILE = (CapacityMultiplier, AbstractCapacityData, Duration, AbstractJointFlowData, UnitCommitment)
+const BEHAVIORS_PRIORITY_PROFILE = (CapacityMultiplier, AbstractCapacityData, Duration, AbstractJointFlowData, AbstractUnitCommitmentData)
 
 _sort_order(::AbstractModel) = BEHAVIORS_PRIORITY
 _sort_order(::ProfileSourceModel) = BEHAVIORS_PRIORITY_PROFILE

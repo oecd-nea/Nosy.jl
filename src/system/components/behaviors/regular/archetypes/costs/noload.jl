@@ -24,7 +24,7 @@ struct NoLoadCostBehavior{T<:VAL} <: AbstractCostBehavior{T}
 end
 
 function buildbehavior(c::Component{T}, b::NoLoadCost) where T
-    vuc = getbehaviors(c, FleetUnitCommitmentBehavior{T}) # TODO update when other unit commitment behaviors are implemented
+    vuc = getbehaviors(c, Nosy.AbstractFleetUnitCommitmentBehavior{T}) # TODO update when other unit commitment behaviors are implemented
     local uc = nothing
     for _uc in vuc
         portname(_uc) == b.pname ? uc = _uc : nothing

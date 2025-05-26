@@ -24,7 +24,7 @@ struct StartupCostBehavior{T<:VAL} <: AbstractCostBehavior{T}
 end
 
 function buildbehavior(c::Component{T}, b::StartupCost) where T
-    vuc = getbehaviors(c, FleetUnitCommitmentBehavior{T}) # TODO update when other unit commitment behaviors are implemented
+    vuc = getbehaviors(c, AbstractFleetUnitCommitmentBehavior{T}) # TODO update when other unit commitment behaviors are implemented
     local uc = nothing
     for _uc in vuc
         portname(_uc) == b.pname ? uc = _uc : nothing
@@ -32,7 +32,7 @@ function buildbehavior(c::Component{T}, b::StartupCost) where T
     end
     @assert !isnothing(uc) "Component $(name(c)) does not have a unit commitment behavior for port $(b.pname)"
     _cost = sum(uc.startup.data) * b.val # we need to sum the switch states, so they must not be weighted
-    return StartupCostBehavior(b, _cost)
+    return StartupCostBehavior{T}(b, convert(T,_cost))
 end
 
 # no constraint associated with cost

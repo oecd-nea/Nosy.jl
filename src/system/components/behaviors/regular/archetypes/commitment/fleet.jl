@@ -15,7 +15,9 @@ Therefore, special care must be applied when manipulating these series. For inst
 However, the UC flows (including evaluated with _su and _sd functions) can be converted to Hourly and integrated.
 """
 
-struct FleetUnitCommitmentBehavior{T<:VAL,M<:Function} <: AbstractUnitCommitmentBehavior{T}
+abstract type AbstractFleetUnitCommitmentBehavior{T} <: AbstractUnitCommitmentBehavior{T} end
+
+struct FleetUnitCommitmentBehavior{T<:VAL,M<:Function} <: AbstractFleetUnitCommitmentBehavior{T}
     data::UnitCommitment
     
     # capacity data
@@ -25,12 +27,12 @@ struct FleetUnitCommitmentBehavior{T<:VAL,M<:Function} <: AbstractUnitCommitment
     # uc variables
     startup::Stepwise{T}
     shutdown::Stepwise{T}
+    shutdownselector::Vector{Stepwise{T}}
     state::Stepwise{T}
     variable::Stepwise{T}
 end
 
-
-function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::AbstractCapacityBehavior)
+function FleetUnitCommitmentBehavior(c::Component{T}, b::UnitCommitment, cap::AbstractCapacityBehavior) where T
     s = sim(c)
     
     umax = _nbunitsmax(cap) # max number of units
@@ -55,6 +57,30 @@ function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::Abstr
     startup = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_su")
     shutdown = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_sd")
     state = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_uc")
+
+    # shutdown selector variable
+    if length(b.downtime) == 1
+        
+        #if there is only one way to shutdown
+        shutdownselector = [shutdown]
+
+    else
+        
+        # if there are multiple ways to shutdown
+
+        # set shutdown to not integer (already taken into account by selectors)
+        for e in shutdown
+            v = first(e.terms)[1]
+            is_integer(v) && unset_integer(v)
+        end
+
+        # generate variables for shutdown selector
+        shutdownselector = Vector{Stepwise{T}}(undef,length(b.downtime))
+        for i in eachindex(b.downtime)
+            shutdownselector[i] = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_sds" * string(i))
+        end
+
+    end
         
     # if there is no variable part for the output, we don't generate a variable for it
     if iszero(vmax)
@@ -63,7 +89,7 @@ function FleetUnitCommitmentBehavior(c::Component, b::UnitCommitment, cap::Abstr
         variable = Stepwise(s, lb=0, ub=vmax, basename=name(c) * "_var") # deactivate ub=ub(vmax) because constraint is mandatory
     end
 
-    return FleetUnitCommitmentBehavior(b, cap.data.modifier, _unitsize(cap), startup, shutdown, state, variable)
+    return FleetUnitCommitmentBehavior(b, cap.data.modifier, _unitsize(cap), startup, shutdown, shutdownselector, state, variable)
 end
 
 """
@@ -73,11 +99,11 @@ Next functions quantify the different components of the UC flow:
   * _sd: flow due to the fact that some units are shutting down
 """
 
-function _com(b::FleetUnitCommitmentBehavior)
+function _com(b::AbstractFleetUnitCommitmentBehavior)
     return b.data.minratio * b.unitsize * b.state
 end
 
-function _var(b::FleetUnitCommitmentBehavior)
+function _var(b::AbstractFleetUnitCommitmentBehavior)
     return b.variable
 end
 
@@ -91,7 +117,7 @@ function _lin_ratio_su(sud, timebeforesu)
     end
 end
 
-function _su(b::FleetUnitCommitmentBehavior{T}) where T
+function _su(b::AbstractFleetUnitCommitmentBehavior{T}) where T
     m = b.startup.mesh # mesh
     _su = Stepwise(differentzerovector(T, nsteps(m)), m)
     for step in eachindex(_su)
@@ -116,13 +142,13 @@ function _lin_ratio_sd(sdd, timeaftersd)
     end
 end
 
-function _sd(b::FleetUnitCommitmentBehavior{T}) where T
+function _sd(b::AbstractFleetUnitCommitmentBehavior{T}) where T
     m = b.startup.mesh # mesh
     _sd = Stepwise(differentzerovector(T, nsteps(m)), m)
     for step in eachindex(_sd)
         local deltah = 0//1
         local step2 = step + 1
-        while deltah < b.data.shutdown        
+        while deltah < b.data.shutdown     
             deltah += weight(m, step2)
             _sd[step2] += b.shutdown[step] * b.unitsize * b.data.shutdownratio * _lin_ratio_sd(b.data.shutdown, deltah)
             step2 = step2 + 1
@@ -131,12 +157,12 @@ function _sd(b::FleetUnitCommitmentBehavior{T}) where T
     return _sd
 end
 
-_flow(b::FleetUnitCommitmentBehavior) = _com(b) + _var(b) + _su(b) + _sd(b)
+_flow(b::AbstractFleetUnitCommitmentBehavior) = _com(b) + _var(b) + _su(b) + _sd(b)
 
 
 # return the "up" state, which is either unit is committed, or is in startup or shutdown process
 # in other words, if and only if the unit is doing something, the "up" state is positive.
-function _up(b::FleetUnitCommitmentBehavior{T}) where T
+function _up(b::AbstractFleetUnitCommitmentBehavior{T}) where T
     m = b.startup.mesh
 
     _up = Stepwise(differentzerovector(T, nsteps(m)), m)
@@ -182,14 +208,14 @@ Unit commitment constraints:
 NB the startup and shutdown duration are not constraints, they are used to compute the flow.
 """
 
-function _apply_constraint_uc_switch!(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraint_uc_switch!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     @constraint(lowermodel(sim(c)),
         b.state.data .== (shift(b.state, -1) + b.startup - shift(b.shutdown, -1)).data
     )
 end
 
 # not applied if minratio is 1 (no variable part of flow)
-function _apply_constraint_uc_variable_flow!(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraint_uc_variable_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     if b.data.minratio < 1
         @constraint(lowermodel(sim(c)), 
             (b.variable -  b.state * (b.unitsize * (1. - b.data.minratio))).data .<= 0.
@@ -205,7 +231,7 @@ end
 #     )
 # end
 
-function _apply_constraints_uc_minuptime!(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraints_uc_minuptime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = sim(c).mesh
 
     lm = lowermodel(sim(c)) # type unstable, don't access it in loop
@@ -231,20 +257,24 @@ end
 # Same remark for shutdown.
 # The implementation of the constraint is tested for constant time intervals, it will not be correct for variable time intervals.
 # TODO update the implementation to handle variable time intervals
-function _apply_constraints_uc_mindowntime!(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraints_uc_mindowntime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = sim(c).mesh
     _units = nbunits(c)
 
     lm = lowermodel(sim(c)) # type unstable, don't access it in loop
 
+    # outer loop on shutdown types
+    
     for step in eachindex(b.state)
         val = exptype(sim(c))(0.)
-        local step2 = step - 1
-        local deltah = 0//1
-        while deltah < b.data.downtime + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
-            addto!(val, b.shutdown[step2])  
-            deltah += weight(m, step2)
-            step2 = step2 - 1
+        for sdtype in eachindex(b.shutdownselector)
+            local step2 = step - 1
+            local deltah = 0//1
+            while deltah < b.data.downtime[sdtype] + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
+                addto!(val, b.shutdownselector[sdtype][step2])  
+                deltah += weight(m, step2)
+                step2 = step2 - 1
+            end
         end
         if !iszero(val)
             @constraint(lm, val <= _units - b.state[step] + b.startup[step])
@@ -252,14 +282,23 @@ function _apply_constraints_uc_mindowntime!(c::Component, b::FleetUnitCommitment
     end
 end
 
-function _apply_constraints_uc_flow!(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraints_uc_shutdownselector!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
+    # this constraint is only meaningful if there are multiple shutdown selectors
+    if length(b.shutdownselector) > 1
+        @constraint(lowermodel(sim(c)), 
+            sum(b.shutdownselector).data .== b.shutdown.data
+        )
+    end
+end
+
+function _apply_constraints_uc_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     @constraint(lowermodel(sim(c)), 
         b.modifier(getport(c, b.data.pname)).data .== _flow(b).data
     )
 end
 
 
-function _apply_constraint_su_sd(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraint_su_sd(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     # cannot shutdown more units than committed
     @constraint(lowermodel(sim(c)),
         b.shutdown.data .<= b.state.data
@@ -272,23 +311,24 @@ function _apply_constraint_su_sd(c::Component, b::FleetUnitCommitmentBehavior)
     # )
 end
 
-function _apply_constraints!(c::Component, b::FleetUnitCommitmentBehavior)
+function _apply_constraints!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     _apply_constraint_uc_switch!(c, b)
     _apply_constraint_uc_variable_flow!(c, b)
     # _apply_constraints_uc_units!(c, b)
     _apply_constraints_uc_minuptime!(c, b)
     _apply_constraints_uc_mindowntime!(c, b)
+    _apply_constraints_uc_shutdownselector!(c,b)
     _apply_constraints_uc_flow!(c, b)
     _apply_constraint_su_sd(c, b)
 end
 
-portname(uc::FleetUnitCommitmentBehavior) = uc.data.pname
+portname(uc::AbstractFleetUnitCommitmentBehavior) = uc.data.pname
 
 
-behaviorname(::FleetUnitCommitmentBehavior) = "Fleet unit commitment"
+behaviorname(::AbstractFleetUnitCommitmentBehavior) = "Fleet unit commitment"
 
 # display behavior info
-function Base.show(io::IO, b::FleetUnitCommitmentBehavior)
+function Base.show(io::IO, b::AbstractFleetUnitCommitmentBehavior)
   print(
       io, 
       "Behavior \"$(behaviorname(b))\""

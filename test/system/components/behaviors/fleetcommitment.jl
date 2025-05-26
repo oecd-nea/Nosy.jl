@@ -45,7 +45,8 @@ Some notes and observations:
         df[!, "t"] = 1:nsteps(sim(c))
         df[!,"uc"] = uc.state.data
         df[!,"st"] = uc.startup.data
-        df[!,"sd"] = uc.shutdown.data
+        df[!,"sd1"] = uc.shutdown1.data
+        df[!,"sd2"] = uc.shutdown2.data
         df[!,"v"] = uc.variable.data
         df[!, "up"] = _up(uc)
         df[!,"b"] = balance(c, :output, energy, collapse=false)

@@ -1,16 +1,18 @@
 using ArgCheck: @argcheck
 
+abstract type AbstractUnitCommitmentData <: AbstractBehaviorData end
+
 """
 Behavior: unit commitment for fleet of components.
 """
 
-struct UnitCommitment <: AbstractBehaviorData
+struct UnitCommitment <: AbstractUnitCommitmentData
     pname::String
     minratio::Float64
     startup::Float64
     shutdown::Float64
     uptime::Float64
-    downtime::Float64
+    downtime::Vector{Float64}
     startupratio::Float64
     shutdownratio::Float64
     integer::Bool
@@ -28,12 +30,21 @@ Optional parameters:
   * shutdownratio: flow ratio at the beginning of the shutdown phase (default=minratio)
   * integer: whether the unit commitment must follow an integer constraint (default=false).
 """
-function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime::Number=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false)
+function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false)
     @argcheck 0 <= minratio <= 1. "minratio must be between 0 and 1."
-    @argcheck startup >= 0 && shutdown >= 0 && uptime >= 0 && downtime >= 0 "All durations must be superior or equal to zero"
+    @argcheck startup >= 0 && shutdown >= 0 && uptime >= 0 "All durations must be superior or equal to zero"
+    if downtime isa Number
+        @argcheck downtime >= 0 "All durations must be superior or equal to zero"
+        downtime = [downtime]
+    elseif downtime isa Vector{<:Number}
+        @argcheck length(downtime) >= 1 "At least one downtime duration must be specified"
+        @argcheck all(downtime .>= 0) "All durations must be superior or equal to zero"
+    else
+        throw(ArgumentError("Downtime must be a positive number or a vector of positive numbers"))
+    end
     @argcheck minratio <= startupratio <= 1. "startupratio must be between 0 and minratio"
     @argcheck minratio <= shutdownratio <= 1. "shutdownratio must be between 0 and minratio"
-    UnitCommitment(pname, minratio, Float64(startup), Float64(shutdown), Float64(uptime), Float64(downtime), Float64(startupratio), Float64(shutdownratio), integer)
+    UnitCommitment(pname, minratio, Float64(startup), Float64(shutdown), Float64(uptime), Float64.(downtime), Float64(startupratio), Float64(shutdownratio), integer)
 end
 
 # unitcommitment will branch into fleet commitment or single unit commitment depending on whether unitsize is defined @ capacity associated with port pname
