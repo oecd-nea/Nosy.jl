@@ -41,15 +41,16 @@ using JuMP: Model, AffExpr
         @test hasport(ps, "p1")
         @test !hasport(ps, "p2")
 
-        @test_throws AssertionError addinput!(ps, "p1", p1)
+        # adding p1 a second time to input
+        addinput!(ps, "p1", p1)
+        @test all(ps.input["p1"].series .== 2 * p1.series)
+        @test all(p1.series .== makeport(s).series) # check that p1 series was not mutated when p1 was added again to ps
 
 
         p2 = makeport(s)
         addinput!(ps, "p2", p2)
         @test hasinput(ps, "p1")
-        @test hasinput(ps, "p2")
-        @test containsameelements(allports(ps), (p1, p2))
-        
+        @test hasinput(ps, "p2")       
 
     end
 
@@ -64,13 +65,16 @@ using JuMP: Model, AffExpr
         @test hasoutput(ps, "p1")
         @test !isempty(ps)
         @test allports(ps) == (p1,)
-        @test_throws AssertionError addoutput!(ps, "p1", p1)
+
+        # adding p1 a second time to output
+        addoutput!(ps, "p1", p1)
+        @test all(ps.output["p1"].series .== 2 * p1.series)
 
         p2 = makeport(s)
         addoutput!(ps, "p2", p2)
         @test hasoutput(ps, "p1")
         @test hasoutput(ps, "p2")
-        @test containsameelements(allports(ps), (p1, p2))
+        @test all(ps.output["p2"].series .== p2.series)
         
     end
 

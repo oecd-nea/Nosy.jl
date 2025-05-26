@@ -25,18 +25,25 @@ sim(ps::PortStructure) = ps.sim
 
 # Add named port to port structure
 
+# TODO
+# refactor ps so that the Dict key is a tuple (cname, pname) for a node
+# or (nname, pname) for a component
+# this modification is to allow binding joint flows to the same node as model flows
+
 function addinput!(ps::PortStructure{T}, name::String, p::Port{T}) where T
     if haskey(ps.input, name)
-        throw(AssertionError("$name already present as an input"))
+        ps.input[name] = Port(p.carrier, ps.input[name].series + p.series, ps.input[name].used)
+    else
+        ps.input[name] = p
     end
-    ps.input[name] = p
 end
 
 function addoutput!(ps::PortStructure{T}, name::String, p::Port{T}) where T
     if haskey(ps.output, name)
-        throw(AssertionError("$name already present as an output"))
+        ps.output[name] = Port(p.carrier, ps.output[name].series + p.series, ps.output[name].used)
+    else
+        ps.output[name] = p
     end
-    ps.output[name] = p
 end
 
 function addlevel!(ps::PortStructure{T}, name::String, p::Port{T}) where T
