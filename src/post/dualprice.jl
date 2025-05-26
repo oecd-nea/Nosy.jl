@@ -25,6 +25,13 @@ _dualprice(n::Node{Float64}) = _dualprice(n.dualprice.val, sim(n))
 Return the dual price associated with node `n`
 """
 function dualprice(n::Node)
-    @assert has_duals(sim(n).model) "Cannot evaluate dual price: duals are not available"
-    return _dualprice(n)
+    if has_duals(sim(n).model)
+        return _dualprice(n)
+    else
+        if is_solved_and_feasible(sim(n).model)
+            return Stepwise(-Inf, sim(n).mesh) # set price to fallback value (-Inf) at all times
+        else
+            throw(AssertionError("Cannot evaluate dual price: duals are not available"))
+        end
+    end
 end
