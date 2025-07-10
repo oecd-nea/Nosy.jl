@@ -21,8 +21,18 @@ function _defaultnodeconstraint!(n::Node, _in::Stepwise, _out::Stepwise)
 end
 
 function _curtailednodeconstraint!(n::Node, _in::Stepwise, _out::Stepwise)
-    c = @constraint(lowermodel(sim(n)), _in.data .>= _out.data)
-    _saveconstraint!(n, c)
+
+    # following check avoids adding node constraint if th node has no output
+    # however some solvers perform bounds propagation in presolve making this step useless
+
+    if all(iszero.(_out))
+        # if a curtailed node has no output, then the input is not constrained
+        # this requires the flows to be positive or zero - which is supposed to be true in this model
+        nothing
+    else
+        c = @constraint(lowermodel(sim(n)), _in.data .>= _out.data)
+        _saveconstraint!(n, c)
+    end
 end
 
 # save node constraints to dualprice property
