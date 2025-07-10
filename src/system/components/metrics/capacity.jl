@@ -52,7 +52,9 @@ function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where 
             return _capacity(cap) / _hours(d) # not managing multiplier for level
         end
     else
-        throw(AssertionError("Component $(c.name) has no capacity associated with port $pname"))
+        @warn "No capacity for component " * name(c) * "(port name: " * pname * ")"
+        return Inf
+        #throw(AssertionError("Component $(c.name) has no capacity associated with port $pname"))
     end
     local m = 1.
     if multiplier
