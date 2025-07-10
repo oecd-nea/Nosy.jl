@@ -14,6 +14,7 @@ struct LazyStorage{C<:AbstractCarrier,M<:Function} <: AbstractModelData
     level::C # only level is provided by component, other ports are added as joint flows (free / linked)
     modifier::M # the balance equation will be performed at the component level after appying this modifier
     eff::LittleDict{String,Float64} # dictionary for efficiencies
+    simplified::Bool
 end
 
 """
@@ -21,7 +22,7 @@ end
 Return a model LazyStorage model which has a level of carrier `level`.
 The lazy storage constraint will be applied to the level and the associated joint flows after applying the `modifier` to flows.`. 
 """
-function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing)
+function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, simplified::Bool=false)
     s = sim(level)
 
     if modifier != defaultmodifier
@@ -34,7 +35,7 @@ function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier,
         d = convert(LittleDict{String,Float64}, eff)
     end
 
-    return LazyStorage(s, level, modifier, d)
+    return LazyStorage(s, level, modifier, d, simplified)
 end
 
 struct LazyStorageModel{C<:AbstractCarrier,M<:Function,T<:VAL} <: AbstractModel{T}
@@ -75,9 +76,14 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     _level = mod(getport(m, "level"))
     
     # constraint: conservation of modified, efficiency-weighted flows & storage
-    # constraint is multiplied by 2 both sides to reduce number of operations on GenericAffExpr
-    # we consider flow varies linearly during a timestep
-    @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
+    if m.data.simplified
+        # basic step function for flow... reduce number of terms in equation
+        @constraint(lowermodel(sim(m)), 1. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (_in - _out).data)
+    else
+        # we consider flow varies linearly during a timestep
+        # constraint is multiplied by 2 both sides to reduce number of operations on GenericAffExpr
+        @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
+    end
 
 end
 

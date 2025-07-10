@@ -16,15 +16,16 @@ struct BasicStorage{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,
     modifier::M
     eff_i::Float64 # efficiency of input
     eff_o::Float64 # efficiency of output
+    simplified::Bool
 
-    function BasicStorage(input::CI, output::CO, level::CL, modifier::M, eff_i::Float64, eff_o::Float64) where {CI,CO,CL,M}
+    function BasicStorage(input::CI, output::CO, level::CL, modifier::M, eff_i::Float64, eff_o::Float64, simplified::Bool) where {CI,CO,CL,M}
         @argcheck eff_i >= 0. "Efficiency of input must be positive or zero"
         @argcheck eff_o > 0. "Efficiency of output must be strictly positive or zero"
         @argcheck hasmodifier(input, modifier) "input carrier is not compatible with given modifier"
         @argcheck hasmodifier(output, modifier) "output carrier is not compatible with given modifier"
         @argcheck hasmodifier(level, modifier) "level carrier is not compatible with given modifier"
         @argcheck input.sim == output.sim == level.sim "input, output and level carriers must have the same simulation"
-        return new{CI,CO,CL,M}(input.sim, input, output, level, modifier, eff_i, eff_o)
+        return new{CI,CO,CL,M}(input.sim, input, output, level, modifier, eff_i, eff_o, simplified)
     end
 end
 
@@ -33,8 +34,8 @@ end
 Return a model BasicStorage model associated with carrier `carrier`.
 The model also has the input effiency `input` and output efficiency `output` (inferior to 1 for losses).
 """
-function BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., modifier=_defaultmodifier(carrierstyle(carrier)))
-    return BasicStorage(carrier, carrier, carrier, modifier, eff_i, eff_o)
+function BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., modifier=_defaultmodifier(carrierstyle(carrier)), simplified::Bool=false)
+    return BasicStorage(carrier, carrier, carrier, modifier, eff_i, eff_o, simplified)
 end
 
 """
@@ -48,8 +49,8 @@ Return a model BasicStorage model associated with:
   * `eff_o`: efficiency of output (inferior to 1 for losses)
 The model also has the input effiency `input` and output efficiency `output`.
 """
-function BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1.)
-    return BasicStorage(input, output, level, modifier, eff_i, eff_o)
+function BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1., simplified::Bool=false)
+    return BasicStorage(input, output, level, modifier, eff_i, eff_o, simplified)
 end
 
 struct BasicStorageModel{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,M<:Function,T<:VAL} <: AbstractModel{T}
@@ -84,10 +85,18 @@ function _apply_constraints!(c::AbstractComponent, m::BasicStorageModel)
     _level = m.data.modifier(getport(m.s, "level"))
     
     # constraint: conservation of modified, efficiency-weighted flows & storage
-    # we consider flow varies linearly during a timestep
-    @constraint(lowermodel(sim(c)), 
-        (shift(_level,1) - _level).data .== (((shift(_in,1) + _in) * m.data.eff_i - (shift(_out,1) + _out) / m.data.eff_o) .* weight(sim(c).mesh) / 2.).data
-    )
+    
+    if m.data.simplified
+        # step flow
+        @constraint(lowermodel(sim(c)), 
+            (shift(_level,1) - _level).data .== ((_in * m.data.eff_i - _out / m.data.eff_o) .* weight(sim(c).mesh)).data
+        )
+    else
+        # we consider flow varies linearly during a timestep
+        @constraint(lowermodel(sim(c)), 
+            (shift(_level,1) - _level).data .== (((shift(_in,1) + _in) * m.data.eff_i - (shift(_out,1) + _out) / m.data.eff_o) .* weight(sim(c).mesh) / 2.).data
+        )
+    end
 
 end
 
