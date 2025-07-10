@@ -10,6 +10,7 @@ struct VariableCapacity{M<:Function} <: AbstractCapacityData
     modifier::M
     lb::Float64
     ub::Float64
+    warmstart::Union{Nothing,Float64}
     unitsize::Union{Nothing,Float64}
     integer::Bool
 end
@@ -23,12 +24,13 @@ Optional parameters:
 * unitsize: size of the unit when considering a fleet
 * integer: if unitsize is a number, constrains the number of units to be integer
 """
-function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
+function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
     @argcheck lb >= 0. "Capacity cannot be negative"
     @argcheck lb <= ub "Lower bound is bigger than upper bound"
     @argcheck !integer || !isnothing(size) "unitsize must be a Number in order to activate integer number of units"
     unitsize isa Number ? unitsize = Float64(unitsize) : nothing
-    VariableCapacity(pname, modifier, Float64(lb), Float64(ub), unitsize, integer)
+    w = isnothing(warmstart) ? nothing : Float64(warmstart)
+    VariableCapacity(pname, modifier, Float64(lb), Float64(ub), w, unitsize, integer)
 end
 
 struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
@@ -44,6 +46,15 @@ function buildbehavior(c::Component, b::VariableCapacity)
     if b.unitsize isa Number
         # variable is number of units
         v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        # v2 = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        # 
+        # @constraint(sim(c).model, v .== v2)
+
+        # warmstart
+        if !isnothing(b.warmstart)
+            set_start_value(v, b.warmstart / b.unitsize)
+        end
+        
         e = v * b.unitsize
 
         # alternative implementation
@@ -56,6 +67,12 @@ function buildbehavior(c::Component, b::VariableCapacity)
     else
         # variable is capacity
         v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        
+        # warmstart
+        if !isnothing(b.warmstart)
+            set_start_value(v, b.warmstart)
+        end
+        
         e = _to_affexpr(v, sim(c).model)
     end
     return VariableCapacityBehavior(b, e)
