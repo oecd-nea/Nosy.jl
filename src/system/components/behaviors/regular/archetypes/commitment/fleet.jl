@@ -162,31 +162,61 @@ _flow(b::AbstractFleetUnitCommitmentBehavior) = _com(b) + _var(b) + _su(b) + _sd
 
 # return the "up" state, which is either unit is committed, or is in startup or shutdown process
 # in other words, if and only if the unit is doing something, the "up" state is positive.
+# function _up(b::AbstractFleetUnitCommitmentBehavior{T}) where T
+#     m = b.startup.mesh
+
+#     _up = Stepwise(differentzerovector(T, nsteps(m)), m)
+#     for step in eachindex(_up)
+
+#         # number of units committed
+#         _val = b.state[step]
+        
+#         # number of units in shutdown procedure
+#         local deltah = weight(m, step)
+#         local step2 = step - 1
+#         while deltah < b.data.shutdown
+#             deltah += weight(m, step2)
+#             _val += b.shutdown[step2]
+#             step2 = step2 - 1
+#         end
+
+#         # number of units in startup procedure
+#         local deltah = weight(m, step)
+#         local step2 = step + 1
+#         while deltah < b.data.startup
+#             deltah += weight(m, step2)
+#             _val += b.startup[step2]
+#             step2 = step2 + 1
+#         end
+
+#         _up[step] = _val
+#     end
+
+#     return _up
+# end
+
+
 function _up(b::AbstractFleetUnitCommitmentBehavior{T}) where T
     m = b.startup.mesh
-
     _up = Stepwise(differentzerovector(T, nsteps(m)), m)
-    for step in eachindex(_up)
 
-        # number of units committed
+    for step in eachindex(_up)
         _val = b.state[step]
-        
-        # number of units in shutdown procedure
-        local deltah = weight(m, step)
+
+        local passed = 0//1
         local step2 = step - 1
-        while deltah < b.data.shutdown
-            deltah += weight(m, step2)
+        while passed + weight(m, step2) < b.data.shutdown
             _val += b.shutdown[step2]
-            step2 = step2 - 1
+            passed += weight(m, step2)
+            step2 -= 1
         end
 
-        # number of units in startup procedure
-        local deltah = weight(m, step)
-        local step2 = step + 1
-        while deltah < b.data.startup
-            deltah += weight(m, step2)
-            _val += b.startup[step2]
-            step2 = step2 + 1
+        local passed2 = 0//1
+        local step3 = step + 1
+        while passed2 + weight(m, step3) < b.data.startup
+            _val += b.startup[step3]
+            passed2 += weight(m, step3)
+            step3 += 1
         end
 
         _up[step] = _val
@@ -257,30 +287,56 @@ end
 # Same remark for shutdown.
 # The implementation of the constraint is tested for constant time intervals, it will not be correct for variable time intervals.
 # TODO update the implementation to handle variable time intervals
+# function _apply_constraints_uc_mindowntime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
+#     m = sim(c).mesh
+#     _units = nbunits(c)
+
+#     lm = lowermodel(sim(c)) # type unstable, don't access it in loop
+
+#     # outer loop on shutdown types
+    
+#     for step in eachindex(b.state)
+#         val = exptype(sim(c))(0.)
+#         for sdtype in eachindex(b.shutdownselector)
+#             local step2 = step - 1
+#             local deltah = 0//1
+#             while deltah < b.data.downtime[sdtype] + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
+#                 addto!(val, b.shutdownselector[sdtype][step2])  
+#                 deltah += weight(m, step2)
+#                 step2 = step2 - 1
+#             end
+#         end
+#         if !iszero(val)
+#             @constraint(lm, val <= _units - b.state[step] + b.startup[step])
+#         end
+#     end
+# end
+
+
 function _apply_constraints_uc_mindowntime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = sim(c).mesh
     _units = nbunits(c)
-
-    lm = lowermodel(sim(c)) # type unstable, don't access it in loop
-
-    # outer loop on shutdown types
-    
+    lm = lowermodel(sim(c)) 
     for step in eachindex(b.state)
         val = exptype(sim(c))(0.)
         for sdtype in eachindex(b.shutdownselector)
             local step2 = step - 1
-            local deltah = 0//1
-            while deltah < b.data.downtime[sdtype] + max(b.data.shutdown,weight(m,step-1)) + max(b.data.startup,weight(m,step-1)) # TODO reevaluate duration of interval, use a while condition on state function instead of counting hours
-                addto!(val, b.shutdownselector[sdtype][step2])  
-                deltah += weight(m, step2)
+            local passed = 0//1
+            local minstep = weight(m, step2)
+            local limit = b.data.downtime[sdtype] + max(b.data.shutdown, minstep) + max(b.data.startup, minstep)
+            while passed < limit
+                passed += weight(m, step2)
+                addto!(val, b.shutdownselector[sdtype][step2])
                 step2 = step2 - 1
             end
         end
+
         if !iszero(val)
             @constraint(lm, val <= _units - b.state[step] + b.startup[step])
         end
     end
 end
+
 
 function _apply_constraints_uc_shutdownselector!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     # this constraint is only meaningful if there are multiple shutdown selectors
