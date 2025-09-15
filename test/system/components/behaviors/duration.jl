@@ -1,11 +1,10 @@
-# Unit tests for DurationBehavior 
+# Unit tests for Duration behavior 
 using Test
-using JuMP
-using JuMP: optimize!
+using JuMP: MAX_SENSE, set_silent
 using Nosy: Duration, buildbehavior, DurationBehavior, _capacitypname, _hours
 using HiGHS
 
-@testset "DurationBehavior" begin
+@testset "Duration" begin
 
     tsim() = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(1//1, 10)))
 
@@ -59,8 +58,8 @@ using HiGHS
             Duration(6)
         ]
         c = makecomp(vb)
-        JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, energy, collapse=true))
-        JuMP.set_silent(sim(c).model)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
         result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
         @test all(result .<= 100.0)
@@ -73,8 +72,8 @@ using HiGHS
             Duration(6)
         ]
         c = makecomp(vb)
-        JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, energy, collapse=true))
-        JuMP.set_silent(sim(c).model)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
         result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
         @test all(result .<= 200.0)
@@ -89,8 +88,8 @@ using HiGHS
                 Duration(i)
             ]
             c = makecomp(vb)
-            JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, energy, collapse=true))
-            JuMP.set_silent(sim(c).model)
+            JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+            set_silent(sim(c).model)
             JuMP.optimize!(sim(c).model)
             result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
             expected_limit = cap / i
@@ -112,8 +111,8 @@ using HiGHS
         d = Duration(6)
 
         c = makecomp([fc, cm, d])
-        JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, energy, collapse=true))
-        JuMP.set_silent(sim(c).model)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
 
         expected_caps = [v * 300 for v in cm.val]  
@@ -129,8 +128,8 @@ using HiGHS
         ]
         c = makecomp(vb)  
 
-        JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, energy, collapse=true))
-        JuMP.set_silent(sim(c).model)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
         level_vals = JuMP.value.(c.s.level["level"].series)
 
@@ -146,8 +145,8 @@ using HiGHS
         c = makecomp(vb)
 
         model = sim(c).model
-        JuMP.set_objective(model, JuMP.MAX_SENSE, balance(c, :input, energy, collapse=true))
-        JuMP.set_silent(model)
+        JuMP.set_objective(model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(model)
         JuMP.optimize!(model)
 
         input_vals = JuMP.value.(balance(c, :input, energy, collapse=false)).data
