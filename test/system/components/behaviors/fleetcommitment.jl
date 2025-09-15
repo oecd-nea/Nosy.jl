@@ -648,5 +648,53 @@ Some notes and observations:
         @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 2.8125, 1.875, 0.9375]))
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
     end
+   
 
+    # fleet commitment with irregular timesteps
+    let
+        irrmesh = TimeMesh([1//1, 1//1, 1//1, 1//1, 1//2, 1//2, 1//1, 1//1, 1//1, 1//1, 1//2, 1//2])
+
+        function makecomp_irregular(vbehavior=[])
+            s = Sim(Model(HiGHS.Optimizer), mesh=irrmesh)
+            en = collect(1:nhours(s.mesh))   # nhours(= sum(weights))
+            mc = MassCarrier("m", s, energy=en)
+            ec = EnergyCarrier("e", s)
+            d  = BasicConverter(mc, ec)
+            return Component("comp", d, vbehavior)
+        end
+
+        let
+            cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
+            uc  = UnitCommitment("input", 1., startup=2., shutdown=0., uptime=0., downtime=1.5, integer=true)
+
+            m   = makecomp_irregular([cap, uc])
+
+            @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[6] == 0.)
+
+            set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+
+            @test all(isapprox.(balance(_m, :output, energy, collapse=false),[5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 2.5, 5.0, 5.0, 5.0, 5.0]))
+            @test all(_up(_m.behaviors[2]) .== [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        end
+
+        let
+            cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
+            uc  = UnitCommitment("input", 1., startup=0., shutdown=0., uptime=0., downtime=2., integer=true)
+
+            m   = makecomp_irregular([cap, uc])
+
+            @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+
+            set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+
+            @test all(isapprox.(balance(_m, :output, energy, collapse=false),[0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]))
+            @test all(_up(_m.behaviors[2]) .==  [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        end
+    end
 end
