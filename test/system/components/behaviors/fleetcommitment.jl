@@ -649,53 +649,52 @@ Some notes and observations:
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
     end
    
-end
 
-@testset "Fleet unit commitment – irregular" begin
-    dts = [1//1, 1//1, 1//1, 1//1, 1//2, 1//2, 1//1, 1//1, 1//1, 1//1, 1//2, 1//2]
-    tsim() = Sim(Model(HiGHS.Optimizer), mesh = TimeMesh(dts))
-
-    function makecomp(vbehavior=[])
-        s = tsim()
-        en = collect(1:nhours(s.mesh))   # nhours(= sum(weights))
-        mc = MassCarrier("m", s, energy=en)
-        ec = EnergyCarrier("e", s)
-        d  = BasicConverter(mc, ec)
-        return Component("comp", d, vbehavior)
-    end
-
+    # fleet commitment with irregular timesteps
     let
-        cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
-        uc  = UnitCommitment("input", 1., startup=2., shutdown=0., uptime=0., downtime=1.5, integer=true)
+        irrmesh = TimeMesh([1//1, 1//1, 1//1, 1//1, 1//2, 1//2, 1//1, 1//1, 1//1, 1//1, 1//2, 1//2])
 
-        m   = makecomp([cap, uc])
+        function makecomp_irregular(vbehavior=[])
+            s = Sim(Model(HiGHS.Optimizer), mesh=irrmesh)
+            en = collect(1:nhours(s.mesh))   # nhours(= sum(weights))
+            mc = MassCarrier("m", s, energy=en)
+            ec = EnergyCarrier("e", s)
+            d  = BasicConverter(mc, ec)
+            return Component("comp", d, vbehavior)
+        end
 
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[6] == 0.)
+        let
+            cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
+            uc  = UnitCommitment("input", 1., startup=2., shutdown=0., uptime=0., downtime=1.5, integer=true)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
-        JuMP.set_silent(sim(m).model)
-        JuMP.optimize!(sim(m).model)
-        _m = _extract(m)
+            m   = makecomp_irregular([cap, uc])
 
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false),[5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 2.5, 5.0, 5.0, 5.0, 5.0]))
-        @test all(_up(_m.behaviors[2]) .== [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+            @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[6] == 0.)
+
+            set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+
+            @test all(isapprox.(balance(_m, :output, energy, collapse=false),[5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 2.5, 5.0, 5.0, 5.0, 5.0]))
+            @test all(_up(_m.behaviors[2]) .== [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        end
+
+        let
+            cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
+            uc  = UnitCommitment("input", 1., startup=0., shutdown=0., uptime=0., downtime=2., integer=true)
+
+            m   = makecomp_irregular([cap, uc])
+
+            @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+
+            set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+
+            @test all(isapprox.(balance(_m, :output, energy, collapse=false),[0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]))
+            @test all(_up(_m.behaviors[2]) .==  [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        end
     end
-
-    let
-        cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
-        uc  = UnitCommitment("input", 1., startup=0., shutdown=0., uptime=0., downtime=2., integer=true)
-
-        m   = makecomp([cap, uc])
-
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
-
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
-        JuMP.set_silent(sim(m).model)
-        JuMP.optimize!(sim(m).model)
-        _m = _extract(m)
-
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false),[0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]))
-        @test all(_up(_m.behaviors[2]) .==  [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    end
-
 end
