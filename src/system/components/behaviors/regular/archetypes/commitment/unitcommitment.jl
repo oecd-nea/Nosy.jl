@@ -42,8 +42,8 @@ function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shut
     else
         throw(ArgumentError("Downtime must be a positive number or a vector of positive numbers"))
     end
-    @argcheck minratio <= startupratio <= 1. "startupratio must be between 0 and minratio"
-    @argcheck minratio <= shutdownratio <= 1. "shutdownratio must be between 0 and minratio"
+    @argcheck minratio <= startupratio <= 1. "startupratio must be between minratio and 1"
+    @argcheck minratio <= shutdownratio <= 1. "shutdownratio must be between minratio and 1"
     UnitCommitment(pname, minratio, Float64(startup), Float64(shutdown), Float64(uptime), Float64.(downtime), Float64(startupratio), Float64(shutdownratio), integer)
 end
 
