@@ -19,7 +19,10 @@ If unitsize is a number: it is the size of the unit when considering a fleet
 """
 function FixedCapacity(pname::String, modifier::Function, val::Number; unitsize::Union{Nothing,Number}=nothing)
     @argcheck val >= 0. "Capacity cannot be negative"
-    unitsize isa Number ? unitsize = Float64(unitsize) : nothing
+    if unitsize isa Number 
+        @argcheck unitsize > 0 "unitsize must be strictly positive"
+        unitsize = Float64(unitsize)
+    end
     FixedCapacity(pname, modifier, Float64(val), unitsize)
 end
 

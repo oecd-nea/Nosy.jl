@@ -1,4 +1,4 @@
-using JuMP: @variable, GenericAffExpr, set_upper_bound, set_lower_bound
+using JuMP: @variable, GenericAffExpr, set_upper_bound, set_lower_bound, set_start_value
 using ArgCheck: @argcheck
 
 """
@@ -27,8 +27,11 @@ Optional parameters:
 function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
     @argcheck lb >= 0. "Capacity cannot be negative"
     @argcheck lb <= ub "Lower bound is bigger than upper bound"
-    @argcheck !integer || !isnothing(size) "unitsize must be a Number in order to activate integer number of units"
-    unitsize isa Number ? unitsize = Float64(unitsize) : nothing
+    if unitsize isa Number
+        @argcheck unitsize > 0 "unitsize must be a strictly positive Number or nothing"
+        unitsize = Float64(unitsize)
+    end
+    @argcheck !integer || !isnothing(unitsize) "unitsize must be provided to activate an integer number of units"
     w = isnothing(warmstart) ? nothing : Float64(warmstart)
     VariableCapacity(pname, modifier, Float64(lb), Float64(ub), w, unitsize, integer)
 end
