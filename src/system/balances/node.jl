@@ -37,7 +37,7 @@ function _balance(n::Node, pname::String, sense::Symbol, modifier::Function; col
             return _balance_one(n.s, pname, _input, modifier)
         end
     else # if sense == :output
-        @argcheck hasoutput(n.s, pname) "Node $(name(cn)) does not have output $pname"
+        @argcheck hasoutput(n.s, pname) "Node $(name(n)) does not have output $pname"
         if collapse
             return _collapse_balance_one(n.s, pname, _output, modifier)
         else

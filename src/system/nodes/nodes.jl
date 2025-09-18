@@ -1,5 +1,5 @@
 using JuMP: GenericAffExpr
-using ArgCheck: @argcheck
+using ArgCheck: @argcheck, ArgumentError
 
 """
 Definition of nodes.
@@ -74,12 +74,12 @@ hastag(n::Node, tag::Symbol) = tag in n.tags
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)
 function addinput!(n::Node{T,C}, name::String, p::Port{T,C}) where {T,C}
-    @assert carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
+    @argcheck carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
     addinput!(n.s, name, p)
 end
 
 function addoutput!(n::Node{T,C}, name::String, p::Port{T,C}) where {T,C}
-    @assert carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
+    @argcheck carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
     addoutput!(n.s, name, p)
 end
 
@@ -99,7 +99,7 @@ addinput!(n::Node{T,C1}, name::String, ::Port{T,C2}) where {T,C1,C2} =  throw(As
 addoutput!(n::Node{T,C1}, name::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))"))
 
 # cannot add level to node
-addlevel!(::Node{T,C1}, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(AssertionError("Ports cannot have a level"))
+addlevel!(::Node{T,C1}, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(ArgumentError("Ports cannot have a level"))
 
 # display node info
 function Base.show(io::IO, n::Node)

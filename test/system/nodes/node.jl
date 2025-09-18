@@ -38,14 +38,14 @@ using ArgCheck: ArgumentError
         @test _input(n)["p1"] == p1
 
         # wrong carrier
-        @test_throws AssertionError addinput!(n, "p2", p2)
+        @test_throws ArgumentError addinput!(n, "p2", p2)
         
         # nodes don't have a level
-        @test_throws AssertionError addlevel!(n, "p1", p1)
-        @test_throws AssertionError addlevel!(n, "p2", p2)
+        @test_throws ArgumentError addlevel!(n, "p1", p1)
+        @test_throws ArgumentError addlevel!(n, "p2", p2)
 
         # model not optimized
-        @test_throws AssertionError dualprice(n)
+        @test_throws ArgumentError dualprice(n)
 
     end
 

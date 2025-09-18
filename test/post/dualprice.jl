@@ -10,6 +10,7 @@ using Nosy: dualprice
 
 using JuMP: set_silent, objective_value, value
 using HiGHS: Optimizer
+using ArgCheck: ArgumentError
 
 @testset "Dual price" begin
 
@@ -28,7 +29,7 @@ using HiGHS: Optimizer
         en = Node("energy", ec, evalprice=true)
 
         # model not optimized
-        @test_throws AssertionError dualprice(en)
+        @test_throws ArgumentError dualprice(en)
 
         disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), FixedCost(:overnight, "output", energy, 2.), VariableCost(:fuel, "output", energy, 1.)])
         cons = Component("cons", Demand(ec, 10), [])
@@ -60,7 +61,7 @@ using HiGHS: Optimizer
         en = Node("energy", ec, evalprice=false)
 
         # model not optimized
-        @test_throws AssertionError dualprice(en)
+        @test_throws ArgumentError dualprice(en)
 
         disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy), FixedCost(:overnight, "output", energy, 2.), VariableCost(:fuel, "output", energy, 1.)])
         cons = Component("cons", Demand(ec, 10), [])
