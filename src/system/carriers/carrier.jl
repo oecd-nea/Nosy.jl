@@ -64,10 +64,10 @@ struct CO2Carrier <: AbstractCarrier
     weight::Stepwise{Float64}
 
     @doc """
-        CO2Carrier(name::String, sim::Sim; energy=nothing)
+        CO2Carrier(name::String, sim::Sim; weight::Number=1.)
     Return a CO2Carrier with name `name` associated with Sim `sim`.
     Optional arguments:
-    * weight: Number describing the CO2 equivalent weight in t CO2eq/t.
+        * weight: Number describing the CO2 equivalent weight in t CO2eq/t.
     """
     function CO2Carrier(name::String, sim::Sim; weight::Number=1.) 
         m = Stepwise(1., sim.mesh)
