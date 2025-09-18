@@ -37,7 +37,9 @@ end
 # both are equivalent for single objective optimization
 function set_objective!(s::Snapshot{<:GenericAffExpr}, metric::Function; threshold=1E-15, objectivetype=:upper)
     obj = metric(s)
-    @assert obj isa VAL "`metric(s)` does not return an GenericAffExpr or a Number"
+    if !(obj isa VAL) 
+        throw(AssertionError("`metric(s)` does not return an GenericAffExpr or a Number"))
+    end
 
     filterexpression!(obj, threshold)
 

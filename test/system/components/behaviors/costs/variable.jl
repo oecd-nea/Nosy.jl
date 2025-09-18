@@ -67,7 +67,7 @@ using ArgCheck: ArgumentError
 
 
     # vectorial variable cost - wrong format
-    @test_throws AssertionError makeconv([VariableCost(:vom, "input", mass, fill(10,7))])
+    @test_throws ArgumentError makeconv([VariableCost(:vom, "input", mass, fill(10,7))])
 
 
     # multiple variable costs

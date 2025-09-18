@@ -30,7 +30,7 @@ end
 
 # Addition of different types of time series is forbidden
 function Base.:+(s1::T1, s2::T2) where {T1<:AbstractMeshedTimeSeries, T2<:AbstractMeshedTimeSeries}
-    @assert parenttype(s1) == parenttype(s2) "Time series have different types"
+    @argcheck parenttype(s1) == parenttype(s2) "Time series have different types"
     return +(promote(s1, s2)...)
 end
 

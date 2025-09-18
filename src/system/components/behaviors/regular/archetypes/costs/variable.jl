@@ -1,3 +1,5 @@
+using ArgCheck: @argcheck
+
 """
 Variable cost behavior.
 Variable cost is associated with a flow.
@@ -20,7 +22,7 @@ struct VariableCost{M<:Function,V} <: AbstractCostBehaviorData
     If `val` is a number, `style` has no effect.
     """
     function VariableCost(type::Symbol, pname::String, modifier::Function, val; style::Symbol=:step) 
-        @assert style in (:step, :linear) "`style` must be :step or :linear"
+        @argcheck style in (:step, :linear) "`style` must be :step or :linear"
         
         # NB variable cost can be negative.
         if val isa AbstractVector{<:Number}
@@ -46,7 +48,9 @@ function buildbehavior(c::Component, b::VariableCost{M,Float64}) where M
 end
 
 function buildbehavior(c::Component, b::VariableCost{M,Vector{Float64}}) where M
-    @assert (length(b.val) == nsteps(sim(c)) || length(b.val) == nhours(sim(c))) "The length of variable cost vector must be equal to $(nsteps(sim(c))) or $(nhours(sim(c)))"
+    if !(length(b.val) == nsteps(sim(c)) || length(b.val) == nhours(sim(c))) 
+        throw(ArgumentError("The length of variable cost vector must be equal to $(nsteps(sim(c))) or $(nhours(sim(c)))"))
+    end
     _cost = Stepwise(b.val, sim(c).mesh)
     _flow = _balance_one(c.s, b.pname, b.modifier)
 

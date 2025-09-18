@@ -65,7 +65,9 @@ set_finalized!(s::Snapshot) = setindex!(s.finalized, true)
 # if the key is already present, check that the node is the same
 function addnode!(s::Snapshot, n::Node)
     if haskey(s.nodes, name(n))
-        @assert s.nodes[name(n)] == n "Snapshot is connected to 2 different nodes sharing the name $(name(n))"
+        if !(s.nodes[name(n)] == n)
+            throw(AssertionError("Snapshot is connected to 2 different nodes sharing the name $(name(n))"))
+        end
     else
         s.nodes[name(n)] = n
     end
@@ -75,7 +77,9 @@ end
 # if the key is already present, check that the component is the same
 function addcomponent!(s::Snapshot, c::Component)
     if haskey(s.components, name(c))
-        @assert s.components[name(c)] == c "Snapshot is connected to 2 different components sharing the name $(name(c))"
+        if s.components[name(c)] != c 
+            throw(AssertionError("Snapshot is connected to 2 different components sharing the name $(name(c))"))
+        end
     else
         s.components[name(c)] = c
     end

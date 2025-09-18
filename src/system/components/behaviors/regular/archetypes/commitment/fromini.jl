@@ -65,7 +65,9 @@ end
 
 function buildbehavior(c::Component, b::FleetUnitCommitmentFromIni)
     cap = getcapacitybehavior(c, b.pname)
-    @assert !isnothing(cap) "Component does not have capacity behavior associated with port $(b.pname)"
+    if isnothing(cap) 
+        throw(AssertionError("Component does not have capacity behavior associated with port $(b.pname)"))
+    end
     if isnothing(_unitsize(cap))
         throw(AssertionError("Not implemented"))
     else

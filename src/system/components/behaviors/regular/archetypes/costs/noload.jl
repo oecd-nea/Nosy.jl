@@ -30,7 +30,9 @@ function buildbehavior(c::Component{T}, b::NoLoadCost) where T
         portname(_uc) == b.pname ? uc = _uc : nothing
         break
     end
-    @assert !isnothing(uc) "Component $(name(c)) does not have a unit commitment behavior for port $(b.pname)"
+    if isnothing(uc) 
+        throw(AssertionError("Component $(name(c)) does not have a unit commitment behavior for port $(b.pname)"))
+    end
     _cost = sum(_up(uc)) * b.val # NB step weights already included in the sum(_up(uc)) as _up(uc) is a Stepwise series
     return NoLoadCostBehavior(b, _cost)
 end

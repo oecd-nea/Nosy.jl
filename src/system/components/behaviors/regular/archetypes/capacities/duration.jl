@@ -29,16 +29,18 @@ end
 
 
 function buildbehavior(c::Component, b::Duration)
-    @assert hasport(c, b.inputpname) "Component $(name(c)) does not have port named $(b.inputpname)"
-    @assert hasport(c, b.outputpname) "Component $(name(c)) does not have port named $(b.outputpname)"
-    @assert hasport(c, b.levelpname) "Component $(name(c)) does not have port named $(b.levelpname)"
+    !hasport(c, b.inputpname) && throw(AssertionError("Component $(name(c)) does not have port named $(b.inputpname)"))
+    !hasport(c, b.outputpname) && throw(AssertionError("Component $(name(c)) does not have port named $(b.outputpname)"))
+    !hasport(c, b.levelpname) && throw(AssertionError("Component $(name(c)) does not have port named $(b.levelpname)"))
 
     # check which port is already linked to a capacity
     _hasicap = hascapacitybehavior(c, b.inputpname)
     _hasocap = hascapacitybehavior(c, b.outputpname)
     _haslcap = hascapacitybehavior(c, b.levelpname)
 
-    @assert (_hasicap + _hasocap + _haslcap) == 1 "There should be exactly one port among $(_inputpname(b)), $(_outputpname(b)) and $(_levelpname(b)) associated with capacity."
+    if (_hasicap + _hasocap + _haslcap) != 1 
+        throw(AssertionError("There should be exactly one port among $(_inputpname(b)), $(_outputpname(b)) and $(_levelpname(b)) associated with capacity."))
+    end
     capacitypname = _hasicap ? b.inputpname : (_hasocap ? b.outputpname : b.levelpname)
 
         

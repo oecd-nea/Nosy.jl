@@ -38,7 +38,9 @@ If the component has no port named `pname`, throw an error.
 If the component has no capacity associated with port `pname`, return Inf64.
 """
 function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where T
-    @assert hasport(c.s, pname) "Component $(name(c)) has no port named $pname"
+    if !hasport(c.s, pname)
+        throw(AssertionError("Component $(name(c)) has no port named $pname"))
+    end
     if hascapacitybehavior(c, pname)
         cap = getcapacitybehavior(c, pname)
     elseif hasbehavior(c, DurationBehavior) # special case: if component (from storage model) has duration, then capacity for pname is evaluated on the fly

@@ -33,7 +33,9 @@ struct CapacityMultiplierBehavior{T,V} <: AbstractRegularBehavior{T}
 end
 
 function buildbehavior(c::Component, b::CapacityMultiplier)
-    @assert !(model(c) isa ProfileSourceModel) "Profile source model is not compatible with capacity multiplier"
+    if (model(c) isa ProfileSourceModel) 
+        throw(AssertionError("Profile source model is not compatible with capacity multiplier"))
+    end
     s = Stepwise(b.val, sim(c).mesh)
     return CapacityMultiplierBehavior(b, s, exptype(sim(c)))
 end

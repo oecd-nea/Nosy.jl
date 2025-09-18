@@ -37,6 +37,8 @@ end
 # return the capacity behavior of c associated with port pname, after checking the modifier is the same as requested
 function getcapacitybehavior(c::Component, pname::String, modifier::Function)
     b = getcapacitybehavior(c, pname)
-    @assert _modifier(b) == modifier "Modifiers are not compatible ($modifier / $(_modifier(b)))"
+    if !(_modifier(b) == modifier)
+        throw(ArgumentError("Modifiers are not compatible ($modifier / $(_modifier(b)))"))
+    end
     return b
 end

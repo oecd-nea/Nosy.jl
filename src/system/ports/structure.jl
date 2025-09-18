@@ -76,7 +76,9 @@ isfullyconnected(ps::PortStructure) = all(is_used(p) for p in externalports(ps))
 
 # return true if ps only is associated with one carrier, false otherwise
 function hasuniquecarrier(ps::PortStructure)
-    c = carrier(first(allports(ps)))
+    vp = allports(ps)
+    isempty(vp) && return true # if there is no port
+    c = carrier(first(vp))
     return !any(carrier(p) != c for p in allports(ps))
 end
 
@@ -104,14 +106,16 @@ function getportsense(ps::PortStructure, sense::Symbol)
     sense == :input && return _input(ps)
     sense == :output && return _output(ps)
     sense == :level && return _level(ps)
-    throw(ArgumentError("$s must be :input, :output or :level"))
+    throw(ArgumentError("$sense must be :input, :output or :level"))
 end
 
 # slightly sped-up function with a hint for port sense
 # no need to check presence of multiple ports with same name: this can't happen when sense is defined
 function getport(ps::PortStructure, pname::String, sense::Symbol)
     d = getportsense(ps, sense)
-    @assert haskey(d, pname) "No port named $pname"
+    if !haskey(d, pname) 
+        throw(AssertionError("No port named $pname"))
+    end
     return d[pname]
 end
 

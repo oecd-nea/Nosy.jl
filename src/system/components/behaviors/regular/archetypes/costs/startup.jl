@@ -30,7 +30,9 @@ function buildbehavior(c::Component{T}, b::StartupCost) where T
         portname(_uc) == b.pname ? uc = _uc : nothing
         break
     end
-    @assert !isnothing(uc) "Component $(name(c)) does not have a unit commitment behavior for port $(b.pname)"
+    if isnothing(uc) 
+        throw(AssertionError("Component $(name(c)) does not have a unit commitment behavior for port $(b.pname)"))
+    end
     _cost = sum(uc.startup.data) * b.val # we need to sum the switch states, so they must not be weighted
     return StartupCostBehavior{T}(b, convert(T,_cost))
 end

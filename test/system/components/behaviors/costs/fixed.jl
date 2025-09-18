@@ -76,6 +76,6 @@ using ArgCheck: ArgumentError
     @test_throws ArgumentError makeconv([FixedCost(:overnight, "input", mass, 10.), VariableCapacity(:"output", mass)])
 
     # incompatible port modifiers
-    @test_throws AssertionError makeconv([FixedCost(:overnight, "input", mass, 10.), VariableCapacity("input", energy)])
+    @test_throws ArgumentError makeconv([FixedCost(:overnight, "input", mass, 10.), VariableCapacity("input", energy)])
 
 end
