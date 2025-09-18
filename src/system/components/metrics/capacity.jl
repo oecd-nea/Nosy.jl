@@ -16,6 +16,7 @@ If the component has no capacity, return zero.
 """
 function capacity(c::Component{T}; multiplier::Bool=false) where T
     cap = uniquebehavior(c, AbstractCapacityBehavior{T})
+    isnothing(cap) && return _capacity(cap, T)
     local m = 1.
     if multiplier
         vm = getbehaviors(c, CapacityMultiplierBehavior{T})
@@ -34,7 +35,7 @@ end
 Return the capacity associated with port named `pname` of component `c`.
 If `multiplier` is true, return the capacity multiplied with the matching capacity multiplier (same port) if it exists.
 If the component has no port named `pname`, throw an error.
-If the component has no capacity associated with port `pname`, return zero.
+If the component has no capacity associated with port `pname`, return Inf64.
 """
 function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where T
     @assert hasport(c.s, pname) "Component $(name(c)) has no port named $pname"
@@ -53,7 +54,7 @@ function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where 
         end
     else
         @warn "No capacity for component " * name(c) * "(port name: " * pname * ")"
-        return Inf
+        return Inf64
         #throw(AssertionError("Component $(c.name) has no capacity associated with port $pname"))
     end
     local m = 1.
