@@ -2,6 +2,8 @@
 Definition of carriers.
 """
 
+using ArgCheck: @argcheck
+
 # conversion of numbers and vectors to Float64 or Vector{Float64}
 # this is to avoid construction of Stepwise{Int64} when using integer arguments for energy, weight...
 _to_f64(n::Number) = Float64(n)
@@ -46,7 +48,9 @@ struct EnergyCarrier <: AbstractCarrier
     """
     function EnergyCarrier(name::String, sim::Sim; energy=nothing)
         if !isnothing(energy)
-            _mass = Stepwise(1. ./ _to_f64(energy), sim.mesh) # note the inversion
+            en = _to_f64(energy)
+            @argcheck all(en .> 0) "energy density must be strictly positive"
+            _mass = Stepwise(1. ./ en, sim.mesh) # note the inversion
         else
             _mass = nothing
         end
