@@ -78,7 +78,6 @@ function _apply_constraints_ramping_uc!(c::Component, b::RampingBehavior, uc::Fl
     var = _var(uc) # variable flow from uc, in the uc modifier
     car = getport(c, b.data.pname).carrier
     diff = (shift(var,1) - var) .* b.data.modifier(car) ./ uc.modifier(car) # conversion of diff to ramping carrier
-    maxramp = uc.state .* weight(sim(c).mesh) * b.data.val
     if b.data.sense == :up
         @constraint(lowermodel(sim(c)), 
             diff.data <= uc.state .* weight(sim(c).mesh) * b.data.val
