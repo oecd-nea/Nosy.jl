@@ -3,7 +3,7 @@ Ramping behavior.
 
 Defines a max rate for a given ramping sense.
 Definition of this component requires a unit size.
-This behavior is applied differently according to whether the component also has unit comitment.
+This behavior is applied differently according to whether the component also has unit commitment.
 """
 
 using ArgCheck: @argcheck
