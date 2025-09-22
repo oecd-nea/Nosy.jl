@@ -26,7 +26,7 @@ const RTimeMesh = TimeMesh{Rational{Int64}} # enforce parametric type of mesh in
 
 """
     TimeMesh(w::Vector{Int})
-Return a TimeMesh based on the timestep weight vector `w`.
+Return a TimeMesh based on the timestep weight vector `w`. All weights must be rational or integer in ]0., 1]. 
 """
 function TimeMesh(w::Vector{T}) where T
     
