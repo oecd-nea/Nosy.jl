@@ -28,6 +28,6 @@ If there are no conflicts, return nothing.
 """
 function conflicts(s::Sim)
     c = _conflicts(s.model)
-    isnothing(c) && println("No conflicts identified.")
+    isnothing(c) && @warn("No conflicts identified.")
     return c
 end
