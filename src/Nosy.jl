@@ -1,7 +1,7 @@
 module Nosy
 
 export TimeMesh, Sim, sim
-export Model
+export Model, lowermodel, uppermodel
 
 export MassCarrier, EnergyCarrier, CO2Carrier
 
@@ -24,6 +24,7 @@ export connect!
 
 export capacity, nbunits
 export cost, variablecost, fixedcost, noloadcost, startupcost
+export dualprice
 
 export costs, table
 
