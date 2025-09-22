@@ -52,11 +52,11 @@ abstract type AbstractUnitCommitmentBehavior{T} <: AbstractRegularBehavior{T} en
 
 function buildbehavior(c::Component, b::UnitCommitment)
     cap = getcapacitybehavior(c, b.pname)
-    if isnothing(cap) 
+    if isnothing(cap)
         throw(AssertionError("Component does not have capacity behavior associated with port $(b.pname)"))
     end
     if isnothing(_unitsize(cap))
-        return SingleUnitCommitmentBehavior(c, b, cap)
+        throw(AssertionError("Component does not have a unit size associated with capacity. This is needed for UnitCommitment behavior."))
     else
         return FleetUnitCommitmentBehavior(c, b, cap)
     end
