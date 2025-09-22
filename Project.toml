@@ -1,6 +1,6 @@
 name = "Nosy"
 uuid = "b62be552-3e07-49d0-bbfa-d9387eb027f7"
-authors = ["Krivtchik_G "]
+authors = ["Guillaume KRIVTCHIK"]
 version = "0.1.0"
 
 [deps]
@@ -14,6 +14,7 @@ MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 
 [compat]
+julia = "1.11"
 ArgCheck = "2.3.0"
 BilevelJuMP = "0.6.2"
 DataFrames = "1.7.0"
