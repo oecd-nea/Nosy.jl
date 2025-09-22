@@ -68,11 +68,6 @@ function _apply_constraints!(c::Component, b::RampingBehavior)
     end
 end
 
-# apply the ramping constraint to the matching single unit commitment behavior
-function _apply_constraints_ramping_uc!(::Component, ::RampingBehavior, ::SingleUnitCommitmentBehavior)
-    error("not implemented")
-end
-
 # apply the ramping constraint to the matching fleet unit commitment behavior
 function _apply_constraints_ramping_uc!(c::Component, b::RampingBehavior, uc::FleetUnitCommitmentBehavior)
     var = _var(uc) # variable flow from uc, in the uc modifier
