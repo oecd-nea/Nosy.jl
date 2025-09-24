@@ -8,7 +8,7 @@ UC rules:
 """
 
 """
-Warning
+Warning for developers:
 The UC switch variables (startup, shutdown) are not designed to be converted to Hourly, because they do not represent flows but switches.
 For instance, some startups will not appear if the series is converted to Hourly.
 Therefore, special care must be applied when manipulating these series. For instance: see StartupCost behavior.
