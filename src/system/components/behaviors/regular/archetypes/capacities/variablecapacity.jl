@@ -42,7 +42,7 @@ struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{
 end
 
 # return a VariableCapacityBehavior
-function buildbehavior(c::Component, b::VariableCapacity)
+function buildbehavior(c::Component, b::VariableCapacity)    
     # _check_model_compat_cap(model(c), b)
     @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
@@ -86,7 +86,7 @@ end
 # in particular: before call to VariableCost, which requires the flow being defined
 function _addbehavior!(c::Component, b::VariableCapacityBehavior, m::ProfileSourceModel)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
-    c.model.s.output["output"].series .= convert.(AffExpr, _capacity(b) * _profile(m))
+    c.model.s.output[PortRef(name(c), "output")].series .= convert.(AffExpr, _capacity(b) * _profile(m))
     push!(c.behaviors, b)
 end
 

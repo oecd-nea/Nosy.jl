@@ -1,10 +1,10 @@
 using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
-using Nosy: Stepwise
+using Nosy: Stepwise, Hourly
 using Nosy: defaultmodifier, mass, energy, co2
 using Nosy: _defaultmodifier
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Port, is_used, set_used!, hasmodifier
-using JuMP: Model, GenericAffExpr
+using JuMP: Model, GenericAffExpr, AffExpr
 
 
 

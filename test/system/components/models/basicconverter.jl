@@ -1,12 +1,14 @@
+using Nosy: Stepwise
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
+using Nosy: mass, energy, carrier
 using Nosy: Sim, TimeMesh
-using Nosy: getport, hasinput, hasoutput
+using Nosy: _getport, _hasinput, _hasoutput, hasport
 using Nosy: build
 using Nosy: BasicConverter, BasicConverterModel
 
 using JuMP: Model
 using ArgCheck: ArgumentError
+using Test
 
 @testset "BasicConverter" begin
 
@@ -27,19 +29,19 @@ using ArgCheck: ArgumentError
 
         m = build(c, "conv")
 
-        @test hasinput(m, "input")
-        @test hasoutput(m, "output")
+        @test _hasinput(m.s, "input", "conv")
+        @test _hasoutput(m.s, "output", "conv")
 
-        @test hasport(m, "input")
-        @test hasport(m, "output")
-        @test !hasport(m, "level")
+        @test hasport(m.s, "input", "conv")
+        @test hasport(m.s, "output", "conv")
+        @test !hasport(m.s, "level", "conv")
 
         @test sim(m) == s
 
-        @test carrier(getport(m, "input")) == mc
-        @test carrier(getport(m, "output")) == ec
+        @test carrier(_getport(m.s, "input", "conv")) == mc
+        @test carrier(_getport(m.s, "output", "conv")) == ec
 
-        @test all(energy(getport(m, "output")) .== 0.5 .* energy(getport(m, "input")))
+        @test all(energy(_getport(m.s, "output", "conv")) .== 0.5 .* energy(_getport(m.s, "input", "conv")))
 
     end
 
@@ -58,7 +60,7 @@ using ArgCheck: ArgumentError
 
         m = build(c, "conv")
 
-        @test all(energy(getport(m, "output")) .== Stepwise([1,2,3,4,5], s.mesh) .* mass(getport(m, "input")))
+        @test all(energy(_getport(m.s, "output", "conv")) .== Stepwise([1,2,3,4,5], s.mesh) .* mass(_getport(m.s, "input", "conv")))
 
     end
 
@@ -77,7 +79,7 @@ using ArgCheck: ArgumentError
 
         m = build(c, "conv")
 
-        @test all(energy(getport(m, "output")) .== Stepwise([1,2,3,4,5,6,7,8,9,10], s.mesh) .* mass(getport(m, "input")))
+        @test all(energy(_getport(m.s, "output", "conv")) .== Stepwise([1,2,3,4,5,6,7,8,9,10], s.mesh) .* mass(_getport(m.s, "input", "conv")))
 
     end
 

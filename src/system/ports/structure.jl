@@ -1,74 +1,117 @@
 """
+PortRef.
+Port reference, contains the component name and the port name.
+"""
+
+struct PortRef
+    cname::String # name of component the port is emanating from (or node for losses)
+    pname::String # name of port
+end
+
+(==)(pr1::PortRef, pr2::PortRef) = (pr1.pname == pr2.pname) && (pr1.cname == pr2.cname)
+
+
+"""
+PortDict.
+Port dictionary, contains a dictionary of PortRef => Port.
+Is used as a wall for type instability, so that AbstractCarrier subtype (unpredictable) does not impact PortStructure.
+"""
+
+struct PortDict{T} <: AbstractElement{T}
+    d::Dict{PortRef,Port{T}} # type instability, but probably not too impactful
+end
+
+# constructor for general case
+PortDict{T}() where T = PortDict(Dict{PortRef,Port{T}}())
+
+# constructor for _extract function
+PortDict(d::Dict{PortRef,<:Port{T}}) where T = PortDict(convert(Dict{PortRef,Port{T}},d))
+
+# Implementation of Dict ~ iterable interface
+Base.getindex(d::PortDict, i) = getindex(d.d, i)
+Base.setindex!(d::PortDict, i, p) = setindex!(d.d, i, p)
+Base.length(d::PortDict) = length(d.d)
+Base.haskey(d::PortDict, k) = haskey(d.d, k)
+Base.copy(d::PortDict) = PortDict(copy(d.d))
+Base.iterate(d::PortDict) = iterate(d.d)
+Base.iterate(d::PortDict, s) = iterate(d.d, s)
+Base.values(d::PortDict) = values(d.d)
+
+
+"""
 Port structure.
 Contain all the ports associated with a node or model.
 """
 
 struct PortStructure{T<:VAL} <: AbstractElement{T}
     sim::Sim
-    input::Dict{String,Port{T}}
-    output::Dict{String,Port{T}}
-    level::Dict{String,Port{T}}
+    input::PortDict{T}
+    output::PortDict{T}
+    level::PortDict{T}
 end
-
 
 # parametric constructor for PortStructure
 function PortStructure{T}(s::Sim) where T<:VAL
     return PortStructure(
         s,
-        Dict{String, Port{T}}(),
-        Dict{String, Port{T}}(),
-        Dict{String, Port{T}}()
+        PortDict{T}(),
+        PortDict{T}(),
+        PortDict{T}(),
     )
 end
 
 sim(ps::PortStructure) = ps.sim
 
-# Add named port to port structure
-
-# TODO
-# refactor ps so that the Dict key is a tuple (cname, pname) for a node
-# or (nname, pname) for a component
-# this modification is to allow binding joint flows to the same node as model flows
-
-function addinput!(ps::PortStructure{T}, name::String, p::Port{T}) where T
-    if haskey(ps.input, name)
-        ps.input[name] = Port(p.carrier, ps.input[name].series + p.series, ps.input[name].used)
+function getpname(ps::PortStructure, p::Port, sense::Symbol)
+    if sense == :input
+        d = ps.input
+    elseif sense == :output
+        d = ps.output
     else
-        ps.input[name] = p
+        throw(AssertionError("Sense must be :input or :output"))
     end
+
+    for (k,v) in d
+        if v == p
+            return k.pname
+        end
+    end
+
+    throw(AssertionError("Port with name $pname not found"))
 end
 
-function addoutput!(ps::PortStructure{T}, name::String, p::Port{T}) where T
-    if haskey(ps.output, name)
-        ps.output[name] = Port(p.carrier, ps.output[name].series + p.series, ps.output[name].used)
-    else
-        ps.output[name] = p
-    end
+
+function addinput!(ps::PortStructure{T}, pname::String, cname::String, p::Port{T}) where T
+    hasport(ps, pname, cname) && throw(AssertionError("Port structure already connected to port $pname from component $cname")) # not just same sense
+    ps.input[PortRef(cname, pname)] = p
 end
 
-function addlevel!(ps::PortStructure{T}, name::String, p::Port{T}) where T
-    if haskey(ps.level, name)
-        throw(AssertionError("$name already present as a level"))
-    end
-    ps.level[name] = p
+function addoutput!(ps::PortStructure{T}, pname::String, cname::String, p::Port{T}) where T
+    hasport(ps, pname, cname) && throw(AssertionError("Port structure already connected to port $pname from component $cname")) # not just same sense
+    ps.output[PortRef(cname, pname)] = p
 end
 
-# return true if sense of PortStructure contains port with name `name`
-# NB check on the actual port is not performed, only the name is checked
-hasinput(ps::PortStructure, name::String) = haskey(ps.input, name)
-hasoutput(ps::PortStructure, name::String) = haskey(ps.output, name)
-haslevel(ps::PortStructure, name::String) = haskey(ps.level, name)
+function addlevel!(ps::PortStructure{T}, pname::String, cname::String, p::Port{T}) where T
+    hasport(ps, pname, cname) && throw(AssertionError("Port structure already connected to port $pname from component $cname")) # not just same sense
+    ps.level[PortRef(cname, pname)] = p
+end
+
+
+_hasinput(ps::PortStructure, pname::String, cname::String) = haskey(_input(ps), PortRef(cname, pname))
+_hasoutput(ps::PortStructure, pname::String, cname::String) = haskey(_output(ps), PortRef(cname, pname))
+_haslevel(ps::PortStructure, pname::String, cname::String) = haskey(_level(ps), PortRef(cname, pname))
 
 _input(ps::PortStructure) = ps.input
 _output(ps::PortStructure) = ps.output
 _level(ps::PortStructure) = ps.level
 
-Base.isempty(ps::PortStructure) = all(isempty(d) for d in (ps.input, ps.output, ps.level))
+
+Base.isempty(ps::PortStructure) = all(isempty(d) for d in (_input(ps), _output(ps), _level(ps)))
 
 # following implementation is probably not efficient
 # return a tuple with all the ports of a PortStructure
-allports(ps::PortStructure) = (values(ps.input)..., values(ps.output)..., values(ps.level)...)
-externalports(ps::PortStructure) = (values(ps.input)..., values(ps.output)...)
+allports(ps::PortStructure) = (values(_input(ps))..., values(_output(ps))..., values(_level(ps))...)
+externalports(ps::PortStructure) = (values(_input(ps))..., values(_output(ps))...)
 
 # return true if all the input and output ports of the port structure are used
 # return false otherwise
@@ -82,27 +125,17 @@ function hasuniquecarrier(ps::PortStructure)
     return !any(carrier(p) != c for p in allports(ps))
 end
 
-# return the port associated with name pname
-# return nothing if there is no such port
-# if checkunique, throw an error if ps contains multiple ports named pname
-function getport(ps::PortStructure, pname::String, checkunique::Bool=false)
-    local found = false
-    local p = nothing
+function _getport(ps::PortStructure, pname::String, cname::String)
+    pr = PortRef(cname, pname)
     for d in (_input(ps), _output(ps), _level(ps))
-        if haskey(d, pname)
-            p = d[pname]
-            if checkunique
-                found && throw(AssertionError("Port structure contains multiple ports with name $pname"))
-                found = true
-            else
-                break
-            end
+        if haskey(d, pr)
+            return d[pr]
         end
     end
-    return p
+    return nothing
 end
 
-function getportsense(ps::PortStructure, sense::Symbol)
+function _getportsense(ps::PortStructure, sense::Symbol)
     sense == :input && return _input(ps)
     sense == :output && return _output(ps)
     sense == :level && return _level(ps)
@@ -111,28 +144,32 @@ end
 
 # slightly sped-up function with a hint for port sense
 # no need to check presence of multiple ports with same name: this can't happen when sense is defined
-function getport(ps::PortStructure, pname::String, sense::Symbol)
-    d = getportsense(ps, sense)
-    if !haskey(d, pname) 
-        throw(AssertionError("No port named $pname"))
+function _getport(ps::PortStructure, pname::String, cname::String, sense::Symbol)
+    pr = PortRef(cname, pname)
+    d = _getportsense(ps, sense)
+    if !haskey(d, pr) 
+        throw(AssertionError("No port named $(pr.pname)"))
     end
-    return d[pname]
+    return d[pr]
 end
 
 # return true if the port structure has a port with name pname, return false otherwise
-hasport(ps::PortStructure, pname::String) = any(haskey(s(ps), pname) for s in (_input, _output, _level))
+hasport(ps::PortStructure, pname::String, cname::String) = _hasport(ps, PortRef(cname, pname))
+_hasport(ps::PortStructure, pr::PortRef) = any(haskey(s(ps), pr) for s in (_input, _output, _level))
 
-function portsense(ps::PortStructure, pname::String)::Symbol
-    if haskey(_input(ps), pname)
+
+function portsense(ps::PortStructure, pr::PortRef)::Symbol
+    if haskey(_input(ps), pr)
         return :input
-    elseif haskey(_output(ps), pname)
+    elseif haskey(_output(ps), pr)
         return :output
-    elseif haskey(_level(ps), pname)
+    elseif haskey(_level(ps), pr)
         return :level
     else
-        throw(ArgumentError("The port structure does not contain a node with name $pname"))
+        throw(ArgumentError("The port structure does not contain a port associated with name $pname and component $cname"))
     end
 end
+
 
 # return a shallow copy of the port structure
 # in particular:
@@ -153,17 +190,17 @@ Flow at a given step.
 """
 
 # return the flow at a given step (as opposed to given hour)
-#for this method, sense is not given, therefore pname ambiguity must be checked
-function _flow(ps::PortStructure{T}, pname::String, modifier::Function, step::Int)::T where T
-    p = getport(ps, pname, true) # throw an error if pname is ambiguous (e.g. exists in both input/output of ps)
+# this method is never ambiguous (both pname and cname are given - see addinput!, addoutput!, addlevel!)
+function _flow(ps::PortStructure{T}, pname::String, cname::String, modifier::Function, step::Int)::T where T
+    p = _getport(ps, pname, cname)
     isnothing(p) && throw(AssertionError("No port named $pname"))
     return modifier(p, step)
 end
 
 # return the flow at a given step (as opposed to given hour)
 # for this method, sense is given
-function _flow(ps::PortStructure{T}, pname::String, sense::Symbol, modifier::Function, step::Int)::T where T
-    p = getport(ps, pname, sense)
+function _flow(ps::PortStructure{T}, pname::String, cname::String, sense::Symbol, modifier::Function, step::Int)::T where T
+    p = _getport(ps, pname, cname, sense)
     isnothing(p) && throw(AssertionError("No port named $pname"))
     return modifier(p, step)
 end

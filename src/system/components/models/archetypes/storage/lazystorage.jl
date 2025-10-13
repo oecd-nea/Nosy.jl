@@ -48,7 +48,7 @@ function build(m::LazyStorage, mname::String)
     level = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(m.modifier) * "_level")
     
     ps = PortStructure{exptype(m.sim)}(m.sim)
-    addlevel!(ps, "level", Port(m.level, level))
+    addlevel!(ps, "level", mname, Port(m.level, level))
 
     return LazyStorageModel(m, ps)
 end
@@ -73,16 +73,16 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     # storage constraint at each timestep
     _in = sum(_geteff(m, k) * v for (k,v) in balance(c, :input, mod, collapse=false, aggregate=false))
     _out = sum(_geteff(m, k) * v for (k,v) in balance(c, :output, mod, collapse=false, aggregate=false))
-    _level = mod(getport(m, "level"))
+    _lev = mod(first(values(_level(m.s).d)))
     
     # constraint: conservation of modified, efficiency-weighted flows & storage
     if m.data.simplified
         # basic step function for flow... reduce number of terms in equation
-        @constraint(lowermodel(sim(m)), 1. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (_in - _out).data)
+        @constraint(lowermodel(sim(m)), 1. ./ weight(sim(m).mesh) .* (shift(_lev,1) -  _lev).data .== (_in - _out).data)
     else
         # we consider flow varies linearly during a timestep
         # constraint is multiplied by 2 both sides to reduce number of operations on GenericAffExpr
-        @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_level,1) -  _level).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
+        @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_lev,1) -  _lev).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
     end
 
 end

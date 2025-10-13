@@ -62,27 +62,41 @@ is_finalized(s::Snapshot) = s.finalized[]
 set_finalized!(s::Snapshot) = setindex!(s.finalized, true)
 
 # add a node entry to the dict of nodes of a snapshot
-# if the key is already present, check that the node is the same
+# adding a node already present does nothing
 function addnode!(s::Snapshot, n::Node)
-    if haskey(s.nodes, name(n))
-        if !(s.nodes[name(n)] == n)
-            throw(AssertionError("Snapshot is connected to 2 different nodes sharing the name $(name(n))"))
+    if hasnode(s, name(n))
+        if getnode(s, name(n)) == n
+            nothing # node is already added
+        else
+            throw(AssertionError("Snapshot already has a node named $(name(n))."))
         end
     else
-        s.nodes[name(n)] = n
+        if hascomponent(s, name(n))
+            throw(AssertionError("Snapshot already has a component named $(name(n)). Can't add a node with the same name."))
+        else
+            s.nodes[name(n)] = n
+        end
     end
+    return nothing
 end
 
 # add a component entry to the dict of components of a snapshot
-# if the key is already present, check that the component is the same
+# adding a component already present does nothing
 function addcomponent!(s::Snapshot, c::Component)
-    if haskey(s.components, name(c))
-        if s.components[name(c)] != c 
-            throw(AssertionError("Snapshot is connected to 2 different components sharing the name $(name(c))"))
+    if hascomponent(s, name(c))
+        if getcomponent(s, name(c)) == c
+            nothing # component is already added
+        else
+            throw(AssertionError("Snapshot already has a different component named $(name(c))."))
         end
     else
-        s.components[name(c)] = c
+        if hasnode(s, name(c))
+            throw(AssertionError("Snapshot already has a node named $(name(c)). Can't add a component with the same name."))
+        else
+            s.components[name(c)] = c
+        end
     end
+    return nothing
 end
 
 # add loss output to nodes with losses
@@ -99,6 +113,12 @@ function apply_constraints!(s::Snapshot)
     for (_, n) in nodes(s)
         apply_constraints!(n)
     end
+end
+
+# fill the component and node fields of a snapshot with c and n being connected
+function _populatesnapshot!(s::Snapshot, c::Component, n::Node)
+    addcomponent!(s, c)
+    addnode!(s, n)
 end
 
 # display snapshot info

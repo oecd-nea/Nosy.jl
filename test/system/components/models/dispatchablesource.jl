@@ -1,7 +1,7 @@
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, sim
-using Nosy: getport, hasinput, hasoutput
+using Nosy: _getport, _hasinput, _hasoutput, hasport
 using Nosy: build
 using Nosy: DispatchableSource, DispatchableSourceModel
 
@@ -19,16 +19,16 @@ using JuMP: Model
 
         m = build(d, "disp")
 
-        @test !hasinput(m, "input")
-        @test hasoutput(m, "output")
+        @test !_hasinput(m.s, "input", "disp")
+        @test _hasoutput(m.s, "output", "disp")
 
-        @test !hasport(m, "input")
-        @test hasport(m, "output")
-        @test !hasport(m, "level")
+        @test !hasport(m.s, "input", "disp")
+        @test hasport(m.s, "output", "disp")
+        @test !hasport(m.s, "level", "disp")
 
         @test sim(m) == s
 
-        @test carrier(getport(m, "output")) == mc
+        @test carrier(_getport(m.s, "output", "disp")) == mc
 
     end
 

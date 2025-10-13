@@ -36,10 +36,10 @@ struct DemandModel{T<:VAL,C<:AbstractCarrier,M} <: AbstractModel{T}
 end
 
 # return a DemandModel using Demand data
-function build(m::Demand, ::String) # no variable -> no use of name
+function build(m::Demand, mname::String)
 
     ps = PortStructure{exptype(m.sim)}(m.sim)
-    addinput!(ps, "input", Port(m.carrier, m.series))
+    addinput!(ps, "input", mname, Port(m.carrier, m.series))
 
     return DemandModel(m, ps)
 end

@@ -1,5 +1,5 @@
 using Nosy: mass, energy
-using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim, nsteps
+using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim, nsteps, nhours
 using Nosy: VariableCapacity, FixedCapacity, capacity
 using Nosy: UnitCommitment, FleetUnitCommitmentBehavior, _up
 using Nosy: getbehaviors
@@ -8,7 +8,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: ProfileSource
 using Nosy: Component
-using Nosy: balance, _extract
+using Nosy: _balance, _extract
 using Nosy: nvariables, nconstraints
 using JuMP: Model, AffExpr, lower_bound, upper_bound, has_lower_bound, has_upper_bound, set_objective, MIN_SENSE, MAX_SENSE, @constraint
 import JuMP
@@ -49,7 +49,7 @@ Some notes and observations:
         df[!,"sd2"] = uc.shutdown2.data
         df[!,"v"] = uc.variable.data
         df[!, "up"] = _up(uc)
-        df[!,"b"] = balance(c, :output, energy, collapse=false)
+        df[!,"b"] = _balance(c, :output, energy, collapse=false)
         return df
     end
 
@@ -137,15 +137,15 @@ Some notes and observations:
         
         # test: maximum capacity can be reached, even with constraint of 0 flow at some point
         # no startup / shutdown constraints
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 0.)
         # max should be reached in at step 2 and steps 4:10
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [0., 10., 0., 10., 10., 10., 10., 10., 10., 10.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 10., 0., 10., 10., 10., 10., 10., 10., 10.])
         @test all(_up(_m.behaviors[2]) .== [0, 2, 0, 2, 2, 2, 2, 2, 2, 2])
     end
 
@@ -169,16 +169,16 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
         # maximum can't be reached: no time because of startup / shutdown time
         # output should always stay at 0
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== 0.)
+        @test all(_balance(_m, :output, energy, collapse=false) .== 0.)
         @test all(_up(_m.behaviors[2]) .== 0.)
     end
 
@@ -202,16 +202,16 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
         @constraint(sim(m).model, m.behaviors[2].shutdown[3] == 1.)
         # @constraint(sim(m).model, m.behaviors[2].startup[7] == 1.)
         
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [5., 5., 5., 2.5, 0., 2.5, 5., 5., 5., 5.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [5., 5., 5., 2.5, 0., 2.5, 5., 5., 5., 5.])
         @test all(_up(_m.behaviors[2]) .== [1, 1, 1, 1, 0, 1, 1, 1, 1, 1])
     end
 
@@ -235,15 +235,15 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: min uptime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 0.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 10.)
 
-        set_objective(sim(m).model, MIN_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 2.5, 10., 5., 5., 2.5, 0., 0.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 2.5, 10., 5., 5., 2.5, 0., 0.])
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 2., 2., 2., 2., 2., 0., 0.])
     end
 
@@ -267,15 +267,15 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 10.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 2.5, 0., 0., 0., 2.5, 10., 10.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 2.5, 0., 0., 0., 2.5, 10., 10.])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 2., 2., 2.])
     end
 
@@ -299,15 +299,15 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 10.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [5., 7.5, 10., 5., 0., 0., 0., 0., 0., 2.5])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [5., 7.5, 10., 5., 0., 0., 0., 0., 0., 2.5])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
     
@@ -331,15 +331,15 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 10.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [5., 7.5, 10., 5., 0., 0., 0., 0., 0., 2.5])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [5., 7.5, 10., 5., 0., 0., 0., 0., 0., 2.5])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
@@ -385,15 +385,15 @@ Some notes and observations:
         @test nconstraints(sim(m)) == 182
 
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 10.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [2.5, 3.75, 10., 2.5, 0., 0., 0., 0., 0., 1.25])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [2.5, 3.75, 10., 2.5, 0., 0., 0., 0., 0., 1.25])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
@@ -417,14 +417,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [5., 2.5, 0., 0., 0., 2.5, 5., 5., 5., 5.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [5., 2.5, 0., 0., 0., 2.5, 5., 5., 5., 5.])
         @test all(_up(_m.behaviors[2]) .== [1., 1., 0., 0., 0., 1., 1., 1., 1., 1.])
     end
 
@@ -448,15 +448,15 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[3] == 10.)
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MIN_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 5., 0., 0., 0., 0., 0., 5.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 5., 0., 0., 0., 0., 0., 5.])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
@@ -480,14 +480,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 10.)
 
-        set_objective(sim(m).model, MIN_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [10., 7.5, 5., 2.5, 0., 0., 0., 0., 0., 0.]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [10., 7.5, 5., 2.5, 0., 0., 0., 0., 0., 0.]))
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 0.])
     end
 
@@ -511,14 +511,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 10.)
 
-        set_objective(sim(m).model, MIN_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [10., 10., 5., 0., 0., 0., 0., 2.5, 5., 7.5]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [10., 10., 5., 0., 0., 0., 0., 2.5, 5., 7.5]))
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 0., 0., 0., 0., 2., 2., 2.])
     end
 
@@ -542,14 +542,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[5] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [5., 0., 0., 0., 0., 1.25, 2.5, 3.75, 5., 5.]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [5., 0., 0., 0., 0., 1.25, 2.5, 3.75, 5., 5.]))
         @test all(_up(_m.behaviors[2]) .== [1., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
     end
 
@@ -574,14 +574,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 5., 5., 5., 5., 5., 0.]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 5., 5., 5., 5., 5., 0.]))
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 1., 1., 1., 1., 1., 0.])
     end
    
@@ -606,14 +606,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5., 0.]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5., 0.]))
         @test all(_up(_m.behaviors[2]) .== [0., 0., 1., 1., 1., 1., 1., 1., 1., 0.])
     end
 
@@ -638,14 +638,14 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 2.8125, 1.875, 0.9375]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 2.8125, 1.875, 0.9375]))
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
     end
    
@@ -669,14 +669,14 @@ Some notes and observations:
 
             m   = makecomp_irregular([cap, uc])
 
-            @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[6] == 0.)
+            @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[6] == 0.)
 
-            set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+            set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
             JuMP.set_silent(sim(m).model)
             JuMP.optimize!(sim(m).model)
             _m = _extract(m)
 
-            @test all(isapprox.(balance(_m, :output, energy, collapse=false),[5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 2.5, 5.0, 5.0, 5.0, 5.0]))
+            @test all(isapprox.(_balance(_m, :output, energy, collapse=false),[5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 2.5, 5.0, 5.0, 5.0, 5.0]))
             @test all(_up(_m.behaviors[2]) .== [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         end
 
@@ -686,14 +686,14 @@ Some notes and observations:
 
             m   = makecomp_irregular([cap, uc])
 
-            @constraint(sim(m).model, balance(m, :output, energy, collapse=false)[1] == 0.)
+            @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-            set_objective(sim(m).model, MAX_SENSE, balance(m, :input, energy))
+            set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
             JuMP.set_silent(sim(m).model)
             JuMP.optimize!(sim(m).model)
             _m = _extract(m)
 
-            @test all(isapprox.(balance(_m, :output, energy, collapse=false),[0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]))
+            @test all(isapprox.(_balance(_m, :output, energy, collapse=false),[0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]))
             @test all(_up(_m.behaviors[2]) .==  [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         end
     end

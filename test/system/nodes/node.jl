@@ -2,7 +2,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port, hasport
-using Nosy: PortStructure, addinput!, addoutput!, addlevel!, addlosses!, hasoutput
+using Nosy: PortStructure, addinput!, addoutput!, addlevel!, addlosses!, _hasoutput
 using Nosy: Node, _input, _output, name, carrier, rule, iscurtailed
 using Nosy: dualprice
 using Nosy: balance, energy
@@ -34,15 +34,14 @@ using ArgCheck: ArgumentError
 
         @test !haskey(_output(n), "losses") # no losses defined for this node
 
-        addinput!(n, "p1", p1)
-        @test _input(n)["p1"] == p1
+        addinput!(n, "p1", "c1", p1)
+        @test _input(n)[PortRef("c1", "p1")] == p1
 
         # wrong carrier
-        @test_throws ArgumentError addinput!(n, "p2", p2)
+        @test_throws ArgumentError addinput!(n, "p2", "c2", p2)
         
         # nodes don't have a level
-        @test_throws ArgumentError addlevel!(n, "p1", p1)
-        @test_throws ArgumentError addlevel!(n, "p2", p2)
+        @test_throws ArgumentError addlevel!(n, "p1", "c1", p1)
 
         # model not optimized
         @test_throws ArgumentError dualprice(n)
@@ -82,17 +81,17 @@ using ArgCheck: ArgumentError
 
         n = Node("n", p1.carrier, rule=:default, losses=0.3) # 30% losses
 
-        addinput!(n, "p1", p1)
-        addinput!(n, "p2", p2)
-        addoutput!(n, "p3", p3)
+        addinput!(n, "p1", "c1", p1)
+        addinput!(n, "p2", "c2", p2)
+        addoutput!(n, "p3", "c3", p3)
 
         # next function must be called during Snapshot finalization
         # we didn't build a Snapshot so we call it manually instead
         addlosses!(n)
 
-        @test hasoutput(n.s, "losses")
+        @test _hasoutput(n.s, "losses", "n")
         
-        @test all(balance(n, :output, energy, collapse=false, aggregate=false)["losses"] .== 0.3 * balance(n, :input, energy, collapse=false, aggregate=true))
+        @test all(balance(n, :output, energy, collapse=false, aggregate=false)[PortRef("n", "losses")] .== 0.3 * balance(n, :input, energy, collapse=false, aggregate=true))
         
     end
 

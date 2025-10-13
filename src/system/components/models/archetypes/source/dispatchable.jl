@@ -30,7 +30,7 @@ function build(m::DispatchableSource, mname::String)
     vout = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(_defaultmodifier(carrierstyle(m.carrier))) * "_out")
 
     ps = PortStructure{exptype(m.sim)}(m.sim)
-    addoutput!(ps, "output", Port(m.carrier, vout))
+    addoutput!(ps, "output", mname, Port(m.carrier, vout))
 
     return DispatchableSourceModel(m, ps)
 end

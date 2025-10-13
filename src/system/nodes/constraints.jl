@@ -6,8 +6,8 @@ Node constraints.
 
 # apply the node constraints, depending on the node rule
 function apply_constraints!(n::Node)
-    _in = balance(n, :input, defaultmodifier, collapse=false, aggregate=true)
-    _out = balance(n, :output, defaultmodifier, collapse=false, aggregate=true)
+    _in = _balance(n, :input, defaultmodifier, collapse=false, aggregate=true)
+    _out = _balance(n, :output, defaultmodifier, collapse=false, aggregate=true)
     if iscurtailed(n)
         _curtailednodeconstraint!(n, _in, _out)
     else

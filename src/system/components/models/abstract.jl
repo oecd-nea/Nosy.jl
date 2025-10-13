@@ -28,14 +28,6 @@ portstructure(m::AbstractModel) = m.s
 # default implementation of sim
 sim(m::AbstractModel) = m.data.sim
 
-hasport(m::AbstractModel, pname::String) = hasport(m.s, pname)
-
-hasinput(m::AbstractModel, pname::String) = hasinput(portstructure(m), pname::String)
-hasoutput(m::AbstractModel, pname::String) = hasoutput(portstructure(m), pname::String)
-haslevel(m::AbstractModel, pname::String) = haslevel(portstructure(m), pname::String)
-
-getport(m::AbstractModel, pname::String) = getport(portstructure(m), pname)
-
 # fallback function for _apply_constraints!
 # used when no specific model constraint is defined
 _apply_constraints!(::AbstractModel) = error("Not implemented")

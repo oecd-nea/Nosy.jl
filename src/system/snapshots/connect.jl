@@ -1,86 +1,15 @@
 """
 Methods for connecting components and nodes to snapshots.
 
-For connection methods, the convention for sense if taking the component's sense.
+For connection methods, the convention for sense is taking the component's sense.
 """
-
-# sense == :input or :output
-# pname: port name
-function _connect!(c::Component{T}, n::Node{T}, sense::Symbol, p::Port) where T<:VAL    
-    # check component port is not used
-    # @assert !is_used(p) "Port is already used"
-
-    if !is_used(p)
-        # check carrier is the same
-        if carrier(p) != carrier(n) 
-            throw(AssertionError("Carriers of component and node must be the same"))
-        end
-
-        # add component port to node
-        if sense == :input
-            _connectinput!(n, p, name(c))
-        elseif sense == :output
-            _connectoutput!(n, p, name(c))
-        else
-            throw(ArgumentError("Sense must be :input or :output"))
-        end
-        set_used!(p)
-    end
-end
-
-# cannot connect GenericAffExpr component to Number node and vice versa
-function _connect!(c::Component{T1}, n::Node{T2}, ::Symbol, ::Port) where {T1,T2}
-    throw(AssertionError("Cannot connect $(name(c)) with $(name(n)): value types don't match"))    
-end
-
-function _connect!(c::Component, n::Node, sense::Symbol, pname::String)  
-    _connect!(c, n, sense, getport(c, pname, sense))    
-end
-
-
-"""
-Senses are opposite for the component and the node.
-What goes out of a component goes into a node and vice versa.
-"""
-
-_connectinput!(n::Node, p::Port, cname::String) = addoutput!(portstructure(n), cname, p)
-
-_connectoutput!(n::Node, p::Port, cname::String) = addinput!(portstructure(n), cname, p)
-
-# fill the component and node fields of a snapshot with c and n being connected
-function _populatesnapshot!(s::Snapshot, c::Component, n::Node)
-    addcomponent!(s, c)
-    addnode!(s, n)
-end
-
-# slow version when port handle is not available
-function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, pname::String)
-    # check the snapshot is not finalized
-     if is_finalized(s) 
-        throw(AssertionError("Cannot connect to snapshot: the snapshot is already finalized."))
-     end
-
-    _connect!(c, n, sense, pname)
-    _populatesnapshot!(s, c, n)
-end
-
-# fast version when port handle is available
-function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, p::Port)
-    # check the snapshot is not finalized
-    if is_finalized(s) 
-        throw(AssertionError("Cannot connect to snapshot: the snapshot is already finalized."))
-    end
-
-    _connect!(c, n, sense, p)
-    _populatesnapshot!(s, c, n)
-end
 
 """
     connect!(s::Snapshot, c::Component, n::Node, pname::String)
 Connect port named `pname` of component `c` to node `n` on snapshot `s`. 
 """
 function connect!(s::Snapshot, c::Component, n::Node, pname::String)
-    sense = portsense(portstructure(c), pname)
+    sense = portsense(portstructure(c), PortRef(name(c), pname))
     _connect!(s, c, n, sense, pname)
 end
 
@@ -106,6 +35,69 @@ function connect!(s::Snapshot, c::Component, n::Node)
         throw(AssertionError("Could not connect component $(name(c)) to node $(name(n))"))
     end
 end
+
+
+# slow version when port handle is not available
+function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, pname::String)
+    # check the snapshot is not finalized
+     if is_finalized(s) 
+        throw(AssertionError("Cannot connect to snapshot: the snapshot is already finalized."))
+     end
+
+    _connect!(c, n, sense, pname)
+    _populatesnapshot!(s, c, n)
+end
+
+# fast version when port handle is available
+function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, p::Port)
+    # check the snapshot is not finalized
+    if is_finalized(s) 
+        throw(AssertionError("Cannot connect to snapshot: the snapshot is already finalized."))
+    end
+
+    pname = getpname(portstructure(c), p, sense)
+    _connect!(n, sense, p, name(c), pname)
+    _populatesnapshot!(s, c, n)
+end
+
+
+# connect component to node, sense is known, general case
+function _connect!(c::Component{T}, n::Node{T}, sense::Symbol, pname::String) where T
+    _connect!(n, sense, getport(c, pname, sense), name(c), pname)
+end
+
+# cannot connect GenericAffExpr component to Number node and vice versa
+function _connect!(c::Component{T1}, n::Node{T2}, ::Symbol, ::String) where {T1,T2}
+    throw(AssertionError("Cannot connect $(name(c)) with $(name(n)): value types don't match"))    
+end
+
+function _connect!(n::Node, sense::Symbol, p::Port, cname::String, pname::String)
+    if !is_used(p)
+        # check carrier is the same
+        if carrier(p) != carrier(n) 
+            throw(AssertionError("Carriers of component and node must be the same"))
+        end
+
+        # add component port to node
+        if sense == :input
+            _connectinput!(n, p, cname, pname)
+        elseif sense == :output
+            _connectoutput!(n, p, cname, pname)
+        else
+            throw(ArgumentError("Sense must be :input or :output"))
+        end
+        set_used!(p)
+    end
+end
+
+"""
+Senses are opposite for the component and the node.
+What goes out of a component goes into a node and vice versa.
+"""
+
+_connectinput!(n::Node, p::Port, cname::String, pname::String) = addoutput!(portstructure(n), pname, cname, p)
+
+_connectoutput!(n::Node, p::Port, cname::String, pname::String) = addinput!(portstructure(n), pname, cname, p)
 
 # return true (and empty string) if all the components of the snapshot are fully connected
 # return a tuple of (false, not_connected_component_name) otherwise
