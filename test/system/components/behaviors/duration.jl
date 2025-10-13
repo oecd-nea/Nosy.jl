@@ -2,6 +2,8 @@
 using Test
 using JuMP: MAX_SENSE, set_silent
 using Nosy: Duration, buildbehavior, DurationBehavior, _capacitypname, _hours
+using Nosy: _balance, balance
+using Nosy: PortRef
 using HiGHS
 
 @testset "Duration" begin
@@ -61,7 +63,7 @@ using HiGHS
         JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
         set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
-        result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
+        result = JuMP.value.(_balance(c, :input, energy, collapse=false))
         @test all(result .<= 100.0)
     end
 
@@ -75,7 +77,7 @@ using HiGHS
         JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
         set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
-        result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
+        result = JuMP.value.(_balance(c, :input, energy, collapse=false))
         @test all(result .<= 200.0)
     end
 
@@ -91,7 +93,7 @@ using HiGHS
             JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
             set_silent(sim(c).model)
             JuMP.optimize!(sim(c).model)
-            result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
+            result = JuMP.value.(balance(c, :input, energy, collapse=false))
             expected_limit = cap / i
             # @test all(isapprox.(result, expected_limit))
             @test all(result .<= expected_limit)
@@ -116,7 +118,7 @@ using HiGHS
         JuMP.optimize!(sim(c).model)
 
         expected_caps = [v * 300 for v in cm.val]  
-        result = JuMP.value.(balance(c, :input, energy, collapse=false)).data
+        result = JuMP.value.(balance(c, :input, energy, collapse=false))
         @test all(result .<= expected_caps)
     end
 
@@ -131,7 +133,7 @@ using HiGHS
         JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
         set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
-        level_vals = JuMP.value.(c.s.level["level"].series)
+        level_vals = JuMP.value.(c.s.level[PortRef("battery", "level")].series)
 
         @test all(level_vals .<= 600.0)  
     end
@@ -149,7 +151,7 @@ using HiGHS
         set_silent(model)
         JuMP.optimize!(model)
 
-        input_vals = JuMP.value.(balance(c, :input, energy, collapse=false)).data
+        input_vals = JuMP.value.(balance(c, :input, energy, collapse=false))
         expected_input = [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0 ,100.0]
 
         @test length(input_vals) == length(expected_input)

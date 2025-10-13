@@ -2,6 +2,8 @@
 Node balance.
 
 Direct application of the balance on the port structure of the node.
+
+`balance`` method is user-facing and should never return Stepwise (or Dict of Stepwise etc.).
 """
 
 
@@ -12,22 +14,42 @@ Parameters:
   * `n`: Node
   * `sense`: `:input` or `:output`
   * `modifier`: modifier function e.g. `energy`, `mass`, `co2`
-  * `collapse`: if `true`, the flows are summed over time, otherwise the Stepwise series are returned
-  * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
+  * `collapse`: if `true`, the flows are summed over time, otherwise the Hourly series are returned
+  * `aggregate`: if `true`, the flows from multiple components are summed together, otherwise one entry per component is returned
 """
 function balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
     @argcheck sense in (:input, :output) "sense must be either :input or :output"
-    if sense == :input
-        return _balance(n.s, _input, modifier, collapse, aggregate)
-    else # if sense == :output
-        return _balance(n.s, _output, modifier, collapse, aggregate)
-    end
+    return __to_hourly(_balance(n, sense, modifier; collapse=collapse, aggregate=aggregate))
 end
 
-# balance applied to only one port of the component
+function _balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
+    if sense == :input
+        b = _balance(n.s, _input, modifier, collapse, aggregate)
+    else # if sense == :output
+        b = _balance(n.s, _output, modifier, collapse, aggregate)
+    end
+    aggregate && return b
+
+    # multiple PortRef in keys of b may be associated with same cname - aggregate by cname
+    return __mergebalancebycname(b)
+end
+
+function __mergebalancebycname(b::AbstractDict{PortRef,<:Any})
+    merged = __containertype(b){String,valtype(b)}() # same type of Dict (LittleDict, Dict etc.), with String keys and same type of values
+    for (k,v) in b
+        if haskey(merged, k.cname)
+            merged[k.cname] = addto!.(merged[k.cname], v)
+        else
+            merged[k.cname] = v
+        end
+    end
+    return merged
+end
+
+# balance applied to only one port of the node
 # this function should not be exported, it is used for behaviors e.g. variable cost
-# this is almost the same method as for components
-function _balance(n::Node, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
+# this is almost the same method as for components - with added argument (cname + pname, otherwise port is ambiguous)
+function _balance(n::Node, cname::String, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
     @argcheck sense in (:input, :output) "sense must be either :input or :output"
     if sense == :input
         @argcheck hasinput(n.s, pname) "Node $(name(n)) does not have input $pname"
@@ -47,8 +69,8 @@ function _balance(n::Node, pname::String, sense::Symbol, modifier::Function; col
 end
 
 # return the flow of a node port at a given timestep
-_flow(n::Node, pname::String, modifier::Function, step::Int) = _flow(n.s, pname, modifier, step)
-_flow(n::Node, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(n.s, pname, sense, modifier, step)
+_flow(n::Node, pname::String, modifier::Function, step::Int) = _flow(n.s, pname, name(n), modifier, step)
+_flow(n::Node, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(n.s, pname, name(n), sense, modifier, step)
 
 
 """
@@ -72,7 +94,7 @@ end
 function _flow(n::Node{T}, sense::Symbol, modifier::Function, step::Int) where T
     local val = zero(T)
     if hasmodifier(n.carrier, modifier)
-        for (_, p) in getportsense(n.s, sense)
+        for (_, p) in _getportsense(n.s, sense)
             val = addto!(val, _flow(p, modifier, step))
         end
     end

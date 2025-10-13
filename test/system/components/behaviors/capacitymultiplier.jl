@@ -73,7 +73,7 @@ using HiGHS: Optimizer
         # expected result: reaches [0.6... 1.0] * 10. at each timestep
         JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, mass, collapse=true, aggregate=true))
         JuMP.optimize!(sim(c).model)
-        @test all(isapprox.(JuMP.value.(balance(c, :input, mass, collapse=false, aggregate=true)).data, collect(0.1:0.1:1.0) * 10.))
+        @test all(isapprox.(JuMP.value.(_balance(c, :input, mass, collapse=false, aggregate=true)), collect(0.1:0.1:1.0) * 10.))
 
     end
 
@@ -88,7 +88,7 @@ using HiGHS: Optimizer
         # expected result: reaches [0.6... 1.0] * 10. at each timestep
         JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, mass, collapse=true, aggregate=true))
         JuMP.optimize!(sim(c).model)
-        @test all(isapprox.(JuMP.value.(balance(c, :input, mass, collapse=false, aggregate=true)).data, collect(0.1:0.1:1.0) * 10.))
+        @test all(isapprox.(JuMP.value.(_balance(c, :input, mass, collapse=false, aggregate=true)), collect(0.1:0.1:1.0) * 10.))
 
     end
 
@@ -114,7 +114,7 @@ using HiGHS: Optimizer
         # expected result: reaches [0.6... 1.0] * 7. at each timestep
         JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, mass, collapse=true, aggregate=true))
         JuMP.optimize!(sim(c).model)
-        @test all(isapprox.(JuMP.value.(balance(c, :input, mass, collapse=false, aggregate=true)).data, collect(0.1:0.1:1.0) * 7.))
+        @test all(isapprox.(JuMP.value.(_balance(c, :input, mass, collapse=false, aggregate=true)), collect(0.1:0.1:1.0) * 7.))
 
     end   
 

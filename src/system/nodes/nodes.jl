@@ -65,6 +65,29 @@ sim(n::Node) = sim(carrier(n))
 _input(n::Node) = _input(portstructure(n))
 _output(n::Node) = _output(portstructure(n))
 
+# this method is never ambigous
+getport(n::Node, pname::String, cname::String) = _getport(portstructure(n), pname, cname)
+
+hasinput(n::Node, pname::String, from::String) = haskey(_input(n), PortRef(from, pname))
+hasoutput(n::Node, pname::String, to::String) = haskey(_output(n), PortRef(to, pname))
+haslevel(n::Node, pname::String, ::String) = false
+
+function hasinput(n::Node, cname::String)
+    for (k,_) in _input(n)
+        k.cname == cname && return true
+    end
+    return false
+end
+
+function hasoutput(n::Node, cname::String)
+    for (k,_) in _output(n)
+        k.cname == cname && return true
+    end
+    return false
+end
+
+haslevel(n::Node, cname::String) = false
+
 _haslosses(n::Node) = !iszero(n.losses)
 _lossesratio(n::Node) = n.losses
 
@@ -73,14 +96,14 @@ hastag(n::Node, tag::Symbol) = tag in n.tags
 
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)
-function addinput!(n::Node{T,C}, name::String, p::Port{T,C}) where {T,C}
-    @argcheck carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
-    addinput!(n.s, name, p)
+function addinput!(n::Node{T,C}, pname::String, cname::String, p::Port{T,C}) where {T,C}
+    @argcheck carrier(n) == carrier(p) "$cname is not compatible with node $(Nosy.name(n))"
+    addinput!(n.s, pname, cname, p)
 end
 
-function addoutput!(n::Node{T,C}, name::String, p::Port{T,C}) where {T,C}
+function addoutput!(n::Node{T,C}, pname::String, cname::String, p::Port{T,C}) where {T,C}
     @argcheck carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
-    addoutput!(n.s, name, p)
+    addoutput!(n.s, pname, cname, p)
 end
 
 # add losses to a node
@@ -90,16 +113,16 @@ function addlosses!(n::Node)
     if _haslosses(n)
         # losses = (node losses ratio) * (sum of input of node)
         _in = balance(n, :input, _defaultmodifier(n.carrier), aggregate=true, collapse=false)
-        addoutput!(n, "losses", Port(n.carrier, _in * n.losses, true))
+        addoutput!(n, "losses", name(n), Port(n.carrier, _in * n.losses, true))
     end
 end
 
 # throw exception when carriers are different between node and port
-addinput!(n::Node{T,C1}, name::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))"))
-addoutput!(n::Node{T,C1}, name::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))"))
+addinput!(::Node{T,C1}, ::String, ::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))")) # not used ??
+addoutput!(::Node{T,C1}, ::String, ::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))")) # not used ??
 
 # cannot add level to node
-addlevel!(::Node{T,C1}, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(ArgumentError("Ports cannot have a level"))
+addlevel!(::Node{T,C1}, ::String, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(ArgumentError("Ports cannot have a level"))
 
 # display node info
 function Base.show(io::IO, n::Node)

@@ -2,7 +2,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Stepwise
-using Nosy: getport, hasinput, hasoutput
+using Nosy: _getport, _hasinput, _hasoutput
 using Nosy: build
 using Nosy: Demand, DemandModel
 
@@ -22,18 +22,18 @@ using JuMP: Model, AffExpr
 
         m = build(d, "demand")
 
-        @test hasinput(m, "input")
-        @test !hasoutput(m, "output")
+        @test _hasinput(m.s, "input", "demand")
+        @test !_hasoutput(m.s, "output", "demand")
 
-        @test hasport(m, "input")
-        @test !hasport(m, "output")
-        @test !hasport(m, "level")
+        @test hasport(m.s, "input", "demand")
+        @test !hasport(m.s, "output", "demand")
+        @test !hasport(m.s, "level", "demand")
 
-        @test all(mass(getport(m, "input")) .== series)
+        @test all(mass(_getport(m.s, "input", "demand")) .== series)
 
         @test sim(m) == s
 
-        @test carrier(getport(m, "input")) == mc
+        @test carrier(_getport(m.s, "input", "demand")) == mc
 
     end
 
@@ -47,9 +47,9 @@ using JuMP: Model, AffExpr
 
         m = build(d, "demand")
 
-        @test all(isapprox.(energy(getport(m, "input")), AffExpr.(series)))
+        @test all(isapprox.(energy(_getport(m.s, "input", "demand")), AffExpr.(series)))
 
-        @test carrier(getport(m, "input")) == mc
+        @test carrier(_getport(m.s, "input", "demand")) == mc
 
     end
 
@@ -64,7 +64,7 @@ using JuMP: Model, AffExpr
 
         m = build(d, "demand")
 
-        @test all(mass(getport(m, "input")) .== Stepwise(series, s.mesh))
+        @test all(mass(_getport(m.s, "input", "demand")) .== Stepwise(series, s.mesh))
 
     end
 
@@ -79,7 +79,7 @@ using JuMP: Model, AffExpr
 
         m = build(d, "demand")
 
-        @test all(mass(getport(m, "input")) .== Stepwise(series, s.mesh))
+        @test all(mass(_getport(m.s, "input", "demand")) .== Stepwise(series, s.mesh))
 
     end
 

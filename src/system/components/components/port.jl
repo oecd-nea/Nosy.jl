@@ -6,10 +6,10 @@ Accessing ports of components.
 portstructure(c::Component) = c.s
 
 # return the port with name pname of a component
-getport(c::Component, pname::String) = getport(portstructure(c), pname)
+getport(c::Component, pname::String) = _getport(portstructure(c), pname, name(c))
 
 # return the port with name pname of a component, hint on sense makes the call faster
-getport(c::Component, pname::String, sense::Symbol) = getport(portstructure(c), pname, sense)
+getport(c::Component, pname::String, sense::Symbol) = _getport(portstructure(c), pname, name(c), sense)
 
 # return true if all the ports of the component are used
 # return false otherwise

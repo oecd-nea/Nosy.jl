@@ -46,8 +46,8 @@ function build(m::BasicConverter, mname::String)
     vout = m.ratio .* m.modifier(m.input) ./ m.modifier(m.output) .* vin
 
     ps = PortStructure{exptype(m.sim)}(m.sim)
-    addinput!(ps, "input", Port(m.input, vin))
-    addoutput!(ps, "output", Port(m.output, vout))
+    addinput!(ps, "input", mname, Port(m.input, vin))
+    addoutput!(ps, "output", mname, Port(m.output, vout))
 
     return BasicConverterModel(m, ps)
 end

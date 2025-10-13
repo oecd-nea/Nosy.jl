@@ -27,9 +27,9 @@ using JuMP: Model, GenericAffExpr
         p2 = makeport_m(s)
         p3 = makeport_m(s)
         ps = PortStructure{AffExpr}(s)
-        addinput!(ps, "p1", p1)
-        addinput!(ps, "p2", p2)
-        addoutput!(ps, "p3", p3)
+        addinput!(ps, "p1", "n", p1)
+        addinput!(ps, "p2", "n", p2)
+        addoutput!(ps, "p3", "n", p3)
         return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[]) # not usual constructor, to avoid connection stage
     end
 
@@ -86,9 +86,9 @@ using JuMP: Model, GenericAffExpr
         p2 = makeport_m2(s)
         p3 = makeport_m2(s)
         ps = PortStructure{AffExpr}(s)
-        addinput!(ps, "p1", p1)
-        addinput!(ps, "p2", p2)
-        addoutput!(ps, "p3", p3)
+        addinput!(ps, "p1", "n", p1)
+        addinput!(ps, "p2", "n", p2)
+        addoutput!(ps, "p3", "n", p3)
         return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[])
     end
 
@@ -111,44 +111,6 @@ using JuMP: Model, GenericAffExpr
 
         @test all((flow(n, :input, energy, h) for h in 0:4) .== ((1:2:10) .* 2 .* (1:2:10)))
         @test all((flow(n, :output, energy, h) for h in 0:4) .== ((1:2:10) .* 1 .* (1:2:10)))
-
-    end
-
-    function makenode3(s::Sim)
-        p1 = makeport_m2(s)
-        p2 = makeport_m2(s)
-        p3 = makeport_m(s) # different constructor for p3
-        ps = PortStructure{AffExpr}(s)
-        addinput!(ps, "p1", p1)
-        addinput!(ps, "p2", p2)
-        addoutput!(ps, "p1", p3) # p1 also present in input
-        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[])
-    end
-
-    # test ambiguous port names
-    let s = tsim()
-
-        n = makenode3(s)
-
-        # flow at a given step
-
-        @test_throws AssertionError _flow(n, "p1", energy, 1) # ambiguous port name
-
-        @test all((_flow(n, "p1", :input, energy, step) for step in 1:10) .== ((1:10) .* (1:10)))
-        @test all((_flow(n, "p1", :output, energy, step) for step in 1:10) .== ((1:10) .* 0.5))
-
-        @test all((_flow(n, :input, energy, step) for step in 1:10) .== ((1:10) .* 2 .* (1:10)))
-        @test all((_flow(n, :output, energy, step) for step in 1:10) .== ((1:10) .* 0.5))
-
-        # flow at a given hour
-        
-        @test_throws AssertionError flow(n, "p1", energy, 1) # ambiguous port name
-
-        @test all((flow(n, "p1", :input, energy, h) for h in 0:4) .== ((1:2:10) .* (1:2:10)))
-        @test all((flow(n, "p1", :output, energy, h) for h in 0:4) .== ((1:2:10) .* 0.5))
-
-        @test all((flow(n, :input, energy, h) for h in 0:4) .== ((1:2:10) .* 2 .* (1:2:10)))
-        @test all((flow(n, :output, energy, h) for h in 0:4) .== ((1:2:10) .* 0.5))
 
     end
 

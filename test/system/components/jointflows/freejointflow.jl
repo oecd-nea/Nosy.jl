@@ -1,5 +1,5 @@
 using Nosy: mass
-using Nosy: Sim, TimeMesh, nvariables, nconstraints
+using Nosy: Sim, TimeMesh, nvariables, nconstraints, eachstep
 using Nosy: FreeJointFlow, FreeJointFlowModel
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
@@ -38,13 +38,13 @@ using JuMP: Model, GenericAffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == ff
-        @test haskey(_input(portstructure(c)), "ff")
-        @test !haskey(_output(portstructure(c)), "ff")
+        @test hasinput(c, "ff")
+        @test !hasoutput(c, "ff")
 
-        @test getport(c, "ff") == _input(portstructure(c))["ff"] 
+        @test getport(c, "ff") == _input(portstructure(c))[PortRef("test", "ff")] 
 
-        @test all(iszero(mass(_input(portstructure(c))["ff"])[i].constant) for i in eachstep(sim(mc)))
-        @test all(length(mass(_input(portstructure(c))["ff"])[i].terms) == 1 for i in eachstep(sim(mc)))
+        @test all(iszero(flow(c, "ff", :input, energy, s).constant) for s in eachstep(sim(mc)))
+        @test all(length(flow(c, "ff", :input, energy, s).terms) == 1 for s in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 20 # time series for converter model + time series for free joint flow

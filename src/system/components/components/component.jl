@@ -16,7 +16,11 @@ name(c::Component) = c.name
 behaviors(c::Component) = c.behaviors
 sim(c::Component) = sim((model(c)))
 
-hasport(c::Component, pname::String) = hasport(c.s, pname)
+hasport(c::Component, pname::String) = hasport(c.s, pname, name(c))
+hasinput(c::Component, pname::String) = _hasinput(c.s, pname, name(c))
+hasoutput(c::Component, pname::String) = _hasoutput(c.s, pname, name(c))
+haslevel(c::Component, pname::String) = _haslevel(c.s, pname, name(c))
+
 
 tag!(c::Component, tag::Symbol) = tag in c.tags ? nothing : push!(c.tags, tag)
 hastag(c::Component, tag::Symbol) = tag in c.tags
