@@ -12,7 +12,7 @@ Optional arguments:
   * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
 """
 function balance(s::Snapshot, name::String, sense::Symbol, modifier::Function; collapse::Bool=false, aggregate::Bool=false)
-    return __to_hourly(balance(s, name, sense, modifier, collapse=collapse, aggregate=aggregate)) # user-facing method, return hourly version
+    return __to_hourly(_balance(s, name, sense, modifier, collapse=collapse, aggregate=aggregate)) # user-facing method, return hourly version
 end
 
 function _balance(s::Snapshot, name::String, sense::Symbol, modifier::Function; collapse::Bool=false, aggregate::Bool=false)
