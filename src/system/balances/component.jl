@@ -4,8 +4,6 @@ Component balance.
 Direct application of the balance on the port structure of the component.
 """
 
-using Infiltrator
-
 """
     balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
 Return the flow balance for component `c`.
