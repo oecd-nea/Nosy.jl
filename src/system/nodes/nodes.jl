@@ -70,7 +70,23 @@ getport(n::Node, pname::String, cname::String) = _getport(portstructure(n), pnam
 
 hasinput(n::Node, pname::String, from::String) = haskey(_input(n), PortRef(from, pname))
 hasoutput(n::Node, pname::String, to::String) = haskey(_output(n), PortRef(to, pname))
-haslevel(::Node, ::String, ::String) = false
+haslevel(n::Node, pname::String, ::String) = false
+
+function hasinput(n::Node, cname::String)
+    for (k,_) in _input(n)
+        k.cname == cname && return true
+    end
+    return false
+end
+
+function hasoutput(n::Node, cname::String)
+    for (k,_) in _output(n)
+        k.cname == cname && return true
+    end
+    return false
+end
+
+haslevel(n::Node, cname::String) = false
 
 _haslosses(n::Node) = !iszero(n.losses)
 _lossesratio(n::Node) = n.losses

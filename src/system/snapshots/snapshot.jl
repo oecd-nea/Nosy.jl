@@ -45,7 +45,7 @@ function getcomponents(s::Snapshot, nodename::String, withtags::Vector{Symbol}, 
     n = getnode(s, nodename)
     d = LittleDict{String,AbstractComponent}()
     for (k,v) in d0
-        if !haskey(d, k) && (haskey(_input(n), k) || haskey(_output(n), k))
+        if !haskey(d, k) && (hasinput(n, k) || hasoutput(n, k))
             d[k] = v
         end
     end
