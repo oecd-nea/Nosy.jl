@@ -9,21 +9,26 @@ Direct application of the balance on the port structure of the component.
 Return the flow balance for component `c`.
 Parameters:
   * `c`: Component
-  * `sense`: `input` or `:output`
+  * `sense`: `input` or `:output` or `:level`
   * `modifier`: modifier function e.g. `energy`, `mass`, `co2`
   * `collapse`: if `true`, the flows are summed over time, otherwise the Hourly series are returned
   * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
 """
 function balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
-    @argcheck sense in (:input, :output) "sense must be either :input or :output"
+    @argcheck sense in (:input, :output, :level) "sense must be either :input or :output or :level"
     return __to_hourly(_balance(c, sense, modifier, collapse=collapse, aggregate=aggregate))
 end
 
 function _balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
     if sense == :input
         b = _balance(c.s, _input, modifier, collapse, aggregate)
-    else # if sense == :output
+    elseif sense == :output
         b = _balance(c.s, _output, modifier, collapse, aggregate)
+    elseif sense == :level
+        if collapse
+            throw(ArgumentError("collapse must be false when sense is :level"))
+        end
+        b = _balance(c.s, _level, modifier, collapse, aggregate)
     end
     aggregate && return b
     return Dict(k.pname => v for (k,v) in b) # all flows have different port names, no ambiguity here
