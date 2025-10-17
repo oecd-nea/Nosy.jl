@@ -26,7 +26,7 @@ function _balance(c::Component, sense::Symbol, modifier::Function; collapse::Boo
         b = _balance(c.s, _output, modifier, collapse, aggregate)
     end
     aggregate && return b
-    return Dict(k.pname => v for (k,v) in b)
+    return Dict(k.pname => v for (k,v) in b) # all flows have different port names, no ambiguity here
 end
 
 # balance applied to only one port of the component

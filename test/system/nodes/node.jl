@@ -91,7 +91,7 @@ using ArgCheck: ArgumentError
 
         @test _hasoutput(n.s, "losses", "n")
         
-        @test all(balance(n, :output, energy, collapse=false, aggregate=false)[PortRef("n", "losses")] .== 0.3 * balance(n, :input, energy, collapse=false, aggregate=true))
+        @test all(balance(n, :output, energy, collapse=false, aggregate=false)["n"] .== 0.3 * balance(n, :input, energy, collapse=false, aggregate=true))
         
     end
 

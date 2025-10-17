@@ -29,5 +29,5 @@ end
 # # convert Stepwise to Hourly
 # nothing to do for other data formats
 __to_hourly(s::Stepwise) = Hourly(s)
-__to_hourly(d::AbstractDict{PortRef,<:Stepwise}) = Dict(k => Hourly(v) for (k,v) in d)
+__to_hourly(d::AbstractDict{<:Any,<:Stepwise}) = Dict(k => Hourly(v) for (k,v) in d)
 __to_hourly(d) = d

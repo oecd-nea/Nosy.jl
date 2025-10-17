@@ -71,10 +71,10 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     end
 
     # storage constraint at each timestep
-    _in = sum(_geteff(m, k) * v for (k,v) in balance(c, :input, mod, collapse=false, aggregate=false))
-    _out = sum(_geteff(m, k) * v for (k,v) in balance(c, :output, mod, collapse=false, aggregate=false))
+    _in = sum(_geteff(m, k) * v for (k,v) in _balance(c, :input, mod, collapse=false, aggregate=false))
+    _out = sum(_geteff(m, k) * v for (k,v) in _balance(c, :output, mod, collapse=false, aggregate=false))
     _lev = mod(first(values(_level(m.s).d)))
-    
+
     # constraint: conservation of modified, efficiency-weighted flows & storage
     if m.data.simplified
         # basic step function for flow... reduce number of terms in equation

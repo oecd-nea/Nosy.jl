@@ -3,7 +3,7 @@ using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: BasicConverter, LinkedJointFlow
 using Nosy: Component
-using Nosy: balance, _balance
+using Nosy: _balance
 
 using JuMP: Model, AffExpr
 
@@ -25,26 +25,26 @@ using JuMP: Model, AffExpr
     let c = makecomp1([])
 
         # non-collapsed, non-aggregated balance, mass
-        bm = balance(c, :input, mass, collapse=false, aggregate=false)
+        bm = _balance(c, :input, mass, collapse=false, aggregate=false)
         @test haskey(bm, "input") && bm["input"] == c.s.input[PortRef("comp", "input")].series
-        @test isempty(balance(c, :output, mass, collapse=false, aggregate=false))
+        @test isempty(_balance(c, :output, mass, collapse=false, aggregate=false))
 
         # non-collapsed, non-aggregated balance, energy
-        bei = balance(c, :input, energy, collapse=false, aggregate=false)
+        bei = _balance(c, :input, energy, collapse=false, aggregate=false)
         @test haskey(bei, "input") && bei["input"] == c.s.input[PortRef("comp", "input")].series .* [1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,3.]
-        beo = balance(c, :output, energy, collapse=false, aggregate=false)
+        beo = _balance(c, :output, energy, collapse=false, aggregate=false)
         @test haskey(beo, "output") && beo["output"] == c.s.output[PortRef("comp", "output")].series
 
 
         # collapsed, non-aggregated balance, mass
-        bm = balance(c, :input, mass, collapse=true, aggregate=false)
+        bm = _balance(c, :input, mass, collapse=true, aggregate=false)
         @test haskey(bm, "input") && bm["input"] == sum(c.s.input[PortRef("comp", "input")].series) # NB sum of GenericAffExpr is weighted
-        @test isempty(balance(c, :output, mass, collapse=true, aggregate=false))
+        @test isempty(_balance(c, :output, mass, collapse=true, aggregate=false))
 
         # collapsed, non-aggregated balance, energy
-        bei = balance(c, :input, energy, collapse=true, aggregate=false)
+        bei = _balance(c, :input, energy, collapse=true, aggregate=false)
         @test haskey(bei, "input") && bei["input"] == sum(energy(c.s.input[PortRef("comp", "input")]))
-        beo = balance(c, :output, energy, collapse=true, aggregate=false)
+        beo = _balance(c, :output, energy, collapse=true, aggregate=false)
         @test haskey(beo, "output") && beo["output"] == sum(c.s.output[PortRef("comp", "output")].series) # NB sum of GenericAffExpr is weighted
 
     end
@@ -64,8 +64,8 @@ using JuMP: Model, AffExpr
     let c = makecomp2()
 
         # non-collapsed, non-aggregated balance, co2
-        @test isempty(balance(c, :input, co2, collapse=false, aggregate=false))
-        b = balance(c, :output, co2, collapse=false, aggregate=false)
+        @test isempty(_balance(c, :input, co2, collapse=false, aggregate=false))
+        b = _balance(c, :output, co2, collapse=false, aggregate=false)
         @test haskey(b, "linked") && b["linked"] == c.s.output[PortRef("comp", "linked")].series * 0.1
 
     end

@@ -6,7 +6,9 @@ using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
-using Nosy: portstructure, _input, getport
+using Nosy: portstructure, _input, getport, PortRef
+using Nosy: hasinput, hasoutput
+using Nosy: balance, _balance
 using JuMP: Model, GenericAffExpr
 
 @testset "FixedJointFlow" begin
@@ -41,7 +43,7 @@ using JuMP: Model, GenericAffExpr
 
         @test getport(c, "ff") == _input(portstructure(c))[PortRef("test", "ff")] 
         
-        @test all(balance(c, :input, mass, collapse=false, aggregate=false)["ff"] .== Float64.(eachstep(sim(mc))))
+        @test all(_balance(c, :input, mass, collapse=false, aggregate=false)["ff"] .== Float64.(eachstep(sim(mc))))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
@@ -60,7 +62,7 @@ using JuMP: Model, GenericAffExpr
 
         c = Component("test", m, [ff])
 
-        @test all(balance(c, :input, mass, collapse=false, aggregate=false)["ff"][i] == Stepwise(Hourly(Float64.(1:5), sim(c).mesh))[i] for i in eachstep(sim(mc)))
+        @test all(_balance(c, :input, mass, collapse=false, aggregate=false)["ff"][i] == Stepwise(Hourly(Float64.(1:5), sim(c).mesh))[i] for i in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
@@ -79,7 +81,7 @@ using JuMP: Model, GenericAffExpr
 
         c = Component("test", m, [ff])
 
-        @test all(balance(c, :input, mass, collapse=false, aggregate=false)["ff"][i] == 5. for i in eachstep(sim(mc)))
+        @test all(_balance(c, :input, mass, collapse=false, aggregate=false)["ff"][i] == 5. for i in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model

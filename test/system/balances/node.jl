@@ -26,9 +26,9 @@ using JuMP: Model, AffExpr
         p2 = makeport_m(s)
         p3 = makeport_m(s)
         ps = PortStructure{AffExpr}(s)
-        addinput!(ps, "p1", "c", p1)
-        addinput!(ps, "p2", "c", p2)
-        addoutput!(ps, "p3", "c", p3)
+        addinput!(ps, "p1", "c1", p1)
+        addinput!(ps, "p2", "c2", p2)
+        addoutput!(ps, "p3", "c3", p3)
         return (Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[]), p1, p2, p3)
     end
 
@@ -39,9 +39,9 @@ using JuMP: Model, AffExpr
 
         # non-collapsed, non-aggregated balance
         b = _balance(n, :input, mass, collapse=false, aggregate=false)
-        @test haskey(b, PortRef("c", "p1")) && b[PortRef("c", "p1")] == mass(p1)
-        @test haskey(b, PortRef("c", "p2")) && b[PortRef("c", "p2")] == mass(p2)    
-        @test !haskey(b, PortRef("c", "p3"))
+        @test haskey(b, "c1") && b["c1"] == mass(p1)
+        @test haskey(b, "c2") && b["c2"] == mass(p2)    
+        @test !haskey(b, "c3")
         @test_throws ArgumentError balance(n, :level, mass, collapse=false, aggregate=false) # :level not allowed
     
     end
