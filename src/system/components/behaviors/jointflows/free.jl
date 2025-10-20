@@ -37,9 +37,9 @@ end
 function _addbehavior!(c::Component, j::FreeJointFlowModel)
     p = Port(j.data.carrier, j.flow, !mustconnect(j))
     if j.data.sense == :input
-        addinput!(portstructure(c), j.data.name, p)
+        addinput!(portstructure(c), j.data.name, name(c), p)
     elseif j.data.sense == :output
-        addoutput!(portstructure(c), j.data.name, p)
+        addoutput!(portstructure(c), j.data.name, name(c), p)
     end
     push!(c.jointflows, j)
 end

@@ -6,7 +6,9 @@ using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
-using Nosy: portstructure, _input, getport
+using Nosy: portstructure, _input, getport, PortRef
+using Nosy: hasinput, hasoutput
+using Nosy: balance, _balance
 using JuMP: Model, GenericAffExpr
 
 @testset "FixedJointFlow" begin
@@ -36,12 +38,12 @@ using JuMP: Model, GenericAffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == ff
-        @test haskey(_input(portstructure(c)), "ff")
-        @test !haskey(_output(portstructure(c)), "ff")
+        @test hasinput(c, "ff")
+        @test !hasoutput(c, "ff")
 
-        @test getport(c, "ff") == _input(portstructure(c))["ff"] 
-
-        @test all(mass(_input(portstructure(c))["ff"])[i] == Float64(i) for i in eachstep(sim(mc)))
+        @test getport(c, "ff") == _input(portstructure(c))[PortRef("test", "ff")] 
+        
+        @test all(_balance(c, :input, mass, collapse=false, aggregate=false)["ff"] .== Float64.(eachstep(sim(mc))))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
@@ -60,7 +62,7 @@ using JuMP: Model, GenericAffExpr
 
         c = Component("test", m, [ff])
 
-        @test all(mass(_input(portstructure(c))["ff"])[i] == Stepwise(Hourly(Float64.(1:5), sim(c).mesh))[i] for i in eachstep(sim(mc)))
+        @test all(_balance(c, :input, mass, collapse=false, aggregate=false)["ff"][i] == Stepwise(Hourly(Float64.(1:5), sim(c).mesh))[i] for i in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
@@ -79,7 +81,7 @@ using JuMP: Model, GenericAffExpr
 
         c = Component("test", m, [ff])
 
-        @test all(mass(_input(portstructure(c))["ff"])[i] == 5. for i in eachstep(sim(mc)))
+        @test all(_balance(c, :input, mass, collapse=false, aggregate=false)["ff"][i] == 5. for i in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model

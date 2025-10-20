@@ -3,7 +3,7 @@ using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: BasicConverter, LinkedJointFlow
 using Nosy: Component
-using Nosy: balance, _balance
+using Nosy: _balance
 
 using JuMP: Model, AffExpr
 
@@ -25,27 +25,27 @@ using JuMP: Model, AffExpr
     let c = makecomp1([])
 
         # non-collapsed, non-aggregated balance, mass
-        bm = balance(c, :input, mass, collapse=false, aggregate=false)
-        @test haskey(bm, "input") && bm["input"] == c.s.input["input"].series
-        @test isempty(balance(c, :output, mass, collapse=false, aggregate=false))
+        bm = _balance(c, :input, mass, collapse=false, aggregate=false)
+        @test haskey(bm, "input") && bm["input"] == c.s.input[PortRef("comp", "input")].series
+        @test isempty(_balance(c, :output, mass, collapse=false, aggregate=false))
 
         # non-collapsed, non-aggregated balance, energy
-        bei = balance(c, :input, energy, collapse=false, aggregate=false)
-        @test haskey(bei, "input") && bei["input"] == c.s.input["input"].series .* [1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,3.]
-        beo = balance(c, :output, energy, collapse=false, aggregate=false)
-        @test haskey(beo, "output") && beo["output"] == c.s.output["output"].series
+        bei = _balance(c, :input, energy, collapse=false, aggregate=false)
+        @test haskey(bei, "input") && bei["input"] == c.s.input[PortRef("comp", "input")].series .* [1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,3.]
+        beo = _balance(c, :output, energy, collapse=false, aggregate=false)
+        @test haskey(beo, "output") && beo["output"] == c.s.output[PortRef("comp", "output")].series
 
 
         # collapsed, non-aggregated balance, mass
-        bm = balance(c, :input, mass, collapse=true, aggregate=false)
-        @test haskey(bm, "input") && bm["input"] == sum(c.s.input["input"].series) # NB sum of GenericAffExpr is weighted
-        @test isempty(balance(c, :output, mass, collapse=true, aggregate=false))
+        bm = _balance(c, :input, mass, collapse=true, aggregate=false)
+        @test haskey(bm, "input") && bm["input"] == sum(c.s.input[PortRef("comp", "input")].series) # NB sum of GenericAffExpr is weighted
+        @test isempty(_balance(c, :output, mass, collapse=true, aggregate=false))
 
         # collapsed, non-aggregated balance, energy
-        bei = balance(c, :input, energy, collapse=true, aggregate=false)
-        @test haskey(bei, "input") && bei["input"] == sum(energy(c.s.input["input"]))
-        beo = balance(c, :output, energy, collapse=true, aggregate=false)
-        @test haskey(beo, "output") && beo["output"] == sum(c.s.output["output"].series) # NB sum of GenericAffExpr is weighted
+        bei = _balance(c, :input, energy, collapse=true, aggregate=false)
+        @test haskey(bei, "input") && bei["input"] == sum(energy(c.s.input[PortRef("comp", "input")]))
+        beo = _balance(c, :output, energy, collapse=true, aggregate=false)
+        @test haskey(beo, "output") && beo["output"] == sum(c.s.output[PortRef("comp", "output")].series) # NB sum of GenericAffExpr is weighted
 
     end
 
@@ -64,9 +64,9 @@ using JuMP: Model, AffExpr
     let c = makecomp2()
 
         # non-collapsed, non-aggregated balance, co2
-        @test isempty(balance(c, :input, co2, collapse=false, aggregate=false))
-        b = balance(c, :output, co2, collapse=false, aggregate=false)
-        @test haskey(b, "linked") && b["linked"] == c.s.output["linked"].series * 0.1
+        @test isempty(_balance(c, :input, co2, collapse=false, aggregate=false))
+        b = _balance(c, :output, co2, collapse=false, aggregate=false)
+        @test haskey(b, "linked") && b["linked"] == c.s.output[PortRef("comp", "linked")].series * 0.1
 
     end
 
@@ -84,14 +84,14 @@ using JuMP: Model, AffExpr
     let c = makecomp3()
 
         # non-collapsed, aggregated balance, mass (with linked joint flow of input mass)
-        bm = balance(c, :input, mass, collapse=false, aggregate=true)
-        @test bm == c.s.input["input"].series + c.s.input["linked"].series
-        @test all(balance(c, :output, mass, collapse=false, aggregate=true) .== zero(AffExpr))
+        bm = _balance(c, :input, mass, collapse=false, aggregate=true)
+        @test bm == c.s.input[PortRef("comp","input")].series + c.s.input[PortRef("comp", "linked")].series
+        @test all(_balance(c, :output, mass, collapse=false, aggregate=true) .== zero(AffExpr))
         
 
         # collapsed, aggregated balance, mass
-        bm = balance(c, :input, mass, collapse=true, aggregate=true)
-        @test bm == sum(c.s.input["input"].series + c.s.input["linked"].series) # Stepwise sum
+        bm = _balance(c, :input, mass, collapse=true, aggregate=true)
+        @test bm == sum(c.s.input[PortRef("comp","input")].series + c.s.input[PortRef("comp","linked")].series) # Stepwise sum
 
         # collapsed, aggregated balance, co2
         @test balance(c, :input, co2, collapse=true, aggregate=true) == zero(AffExpr)
@@ -102,20 +102,20 @@ using JuMP: Model, AffExpr
     let c = makecomp3()
 
         # non-collapsed
-        @test _balance(c, "input", :input, mass, collapse=false) == mass(c.s.input["input"])
-        @test _balance(c, "input", :input, energy, collapse=false) == energy(c.s.input["input"])
+        @test _balance(c, "input", :input, mass, collapse=false) == mass(c.s.input[PortRef("comp","input")])
+        @test _balance(c, "input", :input, energy, collapse=false) == energy(c.s.input[PortRef("comp","input")])
         @test_throws AssertionError _balance(c, "output", :output, mass, collapse=false) # carrier has no mass
-        @test _balance(c, "output", :output, energy, collapse=false) == energy(c.s.output["output"])
-        @test _balance(c, "linked", :input, mass, collapse=false) == mass(c.s.input["linked"])
-        @test _balance(c, "linked", :input, energy, collapse=false) == energy(c.s.input["linked"])
+        @test _balance(c, "output", :output, energy, collapse=false) == energy(c.s.output[PortRef("comp","output")])
+        @test _balance(c, "linked", :input, mass, collapse=false) == mass(c.s.input[PortRef("comp","linked")])
+        @test _balance(c, "linked", :input, energy, collapse=false) == energy(c.s.input[PortRef("comp","linked")])
 
         # non-collapsed
-        @test _balance(c, "input", :input, mass, collapse=true) == sum(mass(c.s.input["input"]))
-        @test _balance(c, "input", :input, energy, collapse=true) == sum(energy(c.s.input["input"]))
+        @test _balance(c, "input", :input, mass, collapse=true) == sum(mass(c.s.input[PortRef("comp","input")]))
+        @test _balance(c, "input", :input, energy, collapse=true) == sum(energy(c.s.input[PortRef("comp","input")]))
         @test_throws AssertionError _balance(c, "output", :output, mass, collapse=true) # carrier has no mass
-        @test _balance(c, "output", :output, energy, collapse=true) == sum(energy(c.s.output["output"]))
-        @test _balance(c, "linked", :input, mass, collapse=true) == sum(mass(c.s.input["linked"]))
-        @test _balance(c, "linked", :input, energy, collapse=true) == sum(energy(c.s.input["linked"]))
+        @test _balance(c, "output", :output, energy, collapse=true) == sum(energy(c.s.output[PortRef("comp","output")]))
+        @test _balance(c, "linked", :input, mass, collapse=true) == sum(mass(c.s.input[PortRef("comp","linked")]))
+        @test _balance(c, "linked", :input, energy, collapse=true) == sum(energy(c.s.input[PortRef("comp","linked")]))
                 
     end
 

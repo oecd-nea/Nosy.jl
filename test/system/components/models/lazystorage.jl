@@ -26,9 +26,9 @@ using ArgCheck: ArgumentError
         jout = FreeJointFlow("jout", mc, :output)
         c = Component("sto", m, [jin, jout])
 
-        @test collect(keys(_input(c.s))) == ["jin"]
-        @test collect(keys(_output(c.s))) == ["jout"]
-        @test collect(keys(_level(c.s))) == ["level"]
+        @test collect(keys(_input(c.s).d)) == [PortRef("sto", "jin")]
+        @test collect(keys(_output(c.s).d)) == [PortRef("sto", "jout")]
+        @test collect(keys(_level(c.s).d)) == [PortRef("sto","level")]
 
         # testing variables and constraints after component is built
         @test nvariables(s) == 30 # storage level, jin and jout free joint flows @ each timestep

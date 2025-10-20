@@ -15,9 +15,40 @@ Specific care should be used when applying the non-collapsed, aggregated _balanc
 A possible workflow could be to check for the existence of keys before assessing it.
 """
 
+
+# perform balance on only one port
+# faster than performing balance on all ports
+_balance_one(ps::PortStructure, pname::String, cname::String, sense::Function, modifier::Function) = modifier(sense(ps)[PortRef(cname, pname)])
+_balance_one(ps::PortStructure, pname::String, cname::String, modifier::Function) = modifier(_getport(ps, pname, cname))
+_collapse_balance_one(ps::PortStructure, pname::String, cname::String, sense::Function, modifier::Function) = sum(_balance_one(ps, pname, cname, sense, modifier))
+
+# type-unstable function, added barrier functions
+function _balance(ps::PortStructure{T}, sense::Function, modifier::Function, collapse::Bool, aggregate::Bool) where T
+    
+    # non-collapsed, non-aggregated balance
+    b = __balance_expand(ps, sense, modifier)
+    # collapse if requested
+    if collapse
+        # sum(v::Stepwise) returns the weighted sum, not the natural sum
+        # i.e. sum(v::Stepwise) == sum(Hourly(v))
+        d = __collapse_balance(b)
+    else
+        d = b
+    end
+
+    # aggregate if requested
+    if aggregate
+        v = __aggregate_balance(d, sim(ps))
+    else
+        v = d
+    end
+
+    return v
+end
+
 # return a LittleDict of name => Stepwise of the modified series
-function _balance_expand(ps::PortStructure{T}, sense::Function, modifier::Function) where T
-    d = LittleDict{String,Stepwise{T}}()
+function __balance_expand(ps::PortStructure{T}, sense::Function, modifier::Function) where T
+    d = LittleDict{PortRef,Stepwise{T}}()
     for (k,v) in sense(ps)
         if !isnothing(modifier(carrier(v)))
             d[k] = modifier(v)
@@ -26,15 +57,7 @@ function _balance_expand(ps::PortStructure{T}, sense::Function, modifier::Functi
     return d
 end
 
-# perform balance on only one port
-# faster than performing balance on all ports
-_balance_one(ps::PortStructure, pname::String, sense::Function, modifier::Function) = modifier(sense(ps)[pname])
-_balance_one(ps::PortStructure, pname::String, modifier::Function) = modifier(getport(ps, pname))
-_collapse_balance_one(ps::PortStructure, pname::String, sense::Function, modifier::Function) = sum(_balance_one(ps, pname, sense, modifier))
-
-_collapse_balance(b::AbstractDict{String,Stepwise{T}}) where T = LittleDict{String,T}(k => sum(v) for (k,v) in b)
-
-function _aggregate_balance(b::AbstractDict{String,Stepwise{T}}, s::Sim) where T 
+function __aggregate_balance(b::AbstractDict{PortRef,Stepwise{T}}, s::Sim) where T 
     if isempty(b) 
         # not returning the "differentzerovector" because it is not supposed to every be assigned a non-zero value for any step
         # a simple zero vector is returned instead
@@ -44,29 +67,6 @@ function _aggregate_balance(b::AbstractDict{String,Stepwise{T}}, s::Sim) where T
         return sum(values(b))
     end
 end
+__aggregate_balance(b::AbstractDict{PortRef,T}, ::Sim) where T<: VAL = sum(values(b))
 
-_aggregate_balance(b::AbstractDict{String,T}, ::Sim) where T<: VAL = sum(values(b))
-
-# type-unstable function, added barrier functions
-function _balance(ps::PortStructure{T}, sense::Function, modifier::Function, collapse::Bool, aggregate::Bool) where T
-    
-    # non-collapsed, non-aggregated balance
-    b = _balance_expand(ps, sense, modifier)
-    # collapse if requested
-    if collapse
-        # sum(v::Stepwise) returns the weighted sum, not the natural sum
-        # i.e. sum(v::Stepwise) == sum(Hourly(v))
-        d = _collapse_balance(b)
-    else
-        d = b
-    end
-
-    # aggregate if requested
-    if aggregate
-        v = _aggregate_balance(d, sim(ps))
-    else
-        v = d
-    end
-
-    return v
-end
+__collapse_balance(b::AbstractDict{PortRef,Stepwise{T}}) where T = LittleDict{PortRef,T}(k => sum(v) for (k,v) in b)

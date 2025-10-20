@@ -6,7 +6,7 @@ using Nosy: Port
 using Nosy: PortStructure, addinput!, addoutput!, addlevel!
 using Nosy: _flow
 
-using JuMP: Model, GenericAffExpr
+using JuMP: Model, GenericAffExpr, AffExpr
 
 @testset "Port structure flow" begin
 
@@ -32,40 +32,23 @@ using JuMP: Model, GenericAffExpr
         p1 = makeport_m(s)
         p2 = makeport_e(s)
         ps = PortStructure{AffExpr}(s)
-        addinput!(ps, "p1", p1)
-        addinput!(ps, "p2", p2)
+        addinput!(ps, "p1", "comp", p1)
+        addinput!(ps, "p2", "comp", p2)
 
-        @test all((_flow(ps, "p1", mass, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
-        @test all((_flow(ps, "p2", energy, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
+        @test all((_flow(ps, "p1", "comp", mass, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
+        @test all((_flow(ps, "p2", "comp", energy, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
 
-        @test all((_flow(ps, "p1", defaultmodifier, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
-        @test all((_flow(ps, "p2", defaultmodifier, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
+        @test all((_flow(ps, "p1", "comp", defaultmodifier, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
+        @test all((_flow(ps, "p2", "comp", defaultmodifier, step) for step in 1:10)  .== 1:10) # check default modifier (implicit)
 
-        @test all((_flow(ps, "p1", energy, step) for step in 1:10)  .== (1:10) .* (1:10)) # check non-default modifier
-        @test all((_flow(ps, "p2", mass, step) for step in 1:10)  .== (1:10) / 2) # check non-default modifier
+        @test all((_flow(ps, "p1", "comp", energy, step) for step in 1:10)  .== (1:10) .* (1:10)) # check non-default modifier
+        @test all((_flow(ps, "p2", "comp", mass, step) for step in 1:10)  .== (1:10) / 2) # check non-default modifier
 
-        @test_throws AssertionError _flow(ps, "p1", co2, 1) # port does not bear modifier
+        @test_throws AssertionError _flow(ps, "p1", "comp", co2, 1) # port does not bear modifier
         
-        @test _flow(ps, "p1", mass, 10+5) == _flow(ps, "p1", mass, 5) # test modulo is working
+        @test _flow(ps, "p1", "comp", mass, 10+5) == _flow(ps, "p1", "comp", mass, 5) # test modulo is working
 
-        @test_throws AssertionError _flow(ps, "p3", mass, 1) # port named p3 not present in ps
-
-    end
-
-    let s = tsim()
-
-        # Test port ambiguity management
-        p1 = makeport_m(s)
-        p2 = makeport_e(s)
-
-        ps = PortStructure{AffExpr}(s)
-        addinput!(ps, "p1", p1)
-        addoutput!(ps, "p1", p2) # same name
-
-        @test_throws AssertionError _flow(ps, "p1", mass, 1)
-
-        @test all((_flow(ps, "p1", :input, energy, step) for step in (1:10)) .== (1:10) .* (1:10))
-        @test all((_flow(ps, "p1", :output, energy, step) for step in (1:10)) .== 1:10)
+        @test_throws AssertionError _flow(ps, "p3", "comp", mass, 1) # port named p3 not present in ps
 
     end
 

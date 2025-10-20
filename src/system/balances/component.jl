@@ -4,24 +4,34 @@ Component balance.
 Direct application of the balance on the port structure of the component.
 """
 
-
 """
     balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
 Return the flow balance for component `c`.
 Parameters:
   * `c`: Component
-  * `sense`: `input` or `:output`
+  * `sense`: `input` or `:output` or `:level`
   * `modifier`: modifier function e.g. `energy`, `mass`, `co2`
-  * `collapse`: if `true`, the flows are summed over time, otherwise the Stepwise series are returned
+  * `collapse`: if `true`, the flows are summed over time, otherwise the Hourly series are returned
   * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
 """
 function balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
-    @argcheck sense in (:input, :output) "sense must be either :input or :output"
+    @argcheck sense in (:input, :output, :level) "sense must be either :input or :output or :level"
+    return __to_hourly(_balance(c, sense, modifier, collapse=collapse, aggregate=aggregate))
+end
+
+function _balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
     if sense == :input
-        return _balance(c.s, _input, modifier, collapse, aggregate)
-    else # if sense == :output
-        return _balance(c.s, _output, modifier, collapse, aggregate)
+        b = _balance(c.s, _input, modifier, collapse, aggregate)
+    elseif sense == :output
+        b = _balance(c.s, _output, modifier, collapse, aggregate)
+    elseif sense == :level
+        if collapse
+            throw(ArgumentError("collapse must be false when sense is :level"))
+        end
+        b = _balance(c.s, _level, modifier, collapse, aggregate)
     end
+    aggregate && return b
+    return Dict(k.pname => v for (k,v) in b) # all flows have different port names, no ambiguity here
 end
 
 # balance applied to only one port of the component
@@ -30,18 +40,18 @@ end
 function _balance(c::Component, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
     @argcheck sense in (:input, :output) "sense must be either :input or :output"
     if sense == :input
-        @argcheck hasinput(c.s, pname) "Component $(name(c)) does not have input $pname"
+        @argcheck hasinput(c, pname) "Component $(name(c)) does not have input $pname"
         if collapse
-            return _collapse_balance_one(c.s, pname, _input, modifier)
+            return _collapse_balance_one(c.s, pname, name(c), _input, modifier)
         else
-            return _balance_one(c.s, pname, _input, modifier)
+            return _balance_one(c.s, pname, name(c), _input, modifier)
         end
     else # if sense == :output
-        @argcheck hasoutput(c.s, pname) "Component $(name(c)) does not have output $pname"
+        @argcheck hasoutput(c, pname) "Component $(name(c)) does not have output $pname"
         if collapse
-            return _collapse_balance_one(c.s, pname, _output, modifier)
+            return _collapse_balance_one(c.s, pname, name(c), _output, modifier)
         else
-            return _balance_one(c.s, pname, _output, modifier)
+            return _balance_one(c.s, pname, name(c), _output, modifier)
         end
     end
 end
@@ -49,8 +59,8 @@ end
 
 
 # return the flow of a port at a given timestep
-_flow(c::Component, pname::String, modifier::Function, step::Int) = _flow(c.s, pname, modifier, step)
-_flow(c::Component, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(c.s, pname, sense, modifier, step)
+_flow(c::Component, pname::String, modifier::Function, step::Int) = _flow(c.s, pname, name(c), modifier, step)
+_flow(c::Component, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(c.s, pname, name(c), sense, modifier, step)
 
 """
     flow(c::Component, pname::String, modifier::Function, hour::Int)
@@ -72,7 +82,7 @@ end
 # do not throw error if no compatible ports are found - return zero instead
 function _flow(c::Component{T}, sense::Symbol, modifier::Function, step::Int) where T
     local val = zero(T)
-    for (_, p) in getportsense(c.s, sense)
+    for (_, p) in _getportsense(c.s, sense)
         # check port and modifier compatibility
         # if not do not evaluate flow for p
         if hasmodifier(p.carrier, modifier)

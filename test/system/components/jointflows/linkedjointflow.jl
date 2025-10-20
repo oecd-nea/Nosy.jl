@@ -5,7 +5,7 @@ using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component
-using Nosy: portstructure, _input, _output
+using Nosy: portstructure, _input, _output, PortRef, hasinput, hasoutput, getport
 using JuMP: Model, GenericAffExpr
 
 @testset "LinkedJointFlow" begin
@@ -38,12 +38,12 @@ using JuMP: Model, GenericAffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == lf
-        @test haskey(_input(portstructure(c)), "lf")
-        @test !haskey(_output(portstructure(c)), "lf")
+        @test hasinput(c, "lf")
+        @test !hasoutput(c, "lf")
 
-        @test getport(c, "lf") == _input(portstructure(c))["lf"] 
+        @test getport(c, "lf") == _input(portstructure(c))[PortRef("test", "lf")] 
 
-        @test all(mass(_input(portstructure(c))["lf"]) .== 1.5 * mass(_input(portstructure(c))["input"]))
+        @test all(balance(c, :input, mass, collapse=false, aggregate=false)["lf"] .== 1.5 * balance(c, :input, mass, collapse=false, aggregate=false)["input"])
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
@@ -64,12 +64,12 @@ using JuMP: Model, GenericAffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == lf
-        @test !haskey(_input(portstructure(c)), "lf")
-        @test haskey(_output(portstructure(c)), "lf")
+        @test !hasinput(c, "lf")
+        @test hasoutput(c, "lf")
 
-        @test getport(c, "lf") == _output(portstructure(c))["lf"] 
+        @test getport(c, "lf") == _output(portstructure(c))[PortRef("test", "lf")] 
 
-        @test all(energy(_output(portstructure(c))["lf"]) .== 1.5 * energy(_input(portstructure(c))["input"]))
+        @test all(balance(c, :output, mass, collapse=false, aggregate=false)["lf"] .== 1.5 * balance(c, :input, mass, collapse=false, aggregate=false)["input"])
 
 
     end
@@ -87,17 +87,15 @@ using JuMP: Model, GenericAffExpr
 
         @test length(c.jointflows) == 1
         @test first(c.jointflows).data == lf
-        @test !haskey(_input(portstructure(c)), "lf")
-        @test haskey(_output(portstructure(c)), "lf")
+        @test !hasinput(c, "lf")
+        @test hasoutput(c, "lf")
 
-        @test getport(c, "lf") == _output(portstructure(c))["lf"] 
-
-        @test all(mass(_output(portstructure(c))["lf"]) .== 1.5 * energy(_output(portstructure(c))["output"]))
+        @test all(balance(c, :output, mass, collapse=false, aggregate=false)["lf"] .== 1.5 * balance(c, :output, energy, collapse=false, aggregate=false)["output"])
     
     end
 
 
-    # output = f(other joint flow), defaultmodifier
+    # output = f(other joint flow)
     let m = makeconvdata() # model data for converter
 
         mc = m.input # mass carrier
@@ -113,16 +111,13 @@ using JuMP: Model, GenericAffExpr
         # order of joint flows is as defined by user
         @test [c.jointflows[1].data, c.jointflows[2].data] == [lf, lf2]
 
-        @test haskey(_input(portstructure(c)), "lf")
-        @test !haskey(_input(portstructure(c)), "lf2")
-        @test !haskey(_output(portstructure(c)), "lf")
-        @test haskey(_output(portstructure(c)), "lf2")
-
-        @test getport(c, "lf") == _input(portstructure(c))["lf"] 
-        @test getport(c, "lf2") == _output(portstructure(c))["lf2"] 
+        @test hasinput(c, "lf")
+        @test !hasinput(c, "lf2")
+        @test !hasoutput(c, "lf")
+        @test hasoutput(c, "lf2")
         
-        @test all(mass(_input(portstructure(c))["lf"]) .== 1.5 * mass(_input(portstructure(c))["input"]))
-        @test all(energy(_output(portstructure(c))["lf2"]) .== 2.0 * energy(_input(portstructure(c))["lf"]))
+        @test all(balance(c, :input, mass, collapse=false, aggregate=false)["lf"] .== 1.5 * balance(c, :input, mass, collapse=false, aggregate=false)["input"])
+        @test all(balance(c, :output, energy, collapse=false, aggregate=false)["lf2"] .== 2.0 * balance(c, :input, energy, collapse=false, aggregate=false)["lf"])
 
     end
 

@@ -1,12 +1,12 @@
 using Nosy: Model
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: Demand, BasicConverter, DispatchableSource
+using Nosy: Demand, BasicConverter, DispatchableSource, LinkedJointFlow
 using Nosy: VariableCost
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
 using Nosy: Component, Node, Snapshot, connect!
-using Nosy: flow
-using Nosy: extract
+using Nosy: flow, cost
+using Nosy: optimize!, extract
 
 using JuMP: set_silent, is_solved_and_feasible
 using HiGHS
@@ -150,6 +150,8 @@ using HiGHS
         @test isapprox(sum(flow(s, "source", "mc2", :output, mass, month=m) for m in 1:12), sum(1:8760)*2/3*0.3)
         @test isapprox(flow(s, "source", "mc2", :output, mass), sum(1:8760)*2/3*0.3)
 
+
+        throw(AssertionError("implement flownode and flowcomp functions. Same for balance?"))
         @test all(isapprox.(flow(s, "en", "demand", :output, energy, hour=h), h+1) for h in 0:8759)
         @test isapprox(flow(s, "en", "demand", :output, energy, day=1), sum(1:24))
         @test isapprox(sum(flow(s, "en", "demand", :output, energy, day=d) for d in 1:365), sum(1:8760))

@@ -44,10 +44,10 @@ end
 _profile(m::ProfileSourceModel) = m.data.profile
 
 # return a ProfileSourceModel using ProfileSource data
-function build(m::ProfileSource, ::String)
+function build(m::ProfileSource, cname::String)
     vout = fill(-Inf, length(m.profile))
     ps = PortStructure{exptype(m.sim)}(m.sim)
-    addoutput!(ps, "output", Port(m.carrier, vout))
+    addoutput!(ps, "output", cname, Port(m.carrier, vout))
     return ProfileSourceModel(m, ps)
 end
 

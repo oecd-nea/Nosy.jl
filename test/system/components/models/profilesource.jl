@@ -2,7 +2,7 @@ using Nosy: MassCarrier, EnergyCarrier, carrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Stepwise
-using Nosy: getport, hasinput, hasoutput, hasport
+using Nosy: _getport, _hasinput, _hasoutput, hasport
 using Nosy: build
 using Nosy: ProfileSource, ProfileSourceModel, _profile
 
@@ -22,18 +22,18 @@ using JuMP: Model, AffExpr
 
         m = build(d, "profile")
 
-        @test !hasinput(m, "input")
-        @test hasoutput(m, "output")
+        @test !_hasinput(m.s, "input", "profile")
+        @test _hasoutput(m.s, "output", "profile")
 
-        @test !hasport(m, "input")
-        @test hasport(m, "output")
-        @test !hasport(m, "level")
+        @test !hasport(m.s, "input", "profile")
+        @test hasport(m.s, "output", "profile")
+        @test !hasport(m.s, "level", "profile")
 
         @test all(_profile(m) .== profile)
 
         @test sim(m) == s
 
-        @test carrier(getport(m, "output")) == mc
+        @test carrier(_getport(m.s, "output", "profile")) == mc
 
     end
 
@@ -47,18 +47,18 @@ using JuMP: Model, AffExpr
 
         m = build(d, "profile")
 
-        @test !hasinput(m, "input")
-        @test hasoutput(m, "output")
+        @test !_hasinput(m.s, "input", "profile")
+        @test _hasoutput(m.s, "output", "profile")
 
-        @test !hasport(m, "input")
-        @test hasport(m, "output")
-        @test !hasport(m, "level")
+        @test !hasport(m.s, "input", "profile")
+        @test hasport(m.s, "output", "profile")
+        @test !hasport(m.s, "level", "profile")
 
         @test all(_profile(m) .== Stepwise(profile, s.mesh))
 
         @test sim(m) == s
 
-        @test carrier(getport(m, "output")) == mc
+        @test carrier(_getport(m.s, "output", "profile")) == mc
 
     end
 

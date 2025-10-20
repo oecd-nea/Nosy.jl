@@ -5,6 +5,7 @@ using Nosy: DispatchableSource, BasicConverter, Demand
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, Node, portstructure, isfullyconnected, is_used, getport
+using Nosy: hasinput, hasoutput, _input, _output
 using Nosy: Snapshot, components, nodes, connect!, assertconnected
 using JuMP: Model, GenericAffExpr
 
@@ -42,8 +43,8 @@ using JuMP: Model, GenericAffExpr
 
         @test isempty(_input(portstructure(n)))
         @test length(_output(portstructure(n))) == 1
-        @test haskey(_output(portstructure(n)), "comp")
-        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
+        @test hasoutput(n, "input", "comp")
+        @test getport(n, "input", "comp") == getport(c, "input")
 
         @test is_used(getport(c, "input"))
         @test !is_used(getport(c, "output"))
@@ -69,11 +70,11 @@ using JuMP: Model, GenericAffExpr
         @test haskey(nodes(sn), "n")
 
         @test length(_input(portstructure(n))) == 1
-        @test haskey(_input(portstructure(n)), "comp")
-        @test _input(portstructure(n))["comp"] == _output(portstructure(c))["output"]
+        @test hasinput(n, "output", "comp")
+        @test getport(n, "input", "comp") == getport(c, "input")
         @test length(_output(portstructure(n))) == 1
-        @test haskey(_output(portstructure(n)), "comp")
-        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
+        @test hasoutput(n, "input", "comp")
+        @test getport(n, "output", "comp") == getport(c, "output")
 
         @test is_used(getport(c, "input"))
         @test is_used(getport(c, "output"))
@@ -100,8 +101,9 @@ using JuMP: Model, GenericAffExpr
 
         @test isempty(_input(portstructure(n)))
         @test length(_output(portstructure(n))) == 1
-        @test haskey(_output(portstructure(n)), "comp")
-        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
+        @test hasoutput(n, "input", "comp")
+        @test !hasinput(n, "output", "comp")
+        @test getport(n, "input", "comp") == getport(c, "input")
 
         @test is_used(getport(c, "input"))
         @test !is_used(getport(c, "output"))
@@ -131,8 +133,8 @@ using JuMP: Model, GenericAffExpr
 
         @test isempty(_output(portstructure(n)))
         @test length(_input(portstructure(n))) == 1
-        @test haskey(_input(portstructure(n)), "comp")
-        @test _input(portstructure(n))["comp"] == _output(portstructure(c))["j"]
+        @test hasinput(n, "j", "comp")
+        @test getport(n, "j", "comp") == getport(c, "j")
 
         @test !is_used(getport(c, "input"))
         @test !is_used(getport(c, "output"))
@@ -162,12 +164,8 @@ using JuMP: Model, GenericAffExpr
         @test haskey(nodes(sn), "n")
 
         @test length(_output(portstructure(n))) == 1
-        @test haskey(_output(portstructure(n)), "comp")
-        @test _output(portstructure(n))["comp"] == _input(portstructure(c))["input"]
-        
-        @test length(_input(portstructure(n))) == 1
-        @test haskey(_input(portstructure(n)), "comp")
-        @test _input(portstructure(n))["comp"] == _output(portstructure(c))["output"]
+        @test hasinput(n, "output", "comp")
+        @test !hasinput(n, "j", "comp")
 
         @test is_used(getport(c, "input"))
         @test is_used(getport(c, "output"))

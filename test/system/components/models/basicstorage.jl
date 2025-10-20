@@ -1,13 +1,14 @@
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
-using Nosy: portstructure, getport
+using Nosy: portstructure, getport, PortRef
 using Nosy: _input, _output, _level
 using Nosy: BasicStorage, BasicStorageModel
 using Nosy: FixedCapacity
 using Nosy: Component
 using Nosy: nvariables, nconstraints
 using Nosy: _extract
+using Nosy: _balance
 
 import JuMP
 import JuMP: Model, @constraint, set_objective, set_silent, MAX_SENSE, MIN_SENSE
@@ -31,9 +32,9 @@ import HiGHS
         # test on component
         c = Component("sto", m, [])
 
-        @test collect(keys(_input(c.s))) == ["input"]
-        @test collect(keys(_output(c.s))) == ["output"]
-        @test collect(keys(_level(c.s))) == ["level"]
+        @test collect(keys(_input(c.s).d)) == [PortRef("sto", "input")]
+        @test collect(keys(_output(c.s).d)) == [PortRef("sto", "output")]
+        @test collect(keys(_level(c.s).d)) == [PortRef("sto", "level")]
 
         # testing variables and constraints after component is built
         @test nvariables(s) == 30 # storage level, input and output @ each timestep
@@ -54,17 +55,17 @@ import HiGHS
         
         c = Component("sto", m, [icap, ocap, lcap])
 
-        @constraint(sim(c).model, c.model.s.level["level"].series[1] == 0.)
-        @constraint(sim(c).model, c.model.s.input["input"].series[1] == 0.)
+        @constraint(sim(c).model, c.model.s.level[PortRef("sto", "level")].series[1] == 0.)
+        @constraint(sim(c).model, c.model.s.input[PortRef("sto", "input")].series[1] == 0.)
 
-        set_objective(sim(c).model, MAX_SENSE, c.model.s.level["level"].series[5])
+        set_objective(sim(c).model, MAX_SENSE, c.model.s.level[PortRef("sto", "level")].series[5])
         JuMP.set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
         _c = _extract(c)
 
-        @test all(balance(_c, :input, mass, collapse=false)[1:5] .== [0., 10., 10., 10., 10.])
-        @test all(balance(_c, :output, mass, collapse=false)[1:5] .== [0., 0., 0., 0., 0.])
-        @test all(_c.model.s.level["level"].series[1:5] .== [0., 1.25, 3.75, 6.25, 8.75])
+        @test all(_balance(_c, :input, mass, collapse=false)[1:5] .== [0., 10., 10., 10., 10.])
+        @test all(_balance(_c, :output, mass, collapse=false)[1:5] .== [0., 0., 0., 0., 0.])
+        @test all(_c.model.s.level[PortRef("sto", "level")].series[1:5] .== [0., 1.25, 3.75, 6.25, 8.75])
 
     end
 
@@ -81,17 +82,17 @@ import HiGHS
         # test on component
         c = Component("sto", m, [icap, ocap, lcap])
 
-        @constraint(sim(c).model, c.model.s.level["level"].series[1] == 40.)
-        @constraint(sim(c).model, c.model.s.output["output"].series[1] == 0.)
+        @constraint(sim(c).model, c.model.s.level[PortRef("sto", "level")].series[1] == 40.)
+        @constraint(sim(c).model, c.model.s.output[PortRef("sto", "output")].series[1] == 0.)
 
-        set_objective(sim(c).model, MIN_SENSE, c.model.s.level["level"].series[5])
+        set_objective(sim(c).model, MIN_SENSE, c.model.s.level[PortRef("sto", "level")].series[5])
         JuMP.set_silent(sim(c).model)
         JuMP.optimize!(sim(c).model)
         _c = _extract(c)
 
-        @test all(balance(_c, :input, mass, collapse=false)[1:5] .== [0., 0., 0., 0., 0.])
-        @test all(balance(_c, :output, mass, collapse=false)[1:5] .== [0., 10., 10., 10., 10.])
-        @test all(_c.model.s.level["level"].series[1:5] .== [40., 38.75, 36.25, 33.75, 31.25])
+        @test all(_balance(_c, :input, mass, collapse=false)[1:5] .== [0., 0., 0., 0., 0.])
+        @test all(_balance(_c, :output, mass, collapse=false)[1:5] .== [0., 10., 10., 10., 10.])
+        @test all(_c.model.s.level[PortRef("sto", "level")].series[1:5] .== [40., 38.75, 36.25, 33.75, 31.25])
 
     end
 end

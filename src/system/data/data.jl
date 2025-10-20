@@ -32,6 +32,14 @@ _is_equivalent_to_variable(e::GenericAffExpr) = iszero(e.constant) && isone(leng
 
 
 
+"""
+Get container type.
+"""
+
+# return the basic container type (e.g Dict for Dict{K,V}())
+__containertype(d) = Base.typename(typeof(d)).wrapper
+
+
 
 """
 Reserved names.

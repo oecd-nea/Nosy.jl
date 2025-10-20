@@ -43,7 +43,7 @@ end
 
 # must not use the fallback function on model: we need the component to get the capacity behavior
 function buildbehavior(c::Component, b::VariableCost{M,Float64}) where M
-    _cost = sum(_balance_one(c.s, b.pname, b.modifier)) * b.val
+    _cost = sum(_balance_one(c.s, b.pname, name(c), b.modifier)) * b.val
     return VariableCostBehavior(b, _cost)
 end
 
@@ -52,7 +52,7 @@ function buildbehavior(c::Component, b::VariableCost{M,Vector{Float64}}) where M
         throw(ArgumentError("The length of variable cost vector must be equal to $(nsteps(sim(c))) or $(nhours(sim(c)))"))
     end
     _cost = Stepwise(b.val, sim(c).mesh)
-    _flow = _balance_one(c.s, b.pname, b.modifier)
+    _flow = _balance_one(c.s, b.pname, name(c), b.modifier)
 
     # here we assume, as for the rest of the model, that the flow (~power) is linear between steps
     # integration of power * cost over time depends on the shape of cost
