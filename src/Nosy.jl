@@ -1,7 +1,7 @@
 module Nosy
 
 export TimeMesh, Sim, sim
-export Model, lowermodel, uppermodel
+export Model, model, lowermodel, uppermodel
 
 export MassCarrier, EnergyCarrier, CO2Carrier
 

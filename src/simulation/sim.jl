@@ -29,8 +29,23 @@ nhours(s::Sim) = nhours(s.mesh)
 eachstep(s::Sim) = eachstep(s.mesh)
 eachhour(s::Sim) = eachhour(s.mesh)
 
+"""
+    lowermodel(s::Sim)
+Return the lower model of a Bilevel problem or the model itself for a single-level problem.
+"""
 lowermodel(s::Sim) = Lower(s.model)
+
+"""
+    uppermodel(s::Sim)
+Return the upper model of a Bilevel problem or the model itself for a single-level problem.
+"""
 uppermodel(s::Sim) = Upper(s.model)
+
+"""
+    model(s::Sim)
+Return the JuMP model of the simulation for a single-level problem.
+"""
+model(s::Sim) = _model(s.model)
 
 exptype(s::Sim) = _exptype(s.model)
 _exptype(::JuMP.Model) = AffExpr
