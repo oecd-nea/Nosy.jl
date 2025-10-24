@@ -38,7 +38,7 @@ end
     Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Vector{Symbol}=Symbol[])
 Component constructor. Return a Component with name `name`, based on model `model` and bearing behaviors `behaviors`, tagged with `tags`.
 """
-function Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Vector{Symbol}=Symbol[])
+function Component(name::String, model::AbstractModelData, behaviors::AbstractVector=[]; tags::Vector{Symbol}=Symbol[])
     
     @argcheck !_is_reserved_component_name(name) "Cannot name component $name (reserved name)"
 
