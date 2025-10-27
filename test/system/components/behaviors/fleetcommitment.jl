@@ -613,8 +613,8 @@ Some notes and observations:
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5., 0.]))
-        @test all(_up(_m.behaviors[2]) .== [0., 0., 1., 1., 1., 1., 1., 1., 1., 0.])
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5., 0.], atol=1E-8)) # had to be patched due to numeric error after updating HiGHS
+        @test all(isapprox.(_up(_m.behaviors[2]), [0., 0., 1., 1., 1., 1., 1., 1., 1., 0.], atol=1E-8))  # had to be patched due to numeric error after updating HiGHS
     end
 
     #=
