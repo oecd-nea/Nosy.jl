@@ -1,21 +1,26 @@
 ﻿# Nosy.jl
 
-Nosy (the *Node systems* model) is a component-based energy system modelling and optimisation toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MIP formalism, and analyze the results. It can be used directly, or as a library to develop higher-level models.
+Nosy (the *Node Systems* model) is a component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MIP formalism, and analyze the results. It can be used directly, or as a library to develop higher-level models.
 
 Nosy is used at the OECD NEA to model energy systems in the frame of System costs studies.
 System cost studies at the NEA include:
-  * [Achieving Net Zero Carbon Emission in Switzerland in 2050](https://www.oecd-nea.org/jcms/pl_74877/achieving-net-zero-carbon-emissions-in-switzerland-in-2050-low-carbon-scenarios-and-their-system-costs?details=true)
+  * [Achieving Net Zero Carbon Emissions in Switzerland in 2050](https://www.oecd-nea.org/jcms/pl_74877/achieving-net-zero-carbon-emissions-in-switzerland-in-2050-low-carbon-scenarios-and-their-system-costs?details=true)
   * System costs study of Sweden (tentative title, to be published)
   * System costs study of South Korea (tentative title, to be published)
 
+License it MIT.
 
 ## Highlights
-- Compose systems from carriers, nodes, and components enriched with reusable behaviours (capacities, costs, ramping, unit commitment, joint flows).
+- Compose systems from carriers, nodes, and components enriched with reusable behaviors (capacities, costs, ramping, unit commitment, joint flows).
 - Model multiple electricity nodes, hydrogen, fuels, commodities with automatic conversions.
-- Work with flexible time discretisations.
+- Work with flexible time discretizations.
 - Solve problems through JuMP while staying solver-agnostic (HiGHS, Gurobi etc.).
 - Inspect solutions with built-in metrics: cost breakdowns, capacities, flow balances, prices, and tabular summaries.
 - Tag and query components or nodes to drive scenario dashboards and custom reporting.
+
+## Requirements
+Nosy requires a LP/MIP solver compatible with [JuMP](https://jump.dev/JuMP.jl/stable/).
+In the examples below we will use [HiGHS](https://highs.dev/) which is open-source and has a [Julia wrapper](https://ergo-code.github.io/HiGHS/dev/interfaces/julia/) compatible with JuMP.
 
 
 ## Available tools
@@ -40,11 +45,17 @@ The philosophy of Nosy is:
   * maintain a minimal number of model archetypes
   * refine components using as many behaviors and joint flows as required
 
-### Model archetypes
+### Components, nodes and snapshots
+The `Component`s are the moving parts of the system. Components emit or consume flows, and can have a level. `Component`s are generated ad hoc, from the combination of one model archetype plus any number of behaviors and joint flows defined below. 
+The `Node`s are the passive parts of the system. Nodes are where energy or mass balances are performed. By default, at each hour, the sum of the input flows of a node is equal to the sum of the output flows of a node.
+Nodes and components must be connected together. A component is only connected to nodes, and nodes are only connected to components. 
+The `Snapshot` is the system in which all components and nodes live, and is generally optimized by Nosy.
 
-The list of available model archetype is:
+
+### Model archetypes
+Nosy has a small list of model archetypes that define the most basic functions of the component. Model archetype are:
   * `DispatchableSource`: flexibly generates an output flow (ex: gas plant)
-  * `IntermittentSource`: generates an output flow following an exogenous pattern (ex: wind turbine)
+  * `ProfileSource`: generates an output flow following an exogenous profile (ex: wind turbine)
   * `Demand`: consumes an input flow following an exogenous pattern (ex: final consumption)
   * `BasicSink`: flexibly consumes an input flow (ex: flexible consumption)
   * `BasicConverter`: converts an input flow into an output flow (ex: hydrogen turbine with model of hydrogen input flow)
@@ -52,60 +63,56 @@ The list of available model archetype is:
   * `LazyStorage`: converts any input flow into any output flow and a level (ex: hydro reservoir)
 
 ### Behaviors
-
-The list of behaviors is:
-  * Capacity category
-    * `FixedCapacity`: set the capacity of a model port to a numeric value
-    * `VariableCapacity`: set the capacity of a model port to a variable value
+Behaviors refine how the component operates, beyond the model archetypes. Behaviors are:
+  * `FixedCapacity`: set the capacity of a model port to a numeric value
+  * `VariableCapacity`: set the capacity of a model port to a variable value
   * `CapacityMultiplier`: refines the capacity behaviors by adding time-dependent modification of the capacity
   * `Duration`: set a relationship between the input, output and level capacity of a component associated with a level
   * `YearlySum`: constrain the sum of the flow of a port to a numeric value
   * `Ramping`: constrain the variation of the flow of a port to be below a numeric value at every timestep (up or down)
   * `UnitCommitment`: assign unit commitment characteristics (min ratio, min uptime, min downtime, startup duration, shutdown duration, linear/integer commitment) to the flow of a port
+  * `FixedCost`: add a cost related to capacity
+  * `VariableCost`: add a cost related to flow
+  * `StartupCost`: add a cost related to startup
+  * `NoLoadCost`: add a no-load cost
 
 ### Joint flows
+Joint flows add additional flows to the component (in addition to the model archetype's flows). Joint flows are:
   * `FixedJointFlow`: an exogenously defined flow
   * `FreeJointFlow`: an infinitely flexible flow
   * `LinkedJointFlow`: a flow that can be expressed as a function of another flow of the component
 
-### Modifiers
-  * `energy`
-  * `mass`
-  * `co2`
-  * `defaultmodifier` (implicit modifier: energy for EnergyCarrier, mass for MassCarrier and CO2Carrier)
-
 ### Metrics
+Metrics are functions that can be applied to a `Snapshot` and return a scalar. The metrics detailed below are available.
   * `capacity`
   * `nbunits`
-  * Cost category
-    * `cost`
-    * `fixedcost`
-    * `variablecost`
-    * `noloadcost`
-    * `startupcost`
+  * `cost`
+  * `fixedcost`
+  * `variablecost`
+  * `noloadcost`
+  * `startupcost`
 
 NB most of these metrics can use additional arguments to modify the evaluation. For instance, all the cost metrics accept a `type::Symbol` optional argument that is a tag defined when instantiating cost behaviors.
 
-## Requirements
-Nosy requires a LP/MIP solver compatible with [JuMP](https://jump.dev/JuMP.jl/stable/).
-In the examples below we will use [HiGHS](https://highs.dev/) which is open-source and has a [Julia wrapper](https://ergo-code.github.io/HiGHS/dev/interfaces/julia/) compatible with JuMP.
 
-## Contributing
-- Start with an issue or discussion describing the proposed change.
-- Keep new behaviours or archetypes orthogonal; prefer composing them over editing existing ones when possible.
-- Add targeted tests in `test/` and update the README or docs when user-facing features change.
+### Modifiers
+Every flow is associated with a carrier type (e.g. `MassCarrier`, `EnergyCarrier` etc.). Modifiers help manipulating multiple aspects of a single `Carrier`. For instance, H2 can be viewed either through its mass (t) or energy (MWh). Each carrier has a default modifier used as a fallback if no modifier is specified.
+  * `energy` (default modifier for `EnergyCarrier`)
+  * `mass` (default modifier for `MassCarrier`, `CO2Carrier`)
+  * `co2`
+  * `defaultmodifier` (used as a fallback if modifier is not specified)
 
 
 ## Examples
 
-For the examples, we will assume the following units:
+Nosy is unit-agnostic, the user decides the actual units of any value - the only constraint is self-consistency. For the examples below, we will assume the following units:
   * Power, capacity: MW
   * Energy: MWh
-  * Fixed costs: $/MW
-  * Variable costs: $/MWh
+  * Fixed costs: €/MW
+  * Variable costs: €/MWh
   * Masses including CO2: tons
 
-These units are arbitrary, the user decides the actual units of any value - the only constraint is self-consistency.
+Please note that the examples are run in the REPL for the sake of simplicity, but it is generally advised to use functions instead.
 
 ### Example 1.1: Dispatchable source and demand
 
@@ -164,7 +171,7 @@ optimize!(snapshot, cost) # optimize the problem using the cost of the full snap
 result = extract(snapshot) # return a snapshot populated with the optimal solution
 ```
 
-The `snapshot` and `result` are the almost same object, except `snapshot` is populated with variables and `result` is populated with the optimal solution.
+The `snapshot` and `result` are almost the same object, except `snapshot` is populated with variables and `result` is populated with the optimal solution.
 
 The `result` can be post-processed using various functions.
 
@@ -205,7 +212,7 @@ julia> cost(result)
 You can evaluate partial costs.
 
 ```julia
-julia cost(result, :capex)
+julia> cost(result, :capex)
 2.772e8
 ```
 
@@ -215,7 +222,7 @@ julia> cost(snapshot, :capex)
 60000 gasplant_output_energy_cap
 ```
 
-The `costs` function return a table of all costs.
+The `costs` function returns a table of all costs.
 ```julia
 julia> costs(result)
 3×4 DataFrame
@@ -291,7 +298,7 @@ gasplant = Component(
         FixedCost(:capex, "output", energy, 60000),
         VariableCost(:fuel, "output", energy, 50.),
         LinkedJointFlow("co2", co2_carrier, :output, "output", x->0.400*x), # 0.4 tCO2/MWh of energy (electricity) coming out of the gas plant
-        VariableCost(:co2tax, "co2", co2, 100.), # carbon tax of 100 €/t of CO2 emitted by the plant. Modifier is co2.
+        VariableCost(:co2tax, "co2", co2, 100.), # the co2 joint flow is treated as a dedicated port for costing. Add a carbon tax of 100 €/t of CO2 emitted by the plant. Modifier is co2.
     ]
 )
 connect!(snapshot, gasplant, grid) # connect the gas plant to the grid
@@ -339,7 +346,6 @@ using HiGHS
 s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
 
 elec_carrier = EnergyCarrier("power", s)
-co2_carrier = CO2Carrier("co2", s)
 
 # Synthetic data for load
 hours = 1:8760
@@ -391,7 +397,7 @@ optimize!(snapshot, cost)
 result = extract(snapshot)
 ```
 
-The table of capacities of the optimized system is given below. The PV1 component's capacity is equal to the upper bound.
+The table of capacities of the optimized system is given below. The PV component's capacity is equal to the upper bound.
 
 ```julia
 julia> table(result, capacity)
@@ -402,7 +408,7 @@ julia> table(result, capacity)
    1 │ 50373.4  5628.94          0.0
 ```
 
-As we have defined `evalprice=true` at the grid node instantiation, we can calculate the hourly electricity price (€/MWh) as the dual of the "consumption >= production" constraint at each hour. Please note: the dual is not available in problems with integer constraints.
+As we have defined `evalprice=true` at the grid node instantiation, we can calculate the hourly electricity price (€/MWh) as the dual of the "production >= consumption" constraint at each hour. Please note: the dual is not available in problems with integer constraints.
 
 ```
 julia> p = dualprice(result.nodes["grid"]); # binds a price vector to p
@@ -413,7 +419,7 @@ julia> minimum(p)
 julia> maximum(p)
 3516.0807550572163
 
-julia> sum(p)/length(p) # non-weighted average
+julia> sum(p)/length(p) # unweighted average
 111.78592911234246
 ```
 
@@ -498,7 +504,7 @@ transmission = Component(
     "transmission",
     BasicConverter(elec_carrier, elec_carrier), # no losses
     [
-        FixedCapacity("input", energy, 8000), # Fixed capacity of 5000 MW
+        FixedCapacity("input", energy, 8000), # Fixed capacity of 8000 MW
     ]
 )
 connect!(snapshot, transmission, grid2, "input") # selective connection of the input of the transmission to grid 2
@@ -521,7 +527,7 @@ julia> table(result, capacity)
 ```
 
 
-### Example 2.3: PV, battery storage and electrolyser with power and hydrogen demand
+### Example 2.3: PV, battery storage and electrolyzer with power and hydrogen demand
 
 In the following example, we have two demands:
   * power (variable demand in MW)
@@ -530,7 +536,7 @@ In the following example, we have two demands:
 As well as the following components:
   * PV, with variable capacity
   * battery storage, with variable capacity
-  * electrolyser, with variable capacity
+  * electrolyzer, with variable capacity
   * hydrogen storage, with fixed capacity
 
 In particular, we will pay attention to the relationship between `mass` and `energy` of hydrogen. Some components will interact with its `mass`, other with its `energy`.
@@ -588,7 +594,7 @@ pv = Component(
 )
 connect!(snapshot, pv, grid)
 
-# Component: PEM electrolyser
+# Component: PEM electrolyzer
 pem = Component(
     "PEM",
     BasicConverter(elec_carrier, h2_carrier, ratio=0.70, modifier=energy), # convert 70% of the electrical energy into hydrogen energy
@@ -644,6 +650,19 @@ julia> table(result, capacity)
    1 │            0.0       720.0  604.714  58406.1  6631.02          0.0
 ```
 
+We can check the hydrogen mass generated annually, which is equal to the hourly consumption (10 t) multiplied with the hours per year (8760).
+
+```julia
+julia> balance(result, "PEM", :output, mass, collapse=true, aggregate=true) # mass balance, in tons per year
+87600.00000000552
+```
+
+We can also check this result in terms of energy balance.
+
+```julia
+julia> balance(result, "PEM", :output, energy, collapse=true, aggregate=true) # energy balance, in MWh per year
+2.919707999999801e6
+```
 
 ### Example 3.1: PV and gas, problem infeasibility and conflicts analysis
 
@@ -655,7 +674,6 @@ using HiGHS
 
 s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
 elec_carrier = EnergyCarrier("power", s)
-co2_carrier = CO2Carrier("co2", s)
 
 # Synthetic data for load
 hours = 1:8760
@@ -671,7 +689,6 @@ snapshot = Snapshot(s)
 
 # One electricity node
 grid = Node("grid", elec_carrier, rule=:curtailed)
-co2_node = Node("co2", co2_carrier, rule=:curtailed)
 
 # Component: Electricity consumption
 consumption = Component(
@@ -713,7 +730,7 @@ julia> result = extract(snapshot)
 ┌ Warning: System is not optimized. Termination status: INFEASIBLE. Returning the problem instead of the result.
 ```
 
-Some solvers allow computing an IIS (irreducible infeasible subsystem) associated with the problem. When available, the IIS can be obtained so as to determine which constraints are conflicting. One very important remark is that the IIS is not unique, there may be multiple IIS associated with one problem, and repairing one IIS does not necessary make the problem feasible.
+Some solvers allow computing an IIS (irreducible infeasible subsystem) associated with the problem. When available, the IIS can be obtained so as to determine which constraints are conflicting. One very important remark is that the IIS is not unique, there may be multiple IIS associated with one problem, and repairing one IIS does not necessarily make the problem feasible.
 
 ```julia
 julia> conflicts(result.sim)
@@ -756,7 +773,6 @@ using HiGHS
 
 s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
 elec_carrier = EnergyCarrier("power", s)
-co2_carrier = CO2Carrier("co2", s)
 
 # Synthetic data for load
 hours = 1:8760
@@ -772,7 +788,6 @@ snapshot = Snapshot(s)
 
 # One electricity node
 grid = Node("grid", elec_carrier, rule=:curtailed)
-co2_node = Node("co2", co2_carrier, rule=:curtailed)
 
 # Component: Electricity consumption
 consumption = Component(
@@ -834,7 +849,6 @@ import JuMP: @constraint # do not write `using JuMP` as both JuMP and Nosy expor
 
 s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
 elec_carrier = EnergyCarrier("power", s)
-co2_carrier = CO2Carrier("co2", s)
 
 # Synthetic data for load
 hours = 1:8760
@@ -850,7 +864,6 @@ snapshot = Snapshot(s)
 
 # One electricity node
 grid = Node("grid", elec_carrier, rule=:curtailed)
-co2_node = Node("co2", co2_carrier, rule=:curtailed)
 
 # Component: Electricity consumption
 consumption = Component(
@@ -883,7 +896,7 @@ gasplant = Component(
 connect!(snapshot, gasplant, grid)
 
 # Add a constraint on the system cost, directly using JuMP
-@constraint(model(s), cost(snapshot) <= c0 * 1.01)
+@constraint(model(s), cost(snapshot) <= c0 * 1.01) # model(s) returns the JuMP Model
 
 # Optimization
 optimize!(snapshot, x->-capacity(x, "gasplant"))
