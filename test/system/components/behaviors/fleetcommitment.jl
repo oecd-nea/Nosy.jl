@@ -45,8 +45,8 @@ Some notes and observations:
         df[!, "t"] = 1:nsteps(sim(c))
         df[!,"uc"] = uc.state.data
         df[!,"st"] = uc.startup.data
-        df[!,"sd1"] = uc.shutdown1.data
-        df[!,"sd2"] = uc.shutdown2.data
+        df[!,"sd1"] = uc.shutdownselector[1].data
+        df[!,"sd2"] = length(uc.shutdownselector) > 1 ? uc.shutdownselector[2].data : zeros(nsteps(sim(c)))
         df[!,"v"] = uc.variable.data
         df[!, "up"] = _up(uc)
         df[!,"b"] = _balance(c, :output, energy, collapse=false)
