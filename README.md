@@ -8,7 +8,7 @@ System cost studies at the NEA include:
   * System costs study of Sweden (tentative title, to be published)
   * System costs study of South Korea (tentative title, to be published)
 
-License it MIT.
+License is MIT.
 
 ## Highlights
 - Compose systems from carriers, nodes, and components enriched with reusable behaviors (capacities, costs, ramping, unit commitment, joint flows).
