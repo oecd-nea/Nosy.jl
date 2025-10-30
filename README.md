@@ -397,7 +397,7 @@ optimize!(snapshot, cost)
 result = extract(snapshot)
 ```
 
-The table of capacities of the optimized system is given below. The PV component's capacity is equal to the upper bound.
+The table of capacities of the optimized system is given below.
 
 ```julia
 julia> table(result, capacity)
