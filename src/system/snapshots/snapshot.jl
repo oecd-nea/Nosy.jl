@@ -13,14 +13,24 @@ struct Snapshot{T} <: AbstractElement{T}
     finalized::RefValue{Bool}
 end
 
-defaultsnapshotoptions() = Dict()
+"""
+    Snapshot(sim::Sim, options::Dict=Dict())
+Create a Snapshot for simulation `sim` with options `options`.
+Options from `sim` are merged with `options`, and an error is thrown if there are duplicate keys.
+"""
+function Snapshot(sim::Sim, options::Dict=Dict())
+    # merge options argument with options from sim
+    opt = Dict{String,Any}(k => v for (k,v) in sim.options)
+    for (k,v) in options
+        haskey(opt, k) && throw(ArgumentError("Option $k is already defined in sim options"))
+        opt[k] = v
+    end
 
-function Snapshot(sim::Sim, options::Dict=defaultsnapshotoptions())
     Snapshot(
         sim,
         Dict{String,Component{exptype(sim)}}(),
         Dict{String,Node{exptype(sim)}}(),
-        options,
+        opt,
         RefValue(false)
     )
 end
