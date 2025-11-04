@@ -44,14 +44,14 @@ getcomponent(s::Snapshot, cname::String) = components(s)[cname]
 
 _getwithtags(s::Snapshot, f::Function, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = sort(LittleDict([(k,v) for (k,v) in f(s) if (all(hastag(v, tag) for tag in withtags) && !any(hastag(v, tag) for tag in withouttags))]))
 
-getcomponents(s::Snapshot, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = _getwithtags(s, components, withtags, withouttags)
+getcomponents(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) = _getwithtags(s, components, with, without)
 
 """
     getcomponents(s::Snapshot, nodename::String, tags...)
-Return a Dict of components with tags `tags` connected to Node named `nodename` in Snapshot `s`.
+Return a Dict of components with tags `withtags`, and without tages `withouttags`, connected to Node named `nodename` in Snapshot `s`.
 """
-function getcomponents(s::Snapshot, nodename::String, withtags::Vector{Symbol}, withouttags::Vector{Symbol}=Symbol[])
-    d0 = getcomponents(s, withtags, withouttags)
+function getcomponents(s::Snapshot, nodename::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[])
+    d0 = getcomponents(s, with=with, without=without)
     n = getnode(s, nodename)
     d = LittleDict{String,AbstractComponent}()
     for (k,v) in d0
@@ -63,7 +63,7 @@ function getcomponents(s::Snapshot, nodename::String, withtags::Vector{Symbol}, 
 end
 
 
-getnodes(s::Snapshot, withtags::Vector{Symbol}, withouttags::Vector{Symbol}=Symbol[]) = _getwithtags(s, nodes, withtags, withouttags)
+getnodes(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) = _getwithtags(s, nodes, with, without)
 
 hasnode(s::Snapshot, nname::String) = haskey(nodes(s), nname)
 getnode(s::Snapshot, nname::String) = nodes(s)[nname]
