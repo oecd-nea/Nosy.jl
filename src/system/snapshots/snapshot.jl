@@ -5,6 +5,7 @@ A snapshot contains nodes and components.
 using Base: RefValue
 using OrderedCollections: LittleDict
 
+
 struct Snapshot{T} <: AbstractElement{T}
     sim::Sim
     components::Dict{String,Component{T}}
@@ -123,6 +124,7 @@ function apply_constraints!(s::Snapshot)
     for (_, n) in nodes(s)
         apply_constraints!(n)
     end
+    add_kvl_constraints!(s)
 end
 
 # fill the component and node fields of a snapshot with c and n being connected

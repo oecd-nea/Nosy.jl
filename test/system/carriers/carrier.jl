@@ -1,4 +1,4 @@
-using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: MassCarrier, EnergyCarrier, CO2Carrier, PowerCarrier
 using Nosy: carrierstyle
 using Nosy: defaultmodifier, mass, energy, co2
 using Nosy: Sim, TimeMesh, sim
@@ -110,5 +110,26 @@ using JuMP: Model
         c4 = CO2Carrier("c4", s, weight=2) # integer argument
         @test all(co2(c4)[i] == 2. for i in eachstep(s)) 
     end
+
+    let s = tsim()
+
+        # power carrier
+
+        p1 = PowerCarrier("p1", s)
+        @test sim(p1) === s
+
+        p2 = PowerCarrier("p2", s)
+        @test p1 != p2
+
+        @test all(energy(p1) .== defaultmodifier(p1))
+        @test all(energy(p1)[i] == 1.0 for i in eachstep(s))
+
+        @test isnothing(mass(p1))
+        @test isnothing(co2(p1))
+
+        @test length(energy(p1)) == length(eachstep(s))
+
+    end
+
 
 end

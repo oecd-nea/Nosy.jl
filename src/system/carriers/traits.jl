@@ -12,4 +12,4 @@ carrierstyle(::AbstractCarrier) = error("not implemented") # please implement fo
 carrierstyle(::EnergyCarrier) = IsEnergyCarrierStyle()
 carrierstyle(::MassCarrier) = IsMassCarrierStyle()
 carrierstyle(::CO2Carrier) = IsMassCarrierStyle()
-
+carrierstyle(::PowerCarrier)  = IsEnergyCarrierStyle()

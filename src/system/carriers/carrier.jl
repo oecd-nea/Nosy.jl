@@ -79,6 +79,24 @@ struct CO2Carrier <: AbstractCarrier
     end
 end
 
+
+struct PowerCarrier <: AbstractCarrier
+    name::String
+    sim::Sim
+    energy::Stepwise{Float64}
+
+    @doc """
+        PowerCarrier(name::String, sim::Sim)
+    Return a PowerCarrier with name `name` associated with Sim `sim`.
+    """
+    function PowerCarrier(name::String, sim::Sim)
+        e = Stepwise(1.0, sim.mesh)  
+        return new(name, sim, e)
+    end
+end
+
+
+
 sim(c::AbstractCarrier) = c.sim
 name(c::AbstractCarrier) = c.name
 

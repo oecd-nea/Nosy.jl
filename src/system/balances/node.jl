@@ -46,28 +46,6 @@ function __mergebalancebycname(b::AbstractDict{PortRef,<:Any})
     return merged
 end
 
-# balance applied to only one port of the node
-# this function should not be exported, it is used for behaviors e.g. variable cost
-# this is almost the same method as for components - with added argument (cname + pname, otherwise port is ambiguous)
-function _balance(n::Node, cname::String, pname::String, sense::Symbol, modifier::Function; collapse::Bool=true)
-    @argcheck sense in (:input, :output) "sense must be either :input or :output"
-    if sense == :input
-        @argcheck hasinput(n.s, pname) "Node $(name(n)) does not have input $pname"
-        if collapse
-            return _collapse_balance_one(n.s, pname, _input, modifier)
-        else
-            return _balance_one(n.s, pname, _input, modifier)
-        end
-    else # if sense == :output
-        @argcheck hasoutput(n.s, pname) "Node $(name(n)) does not have output $pname"
-        if collapse
-            return _collapse_balance_one(n.s, pname, _output, modifier)
-        else
-            return _balance_one(n.s, pname, _output, modifier)
-        end
-    end
-end
-
 # return the flow of a node port at a given timestep
 _flow(n::Node, pname::String, modifier::Function, step::Int) = _flow(n.s, pname, name(n), modifier, step)
 _flow(n::Node, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(n.s, pname, name(n), sense, modifier, step)
@@ -86,7 +64,7 @@ end
 Return the value of the flow of port named `pname` in sense `sense` of node `n` at hour `hour` modified by `modifier`.
 """
 function flow(n::Node, pname::String, sense::Symbol, modifier::Function, hour::Int)
-    return _flow(n, pname, sense::Symbol, modifier, step(sim(n).mesh, hour))
+    return _flow(n, pname, sense, modifier, step(sim(n).mesh, hour))
 end
 
 # No carrier check for each port because all node ports have the same carrier

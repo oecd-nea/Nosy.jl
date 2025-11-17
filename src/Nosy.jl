@@ -3,12 +3,13 @@ module Nosy
 export TimeMesh, Sim, sim
 export Model, model, lowermodel, uppermodel
 
-export MassCarrier, EnergyCarrier, CO2Carrier
+export MassCarrier, EnergyCarrier, CO2Carrier, PowerCarrier
 
 export BasicConverter
 export BasicSink, Demand
 export DispatchableSource, ProfileSource
 export BasicStorage, LazyStorage
+export ACLine, DCLine
 
 export VariableCapacity, FixedCapacity
 export CapacityMultiplier, Duration

@@ -12,6 +12,7 @@ struct Component{T<:VAL,M<:AbstractModel} <: AbstractComponent{T}
 end
 
 model(c::Component) = c.model
+
 name(c::Component) = c.name
 behaviors(c::Component) = c.behaviors
 sim(c::Component) = sim((model(c)))

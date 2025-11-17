@@ -6,7 +6,8 @@ For connection methods, the convention for sense is taking the component's sense
 
 """
     connect!(s::Snapshot, c::Component, n::Node, pname::String)
-Connect port named `pname` of component `c` to node `n` on snapshot `s`. 
+
+Connect port named `pname` of component `c` to node `n` on snapshot `s`.
 """
 function connect!(s::Snapshot, c::Component, n::Node, pname::String)
     sense = portsense(portstructure(c), PortRef(name(c), pname))
