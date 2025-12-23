@@ -11,7 +11,7 @@ struct FreeJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
     mustconnect::Bool
 
     @doc """
-        FreeJointFlow(name::String, sense::Symbol, carrier::AbstractCarrier; mustconnect::Bool=true)
+        FreeJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol; mustconnect::Bool=true)
     Return a FreeJointFlow with name `name`, of sense `sense` of carrier `carrier`.
     """
     function FreeJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol; mustconnect::Bool=true)

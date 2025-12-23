@@ -24,10 +24,12 @@ If `profile` is a Vector: it defines the profile.
 
 The values of `profile` above `cutoff` will be set to `cutoff`.
 
+NB: adding a Capacity behavior is mandatory.
 NB: the profile is not renormalized.
 """
 function ProfileSource(carrier::AbstractCarrier, profile; cutoff::Number=Inf64)
     @argcheck all(profile .>= 0.) "The profile cannot be negative"
+    @argcheck cutoff >= 0. "The cutoff cannot be negative"
     if isinf(cutoff) && !all(profile .<= 1.) 
         @warn "Some profiles have values superior to 1 and there is no cutoff" 
     end
@@ -52,7 +54,13 @@ function build(m::ProfileSource, cname::String)
 end
 
 # no constraints specific to ProfileSource
-function _apply_constraints!(::ProfileSourceModel) end
+# however we need to check that a capacity was defined (mandatory for ProfileSource)
+function _apply_constraints!(c::AbstractComponent, ::ProfileSourceModel)
+    # check that component has a capacity
+    if !hascapacitybehavior(c, "output")
+        throw(AssertionError("Component $(name(c)) is based on ProfileSource and therefore must have a Capacity behavior on \"output\" port"))
+    end
+end
 
 modelname(::ProfileSourceModel) = "profile source"
 

@@ -18,6 +18,7 @@ A possible workflow could be to check for the existence of keys before assessing
 
 # perform balance on only one port
 # faster than performing balance on all ports
+# not checking for exceptions - that must be made before call
 _balance_one(ps::PortStructure, pname::String, cname::String, sense::Function, modifier::Function) = modifier(sense(ps)[PortRef(cname, pname)])
 _balance_one(ps::PortStructure, pname::String, cname::String, modifier::Function) = modifier(_getport(ps, pname, cname))
 _collapse_balance_one(ps::PortStructure, pname::String, cname::String, sense::Function, modifier::Function) = sum(_balance_one(ps, pname, cname, sense, modifier))

@@ -85,7 +85,7 @@ co2(p::AbstractPort) = _co2(carrierstyle(carrier(p)), p)
 # no dispatch on trait for CO2
 _co2(::AbstractCarrierStyle, p::AbstractPort) = __co2(co2(carrier(p)), p)
 
-__co2(::Nothing, p::AbstractPort) = throw(AssertionError("Port does not carry mass"))
+__co2(::Nothing, p::AbstractPort) = throw(AssertionError("Port does not carry CO2"))
 __co2(s::Stepwise, p::AbstractPort) = _mult(s::Stepwise, p::AbstractPort)
 
 co2(p::AbstractPort, step::Int) = co2(p.carrier, step) * series(p)[step]

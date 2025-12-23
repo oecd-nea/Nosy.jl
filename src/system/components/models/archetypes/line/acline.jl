@@ -11,10 +11,10 @@ struct ACLine <: AbstractTransmissionLine
     from::PowerCarrier
     to::PowerCarrier
     admittance::Float64
-    function ACLine(from::PowerCarrier, to::PowerCarrier, admittance::Float64)
+    function ACLine(from::PowerCarrier, to::PowerCarrier, admittance::Number)
         @argcheck admittance > 0 "admittance must be positive"
         @argcheck sim(from) === sim(to) "Carriers must belong to the same Sim"
-        new(sim(from), from, to, admittance)
+        new(sim(from), from, to, Float64(admittance))
     end
 end
 

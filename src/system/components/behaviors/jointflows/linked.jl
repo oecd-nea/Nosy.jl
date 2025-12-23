@@ -15,7 +15,7 @@ struct LinkedJointFlow{C<:AbstractCarrier,F<:Function,M<:Function} <: AbstractJo
 end
 
 """
-    LinkedJointFlow(sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
+    LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
 Return a LinkedJointFlow with following characteristics:
   * `sense`: sense of the joint flow
   * `baseflow`: name of the flow of the target component to evaluate the joint flow from

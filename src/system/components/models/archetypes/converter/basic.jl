@@ -17,17 +17,16 @@ struct BasicConverter{C1<:AbstractCarrier,C2<:AbstractCarrier,M<:Function} <: Ab
 end
 
 """
-    BasicConverter(input::AbstractCarrier, output::AbstractCarrier, ratio)
+    BasicConverter(input::AbstractCarrier, output::AbstractCarrier; ratio=1., modifier::Function=defaultmodifier)
 Return a model BasicConverter model which converts carrier `input` into `output` with a ratio `ratio`.
 The ratio can be a number or a time series.
-The modifier is applied to both input and output e.g. with modifier=mass, then mass(output) = mass(input) * ratio at each step.
 """
 function BasicConverter(input::AbstractCarrier, output::AbstractCarrier; ratio=1., modifier::Function=defaultmodifier)
     s = sim(input)
 
     if modifier != defaultmodifier
         @argcheck hasmodifier(input, modifier) "$(input.name) not compatible with $modifier"
-        @argcheck hasmodifier(output, modifier) "$(input.name) not compatible with $modifier"
+        @argcheck hasmodifier(output, modifier) "$(output.name) not compatible with $modifier"
     end
 
     @argcheck ratio isa Number || (ratio isa AbstractVector && (length(ratio) == nsteps(s) || length(ratio) == nhours(s))) "ratio must be either a number or a vector of length $(nhours(s)) or $(nsteps(s))"

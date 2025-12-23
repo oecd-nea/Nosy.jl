@@ -34,7 +34,7 @@ const NODE_RULES = [:default, :curtailed]
 
 """
     Node(name::String, c::Carrier; rule::Symbol=:default)
-Construct a Node with name `name` associated with carrier `c`.
+Construct a Node with name `name` associated with carrier `c`. A node has a unique carrier.
 The `rule` defines the node behavior (:default, :curtailed).
 The `losses` is a ratio (between 0 and 1) of the sum of the input that is lost.
 The `tags` are the node tags.
@@ -97,12 +97,12 @@ hastag(n::Node, tag::Symbol) = tag in n.tags
 # add port to node
 # check is performed on T∈VAL (must be identical), and carrier type C (must be identical)
 function addinput!(n::Node{T,C}, pname::String, cname::String, p::Port{T,C}) where {T,C}
-    @argcheck carrier(n) == carrier(p) "$cname is not compatible with node $(Nosy.name(n))"
+    @argcheck carrier(n) == carrier(p) "Port $pname is not compatible with node $(Nosy.name(n))"
     addinput!(n.s, pname, cname, p)
 end
 
 function addoutput!(n::Node{T,C}, pname::String, cname::String, p::Port{T,C}) where {T,C}
-    @argcheck carrier(n) == carrier(p) "$name is not compatible with node $(Nosy.name(n))"
+    @argcheck carrier(n) == carrier(p) "Port $pname is not compatible with node $(Nosy.name(n))"
     addoutput!(n.s, pname, cname, p)
 end
 

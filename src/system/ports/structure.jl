@@ -167,7 +167,7 @@ function portsense(ps::PortStructure, pr::PortRef)::Symbol
     elseif haskey(_level(ps), pr)
         return :level
     else
-        throw(ArgumentError("The port structure does not contain a port associated with name $pname and component $cname"))
+        throw(ArgumentError("The port structure does not contain a port associated with name $(pr.pname) and component $(pr.cname)"))
     end
 end
 

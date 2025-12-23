@@ -12,7 +12,7 @@ struct FixedJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
     mustconnect::Bool
 
     @doc """
-        FixedJointFlow(name::String, sense::Symbol, carrier::AbstractCarrier, series::AbstractVector{<:Number}; mustconnect::Bool=true)
+        FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)
     Return a FixedJointFlow with name `name`, of sense `sense` of carrier `carrier` associated with flow time series (or scalar) `series`.
     """
     function FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)

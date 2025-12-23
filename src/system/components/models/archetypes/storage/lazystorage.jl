@@ -21,12 +21,13 @@ end
     LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier; eff=nothing)
 Return a model LazyStorage model which has a level of carrier `level`.
 The lazy storage constraint will be applied to the level and the associated joint flows after applying the `modifier` to flows.`. 
+NB storage is periodic: the step after the last step is the first step.
 """
 function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, simplified::Bool=false)
     s = sim(level)
 
     if modifier != defaultmodifier
-        @argcheck hasmodifier(level, modifier) "$(input.name) not compatible with $modifier"
+        @argcheck hasmodifier(level, modifier) "$(name(level)) not compatible with $modifier"
     end
     
     if isnothing(eff)

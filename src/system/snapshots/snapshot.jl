@@ -41,7 +41,7 @@ components(s::Snapshot) = s.components
 nodes(s::Snapshot) = s.nodes
 
 hascomponent(s::Snapshot, cname::String) = haskey(components(s), cname)
-getcomponent(s::Snapshot, cname::String) = components(s)[cname]
+getcomponent(s::Snapshot, cname::String) = hascomponent(s, cname) ? components(s)[cname] : throw(AssertionError("No component named $cname"))
 
 _getwithtags(s::Snapshot, f::Function, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = sort(LittleDict([(k,v) for (k,v) in f(s) if (all(hastag(v, tag) for tag in withtags) && !any(hastag(v, tag) for tag in withouttags))]))
 
@@ -67,7 +67,7 @@ end
 getnodes(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) = _getwithtags(s, nodes, with, without)
 
 hasnode(s::Snapshot, nname::String) = haskey(nodes(s), nname)
-getnode(s::Snapshot, nname::String) = nodes(s)[nname]
+getnode(s::Snapshot, nname::String) = hasnode(s, nname) ? nodes(s)[nname] : throw(AssertionError("No node called $nname"))
 
 is_finalized(s::Snapshot) = s.finalized[]
 set_finalized!(s::Snapshot) = setindex!(s.finalized, true)

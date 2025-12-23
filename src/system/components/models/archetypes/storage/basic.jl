@@ -18,14 +18,14 @@ struct BasicStorage{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,
     eff_o::Float64 # efficiency of output
     simplified::Bool
 
-    function BasicStorage(input::CI, output::CO, level::CL, modifier::M, eff_i::Float64, eff_o::Float64, simplified::Bool) where {CI,CO,CL,M}
+    function BasicStorage(input::CI, output::CO, level::CL, modifier::M, eff_i::Number, eff_o::Number, simplified::Bool) where {CI,CO,CL,M}
         @argcheck eff_i >= 0. "Efficiency of input must be positive or zero"
-        @argcheck eff_o > 0. "Efficiency of output must be strictly positive or zero"
+        @argcheck eff_o > 0. "Efficiency of output must be strictly positive"
         @argcheck hasmodifier(input, modifier) "input carrier is not compatible with given modifier"
         @argcheck hasmodifier(output, modifier) "output carrier is not compatible with given modifier"
         @argcheck hasmodifier(level, modifier) "level carrier is not compatible with given modifier"
         @argcheck input.sim == output.sim == level.sim "input, output and level carriers must have the same simulation"
-        return new{CI,CO,CL,M}(input.sim, input, output, level, modifier, eff_i, eff_o, simplified)
+        return new{CI,CO,CL,M}(input.sim, input, output, level, modifier, Float64(eff_i), Float64(eff_o), simplified)
     end
 end
 
@@ -48,6 +48,7 @@ Return a model BasicStorage model associated with:
   * `eff_i`: efficiency of input (inferior to 1 for losses)
   * `eff_o`: efficiency of output (inferior to 1 for losses)
 The model also has the input effiency `input` and output efficiency `output`.
+NB storage is periodic: the step after the last step is the first step.
 """
 function BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1., simplified::Bool=false)
     return BasicStorage(input, output, level, modifier, eff_i, eff_o, simplified)

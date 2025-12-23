@@ -7,12 +7,10 @@ Consumes an input flow according to a series.
 The series is not normalized, it is the actual consumption value.
 """
 
-
-struct Demand{C<:AbstractCarrier,M<:Function} <: AbstractModelData
+struct Demand{C<:AbstractCarrier} <: AbstractModelData
     sim::Sim
     carrier::C
-    modifier::M # the modifier of the time series given by the user
-    series::Stepwise{Float64} # expressed in the defaultmodifier of carrier (!= modifier)
+    series::Stepwise{Float64} # expressed in the defaultmodifier of carrier
 end
 
 """
@@ -21,17 +19,17 @@ Return a model Demand model for carrier `carrier` with a non-negative series `se
 The parameter `series` can be either a Vector (of length equal to number of hours or steps) or a Number.
 If the parameter `modifier` is provided, it implies that the `series` provided by the user is expressed in term of modified carrier unit.
 """
-function Demand(carrier::AbstractCarrier, series; modifier=_defaultmodifier(carrierstyle(carrier)))
+function Demand(carrier::AbstractCarrier, series; modifier=defaultmodifier)
     @argcheck all(series .>= 0.) "The series cannot be negative"
     s = sim(carrier)
-
+    
     _series = Stepwise(series, s.mesh) ./ (Stepwise(modifier(carrier), s.mesh) .* Stepwise(defaultmodifier(carrier), s.mesh))
 
-    return Demand(s, carrier, modifier, Stepwise(_series, s.mesh))
+    return Demand(s, carrier, Stepwise(_series, s.mesh))
 end
 
-struct DemandModel{T<:VAL,C<:AbstractCarrier,M} <: AbstractModel{T}
-    data::Demand{C,M}
+struct DemandModel{T<:VAL,C<:AbstractCarrier} <: AbstractModel{T}
+    data::Demand{C}
     s::PortStructure{T}
 end
 
