@@ -26,8 +26,8 @@ function BasicConverter(input::AbstractCarrier, output::AbstractCarrier; ratio=1
     s = sim(input)
 
     if modifier != defaultmodifier
-        @argcheck !isnothing(modifier(input)) "$(input.name) not compatible with $modifier"
-        @argcheck !isnothing(modifier(output)) "$(input.name) not compatible with $modifier"
+        @argcheck hasmodifier(input, modifier) "$(input.name) not compatible with $modifier"
+        @argcheck hasmodifier(output, modifier) "$(input.name) not compatible with $modifier"
     end
 
     @argcheck ratio isa Number || (ratio isa AbstractVector && (length(ratio) == nsteps(s) || length(ratio) == nhours(s))) "ratio must be either a number or a vector of length $(nhours(s)) or $(nsteps(s))"

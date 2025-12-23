@@ -16,6 +16,7 @@ PortDict.
 Port dictionary, contains a dictionary of PortRef => Port.
 Is used as a wall for type instability, so that AbstractCarrier subtype (unpredictable) does not impact PortStructure.
 """
+const V{T} = Union{Port{T,MassCarrier}, Port{T,PowerCarrier}, Port{T,EnergyCarrier}, Port{T,CO2Carrier}} where T<:VAL
 
 struct PortDict{T} <: AbstractElement{T}
     d::Dict{PortRef,Port{T}} # type instability, but probably not too impactful

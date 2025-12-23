@@ -26,7 +26,7 @@ function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier,
     s = sim(level)
 
     if modifier != defaultmodifier
-        @argcheck !isnothing(modifier(level)) "$(input.name) not compatible with $modifier"
+        @argcheck hasmodifier(level, modifier) "$(input.name) not compatible with $modifier"
     end
     
     if isnothing(eff)

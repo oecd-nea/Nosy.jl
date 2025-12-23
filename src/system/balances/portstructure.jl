@@ -50,7 +50,7 @@ end
 function __balance_expand(ps::PortStructure{T}, sense::Function, modifier::Function) where T
     d = LittleDict{PortRef,Stepwise{T}}()
     for (k,v) in sense(ps)
-        if !isnothing(modifier(carrier(v)))
+        if hasmodifier(carrier(v), modifier)
             d[k] = modifier(v)
         end
     end
