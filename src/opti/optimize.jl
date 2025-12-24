@@ -19,6 +19,7 @@ function filterexpression!(exp::GenericAffExpr, threshold::Number) # relative th
         drop_zeros!(exp) # remove zero terms in the objective
     end
 end
+filterexpression!(exp::Number, threshold::Number) = nothing
 
 # fix variables to zero when upper bound is below threshold
 function cleanup_bounds!(s::Snapshot, threshold::Number)
@@ -37,6 +38,9 @@ end
 # both are equivalent for single objective optimization
 function set_objective!(s::Snapshot{<:GenericAffExpr}, metric::Function; threshold=1E-15, objectivetype=:upper)
     obj = metric(s)
+
+    obj isa Number && @warn "The optimization objective is a constant number, not an expression."
+
     if !(obj isa VAL) 
         throw(AssertionError("`metric(s)` does not return an GenericAffExpr or a Number"))
     end
