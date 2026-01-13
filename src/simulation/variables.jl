@@ -24,7 +24,7 @@ function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=fal
     _checkcompatible(lb, s)
     _checkcompatible(ub, s)
 
-    v = @variable(lowermodel(s), [1:nsteps(s)], binary=binary, integer=integer, base_name=basename)
+    v = @variable(lowermodel(s), [1:nsteps(s)], binary=binary, integer=integer, base_name=basename*s.suffix)
     sl = Stepwise(lb, s.mesh)
     su = Stepwise(ub, s.mesh)   
     _set_bound_if_not_inf!.(sl, v, set_lower_bound)

@@ -7,6 +7,7 @@ struct Sim
     mesh::RTimeMesh
     model::JuMP.AbstractModel # abstract type, would be unpractical to have parametric Sim
     options::Dict{String,Any}
+    suffix::String # suffix for variable names
 end
 
 """
@@ -16,11 +17,12 @@ Optional arguments:
   * `mesh`: TimeMesh for the simulation (default: 8760 hours, 1 step per hour)
   * `options`: Dict containing options for the simulation
 """
-function Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh())
+function Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh(), suffix::String="")
     return Sim(
         mesh,
         model,
-        convert(Dict{String,Any}, options)
+        convert(Dict{String,Any}, options),
+        suffix
     )
 end
 

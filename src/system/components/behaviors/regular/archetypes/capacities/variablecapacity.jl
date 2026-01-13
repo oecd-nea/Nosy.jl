@@ -48,7 +48,7 @@ function buildbehavior(c::Component, b::VariableCapacity)
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     if b.unitsize isa Number
         # variable is number of units
-        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units" * "_" * sim(c).suffix, lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
         # v2 = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
         # 
         # @constraint(sim(c).model, v .== v2)
@@ -69,7 +69,7 @@ function buildbehavior(c::Component, b::VariableCapacity)
         # @constraint(lowermodel(sim(c)), v == u * b.unitsize)
     else
         # variable is capacity
-        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap" * "_" * sim(c).suffix, lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
         
         # warmstart
         if !isnothing(b.warmstart)
