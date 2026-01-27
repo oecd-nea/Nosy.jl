@@ -6,7 +6,7 @@ Startup cost requires unit commitment.
 struct StartupCost <: AbstractCostBehaviorData
     type::Symbol
     pname::String
-    val::Number
+    val::Float64
 
     @doc """
         StartupCost(type::Symbol, pname::String, val::Number)

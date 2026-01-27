@@ -6,7 +6,7 @@ No-load cost requires unit commitment.
 struct NoLoadCost <: AbstractCostBehaviorData
     type::Symbol
     pname::String
-    val::Number
+    val::Float64
 
     @doc """
         NoLoadCost(type::Symbol, pname::String, val::Number)

@@ -17,7 +17,7 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     name::String
     carrier::C
     s::PortStructure{T}
-    losses::Number
+    losses::Float64
     rule::Symbol # :curtailed or :default
     evalprice::Bool
     dualprice::DualPrice{T}
