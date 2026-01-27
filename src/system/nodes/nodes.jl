@@ -89,7 +89,6 @@ end
 haslevel(n::Node, cname::String) = false
 
 _haslosses(n::Node) = !iszero(n.losses)
-_lossesratio(n::Node) = n.losses
 
 tag!(n::Node, tag::Symbol) = tag in n.tags ? nothing : push!(n.tags, tag)
 hastag(n::Node, tag::Symbol) = tag in n.tags
