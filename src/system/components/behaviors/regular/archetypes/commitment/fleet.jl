@@ -273,7 +273,6 @@ end
 # first, the downtime actually covers the time of shutdown and startup: their uc state is 0 but their flow is not, by convention.
 # Then startup duration can be 0. But even when it is zero, startup at least takes a step to transition between state=0 to state=1!
 # Same remark for shutdown.
-# The implementation of the constraint is tested for constant time intervals, it will not be correct for variable time intervals.
 function _apply_constraints_uc_mindowntime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = sim(c).mesh
     _units = nbunits(c)
