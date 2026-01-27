@@ -1,5 +1,6 @@
-using JuMP: VariableRef, AffExpr, GenericAffExpr
+using JuMP: VariableRef, AffExpr, GenericAffExpr, Containers.SparseAxisArray
 using BilevelJuMP: BilevelVariableRef, BilevelAffExpr
+using OrderedCollections: OrderedDict
 
 """
 Manipulation of numbers and affine expressions.
@@ -23,6 +24,7 @@ _to_affexpr(v::AbstractVector{<:GenericAffExpr}, ::Any) = v
 _to_affexpr(v::AbstractVector{<:Number}, m::JuMP.AbstractModel) = _to_affexpr.(v, m)
 _to_affexpr(v::AbstractVector{<:AbstractVariableRef}, m::JuMP.AbstractModel) = _to_affexpr.(v, m)
 
+_to_affexpr(v::SparseAxisArray{<:AbstractVariableRef,1, Tuple{Int64}}, m::JuMP.AbstractModel) = OrderedDict(first(i) => _to_affexpr(v[i], m) for i in eachindex(v))
 
 # return true if the GenericAffExpr is equivalent to a variable:
 #  * no constant

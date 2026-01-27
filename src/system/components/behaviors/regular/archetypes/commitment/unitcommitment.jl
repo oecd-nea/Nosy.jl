@@ -16,6 +16,8 @@ struct UnitCommitment <: AbstractUnitCommitmentData
     startupratio::Float64
     shutdownratio::Float64
     integer::Bool
+    startupmask::Union{Nothing,Vector{Bool}} # can't convert to Stepwise yet
+    shutdownmask::Union{Nothing,Vector{Vector{Bool}}} # can't convert to Stepwise yet
 end
 
 """
@@ -29,8 +31,9 @@ Optional parameters:
   * startupratio: flow ratio at the end of the startup phase (default=minratio)
   * shutdownratio: flow ratio at the beginning of the shutdown phase (default=minratio)
   * integer: whether the unit commitment must follow an integer constraint (default=false).
+  * shutdownmask: Vector of Boolean Vector, disallowing shutdown at certain hours for certain shutdown types.
 """
-function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false)
+function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false, startupmask::Union{Nothing,Vector{Bool}}=nothing, shutdownmask::Union{Nothing,Vector{Vector{Bool}}}=nothing)
     @argcheck 0 <= minratio <= 1. "minratio must be between 0 and 1."
     @argcheck startup >= 0 && shutdown >= 0 && uptime >= 0 "All durations must be superior or equal to zero"
     if downtime isa Number
@@ -44,7 +47,19 @@ function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shut
     end
     @argcheck minratio <= startupratio <= 1. "startupratio must be between minratio and 1"
     @argcheck minratio <= shutdownratio <= 1. "shutdownratio must be between minratio and 1"
-    UnitCommitment(pname, minratio, Float64(startup), Float64(shutdown), Float64(uptime), Float64.(downtime), Float64(startupratio), Float64(shutdownratio), integer)
+
+    # not enough elements here to check the stepwise / hourly length -> must be done at behavior constructor
+    if !isnothing(startupmask)
+        @argcheck eltype(startupmask) == Bool
+    end
+    if !isnothing(shutdownmask)
+        @argcheck length(shutdownmask) == length(downtime) "downtime and shutdownmask must have same length"
+        for v in shutdownmask
+            @argcheck eltype(v) == Bool "element of mask must be boolean"
+        end
+    end
+
+    UnitCommitment(pname, minratio, Float64(startup), Float64(shutdown), Float64(uptime), Float64.(downtime), Float64(startupratio), Float64(shutdownratio), integer, startupmask, shutdownmask)
 end
 
 # unitcommitment will branch into fleet commitment or single unit commitment depending on whether unitsize is defined @ capacity associated with port pname

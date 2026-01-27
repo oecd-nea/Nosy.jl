@@ -2,6 +2,7 @@
 using LinearAlgebra: dot # scalar product
 using ArgCheck
 using JuMP: GenericAffExpr, VariableRef
+using OrderedCollections: OrderedDict
 
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
@@ -81,6 +82,20 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
             return Stepwise(Hourly(_data, m))
         end
     end
+end
+
+"""
+    Stepwise(d::OrderedDict{Int64,T}, m::TimeMesh) where T
+Build a Stepwise form an OrderedDict. Used as an intermediate step for SparseAxisArray.
+"""
+function Stepwise(d::OrderedDict{Int64,T}, m::TimeMesh) where T
+    s = differentzerovector(T, nsteps(m))
+    for i in eachstep(m)
+        if haskey(d,i)
+            s[i] = d[i]
+        end
+    end
+    return Stepwise(s, m)
 end
 
 mesh(s::Stepwise) = s.mesh

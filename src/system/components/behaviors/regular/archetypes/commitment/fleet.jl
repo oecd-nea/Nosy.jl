@@ -35,14 +35,8 @@ end
 function FleetUnitCommitmentBehavior(c::Component{T}, b::UnitCommitment, cap::AbstractCapacityBehavior) where T
     s = sim(c)
     
+
     umax = _nbunitsmax(cap) # max number of units
-    
-    if b.minratio == 1.
-        vmax = 0. # remove ambiguity when minratio == 1 and umax == Inf
-    else
-        vmax = Float64(umax * _unitsize(cap) * (1 - b.minratio))  # max variable output
-    end
-    
     # check inconsistency between capacity and number of units
     # not only such cases are inconsistency,
     # but they tend to be difficult to optimize
@@ -52,36 +46,64 @@ function FleetUnitCommitmentBehavior(c::Component{T}, b::UnitCommitment, cap::Ab
 
     # uc variables
     # all are expressed in nb of units except variable
-    # NB startup xor shutdown can in theory not be integer even if b.integer
-    # however solver performance test showed that it's better to set all as b.integer
-    startup = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_su")
-    shutdown = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_sd")
-    state = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_uc")
 
-    # shutdown selector variable
-    if length(b.downtime) == 1
-        
-        #if there is only one way to shutdown
-        shutdownselector = [shutdown]
 
+    # generate stepwise vector from startup mask
+    if isnothing(b.startupmask)
+        stm = Stepwise(fill(true, nsteps(sim(c).mesh)), s.mesh)
     else
-        
-        # if there are multiple ways to shutdown
-
-        # set shutdown to not integer (already taken into account by selectors)
-        for e in shutdown
-            v = first(e.terms)[1]
-            is_integer(v) && unset_integer(v)
-        end
-
-        # generate variables for shutdown selector
-        shutdownselector = Vector{Stepwise{T}}(undef,length(b.downtime))
-        for i in eachindex(b.downtime)
-            shutdownselector[i] = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_sds" * string(i))
-        end
-
+        stm = Stepwise(b.startupmask, s.mesh)
     end
-        
+
+    # generate variables for startup
+    startup = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_su", mask=stm)
+
+
+    # generate stepwise vectors from shutdown mask
+    if isnothing(b.shutdownmask)
+        sdm = [Stepwise(fill(true, nsteps(sim(c).mesh)), s.mesh) for _ in eachindex(b.downtime)]
+    else
+        sdm = Vector{Stepwise{Bool}}(undef,0)
+        for v in b.shutdownmask
+            push!(sdm, Stepwise(v, s.mesh))
+        end
+    end
+    
+    # generate variables for shutdown selector
+    shutdownselector = Vector{Stepwise{T}}(undef,length(b.downtime))
+    for i in eachindex(b.downtime)
+        shutdownselector[i] = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_sds" * string(i), mask=sdm[i]) # integer shutdown
+    end
+    shutdown = sum(shutdownselector)
+
+
+    # state variable
+    # we apply a state propagation algorithm
+    # if startup mask and shutdown mask are false often enough, we can simplify state by extending previous state
+
+    # sum of shifted masks
+    eventmask = .!iszero.(stm + shift(sum(sdm), -1))
+    
+    if !any(eventmask)
+        eventmask[1] = true # we at least need one UC state variable (always on / always off)
+    end
+    state = Stepwise(s, ub=umax, integer=b.integer, basename=name(c) * "_uc", mask=eventmask)
+
+    # look for first true mask index
+    # we will loop starting here
+    nz = findfirst(eventmask)
+    for i in (nz+1):(nz+nsteps(s.mesh)-1) # we can loop on a stepwise, no bounds problem
+        if iszero(state[i])
+            state[i] = state[i-1] # reference to previous state
+        end
+    end
+
+    if b.minratio == 1.
+        vmax = 0. # remove ambiguity when minratio == 1 and umax == Inf
+    else
+        vmax = Float64(umax * _unitsize(cap) * (1 - b.minratio))  # max variable output
+    end
+
     # if there is no variable part for the output, we don't generate a variable for it
     if iszero(vmax)
         variable = Stepwise(zeros(exptype(s), nsteps(s)), s.mesh) # warning: all elements link to same GenericAffExpr. This is on purpose, to reduce allocation.

@@ -66,6 +66,20 @@ Some notes and observations:
     @test_throws ArgumentError UnitCommitment("input", 0.5, shutdownratio=-0.5) # shutdown ratio cannot be lower than minratio
     @test_throws ArgumentError UnitCommitment("input", 0.5, shutdownratio=1.25) # shutdown ratio cannot be superior to 1
     @test_throws ArgumentError UnitCommitment("input", 0.5, shutdownratio=0.25) # shutdown ratio cannot be lower than minratio
+    @test_throws ArgumentError UnitCommitment("input", 0.5, downtime=1.0, shutdownmask=[fill(true, 10), fill(true, 10)]) # downtime length 1 needs shutdownmask length 1
+    @test_throws ArgumentError UnitCommitment("input", 0.5, downtime=[1.0, 2.0], shutdownmask=[fill(true, 10)]) # downtime length 2 needs shutdownmask length 2
+
+    let
+        cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, startupmask=fill(true, 9))
+        @test_throws ArgumentError makecomp([cap, uc]) # can't catch this error earlier because time mesh unknown at UC level
+    end
+
+    let
+        cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, shutdownmask=[fill(true, 9)])
+        @test_throws ArgumentError makecomp([cap, uc]) # can't catch this error earlier because time mesh unknown at UC level
+    end
 
 
     let   
@@ -519,7 +533,7 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [10., 10., 5., 0., 0., 0., 0., 2.5, 5., 7.5]))
-        @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 0., 0., 0., 0., 2., 2., 2.])
+        @test all(isapprox.(_up(_m.behaviors[2]), [2., 2., 2., 0., 0., 0., 0., 2., 2., 2.]))
     end
 
     #=
@@ -576,13 +590,13 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, sum(collect(0.1:0.1:1) .* _balance(m, :input, energy, collapse=false)))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 5., 5., 5., 5., 5., 0.]))
-        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 1., 1., 1., 1., 1., 0.])
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 0., 5., 5., 5., 5., 5.]))
+        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
     end
    
     #=
@@ -696,5 +710,51 @@ Some notes and observations:
             @test all(isapprox.(_balance(_m, :output, energy, collapse=false),[0.0, 0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]))
             @test all(_up(_m.behaviors[2]) .==  [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
         end
+    end
+
+    # masking: startup blocked until step 4, switch should occur as soon as allowed
+    let
+        cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        mask = [false, false, false, true, true, true, true, true, true, true]
+        uc = UnitCommitment("input", 1., startup=0., shutdown=0., uptime=0., downtime=0., integer=true,
+            startupmask=mask, shutdownmask=[mask]
+        )
+
+        m = makecomp([cap, uc])
+
+        # initial state: off
+        @constraint(sim(m).model, m.behaviors[2].state[1] == 0.)
+
+        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        JuMP.set_silent(sim(m).model)
+        JuMP.optimize!(sim(m).model)
+        _m = _extract(m)
+
+        @test all(_m.behaviors[2].startup[1:3] .== 0.)
+        @test _m.behaviors[2].startup[4] == 2.
+        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 10., 10., 10., 10., 10., 10., 10.])
+    end
+
+    # masking: shutdown blocked until step 4, switch should occur as soon as allowed
+    let
+        cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        mask = [false, false, false, true, true, true, true, true, true, true]
+        uc = UnitCommitment("input", 1., startup=0., shutdown=0., uptime=0., downtime=0., integer=true,
+            shutdownmask=[mask]
+        )
+
+        m = makecomp([cap, uc])
+
+        # initial state: on
+        @constraint(sim(m).model, m.behaviors[2].state[1] == 2.)
+
+        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
+        JuMP.set_silent(sim(m).model)
+        JuMP.optimize!(sim(m).model)
+        _m = _extract(m)
+
+        @test all(_m.behaviors[2].shutdown[1:3] .== 0.)
+        @test _m.behaviors[2].shutdown[4] == 2.
+        @test all(_balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 10., 0., 0., 0., 0., 0., 0.])
     end
 end

@@ -15,8 +15,9 @@ arguments:
   * binary: variable is binary
   * integer: variable is integer
   * basename: variable base name (before numbering)
+  * mask: vector of booleans, variables are only created when true
 """
-function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=false, basename::String="")
+function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=false, basename::String="", mask::Union{Nothing,AbstractVector{Bool}}=nothing)
 
     @argcheck (!binary || !integer) "Variable cannot be both binary and integer"
 
@@ -24,11 +25,22 @@ function Stepwise(s::Sim; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=fal
     _checkcompatible(lb, s)
     _checkcompatible(ub, s)
 
-    v = @variable(lowermodel(s), [1:nsteps(s)], binary=binary, integer=integer, base_name=basename*s.suffix)
+    if isnothing(mask)
+        v = @variable(lowermodel(s), [i=1:nsteps(s)], binary=binary, integer=integer, base_name=basename*s.suffix)
+    else
+        @argcheck length(mask) == nsteps(s.mesh) "mask is not compatible with mesh"
+        v = @variable(lowermodel(s), [i=1:nsteps(s); mask[i]], binary=binary, integer=integer, base_name=basename*s.suffix)
+    end
+
     sl = Stepwise(lb, s.mesh)
-    su = Stepwise(ub, s.mesh)   
-    _set_bound_if_not_inf!.(sl, v, set_lower_bound)
-    _set_bound_if_not_inf!.(su, v, set_upper_bound)
+    su = Stepwise(ub, s.mesh)
+
+    # cannot broadcase on a sparse axis array
+    for i in eachindex(v) # index of a sparse axis array - it's actually a tuple, we only need the first (and only) itemi[1]
+        _set_bound_if_not_inf!(sl[first(i)], v[i], set_lower_bound)
+        _set_bound_if_not_inf!(su[first(i)], v[i], set_upper_bound)
+    end
+
     sw = Stepwise(_to_affexpr(v, s.model), s.mesh)
 
     return sw
