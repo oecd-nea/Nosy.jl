@@ -15,6 +15,7 @@ import JuMP
 using ArgCheck: ArgumentError
 import HiGHS
 using DataFrames
+using Primes: nextprime
 
 """
 Testing unit commitment constraints is difficult.
@@ -28,6 +29,11 @@ Some notes and observations:
 @testset "Fleet unit commitment" begin
 
     tsim() = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(1//2, 10)))
+
+    function weighted_balance_sum(c::Component, dir, carrier)
+        b = _balance(c, dir, carrier, collapse=false)
+        return sum(b[i] * sqrt(nextprime(1, interval=i))  for i in eachindex(b)) # Q-linearly independent weights to remove equivalent solutions, using square root of primes
+    end
 
     function makecomp(vbehavior=[])
         s = tsim()    
@@ -154,7 +160,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 0.)
         # max should be reached in at step 2 and steps 4:10
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -187,7 +193,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
         # maximum can't be reached: no time because of startup / shutdown time
         # output should always stay at 0
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -220,7 +226,7 @@ Some notes and observations:
         @constraint(sim(m).model, m.behaviors[2].shutdown[3] == 1.)
         # @constraint(sim(m).model, m.behaviors[2].startup[7] == 1.)
         
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -252,7 +258,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 0.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 10.)
 
-        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -284,7 +290,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -316,7 +322,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -348,7 +354,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -402,7 +408,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -433,7 +439,7 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -465,7 +471,7 @@ Some notes and observations:
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -496,7 +502,7 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 10.)
 
-        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -527,7 +533,7 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 10.)
 
-        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -558,7 +564,7 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -590,27 +596,27 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, sum(collect(0.1:0.1:1) .* _balance(m, :input, energy, collapse=false)))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 0., 5., 5., 5., 5., 5.]))
-        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0., 5., 5., 5., 5., 5., 0.]))
+        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 0., 1., 1., 1., 1., 1., 0.])
     end
    
     #=
     t	uc	st	sd	v	up	b
     1	0.0	0.0	0.0	0.0	0.0	0.0
     2	0.0	0.0	0.0	0.0	0.0	0.0
-    3	0.0	0.0	0.0	0.0	1.0	0.625
-    4	0.0	0.0	0.0	0.0	1.0	1.25
-    5	0.0	0.0	0.0	0.0	1.0	1.875
-    6	1.0	1.0	0.0	0.0	1.0	5.0
-    7	1.0	0.0	0.0	0.0	1.0	5.0
-    8	1.0	0.0	0.0	0.0	1.0	5.0
-    9	1.0	0.0	1.0	0.0	1.0	5.0
-    10	0.0	0.0	0.0	0.0	0.0	0.0
+    3   0.0 0.0 0.0 0.0 0.0 0.0
+    4	0.0	0.0	0.0	0.0	1.0	0.625
+    5	0.0	0.0	0.0	0.0	1.0	1.25
+    6	0.0	0.0	0.0	0.0	1.0	1.875
+    7	1.0	1.0	0.0	2.5	1.0	5.0
+    8	1.0	0.0	0.0	2.5	1.0	5.0
+    9	1.0	0.0	0.0	2.5	1.0	5.0
+    10	1.0	0.0	1.0	2.5	1.0	5.0
     =#
     let   
         cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
@@ -622,13 +628,13 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5., 0.], atol=1E-8)) # had to be patched due to numeric error after updating HiGHS
-        @test all(isapprox.(_up(_m.behaviors[2]), [0., 0., 1., 1., 1., 1., 1., 1., 1., 0.], atol=1E-8))  # had to be patched due to numeric error after updating HiGHS
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5.], atol=1E-8)) # had to be patched due to numeric error after updating HiGHS
+        @test all(isapprox.(_up(_m.behaviors[2]), [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.], atol=1E-8))  # had to be patched due to numeric error after updating HiGHS
     end
 
     #=
@@ -654,7 +660,7 @@ Some notes and observations:
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -685,7 +691,7 @@ Some notes and observations:
 
             @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[6] == 0.)
 
-            set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+            set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
             JuMP.set_silent(sim(m).model)
             JuMP.optimize!(sim(m).model)
             _m = _extract(m)
@@ -702,7 +708,7 @@ Some notes and observations:
 
             @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
 
-            set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+            set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
             JuMP.set_silent(sim(m).model)
             JuMP.optimize!(sim(m).model)
             _m = _extract(m)
@@ -725,7 +731,7 @@ Some notes and observations:
         # initial state: off
         @constraint(sim(m).model, m.behaviors[2].state[1] == 0.)
 
-        set_objective(sim(m).model, MAX_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
@@ -748,7 +754,7 @@ Some notes and observations:
         # initial state: on
         @constraint(sim(m).model, m.behaviors[2].state[1] == 2.)
 
-        set_objective(sim(m).model, MIN_SENSE, _balance(m, :input, energy))
+        set_objective(sim(m).model, MIN_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
