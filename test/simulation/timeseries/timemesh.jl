@@ -1,5 +1,6 @@
 using Nosy: TimeMesh
 using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep
+using Test
 
 @testset "Time series mesh" begin
 

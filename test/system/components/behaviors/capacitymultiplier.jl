@@ -1,16 +1,18 @@
 using Nosy: mass, energy
-using Nosy: Sim, TimeMesh, sim, nvariables, nconstraints
-using Nosy: build, buildbehavior
+using Nosy: Sim, TimeMesh, sim
+using Nosy: buildbehavior
 using Nosy: CapacityMultiplier, CapacityMultiplierBehavior
-using Nosy: FixedCapacity
-using Nosy: BasicConverter, ProfileSource, Demand
+using Nosy: FixedCapacity, VariableCapacity
+using Nosy: BasicConverter, ProfileSource
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component
+using Nosy: balance, _balance
+using JuMP: AffExpr
 import JuMP
 using ArgCheck: ArgumentError
 
 using HiGHS: Optimizer
+using Test
 
 @testset "CapacityMultiplier" begin
 

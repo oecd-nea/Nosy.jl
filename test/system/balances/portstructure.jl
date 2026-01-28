@@ -3,11 +3,12 @@ using Nosy: mass, energy, co2
 using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port, PortRef
-using Nosy: PortStructure, addinput!, addoutput!, addlevel!
+using Nosy: PortStructure, addinput!, addoutput!
 using Nosy: _input, _output, _level
 using Nosy: _balance
 
 using JuMP: Model, AffExpr
+using Test
 
 @testset "Port structure balance" begin
 
@@ -139,4 +140,3 @@ using JuMP: Model, AffExpr
 
 
 end
-

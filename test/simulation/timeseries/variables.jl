@@ -1,8 +1,8 @@
 using Nosy: TimeMesh, Stepwise, Sim
-using Nosy: nhours, nsteps
+using Nosy: nsteps
 
-using JuMP: Model, @variable, GenericAffExpr, set_lower_bound, set_upper_bound
-using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound, is_binary, is_integer
+using JuMP: Model, GenericAffExpr, lower_bound, upper_bound, has_upper_bound, is_binary, is_integer
+using Test
 
 
 @testset "Stepwise variables" begin

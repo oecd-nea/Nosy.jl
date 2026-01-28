@@ -1,12 +1,13 @@
-using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
+using Nosy: MassCarrier
 using Nosy: Sim, TimeMesh, sim
 using Nosy: _getport, _hasinput, _hasoutput
+using Nosy: carrier, hasport
 using Nosy: build
-using Nosy: BasicSink, BasicSinkModel
+using Nosy: BasicSink
 using Nosy: nvariables, nconstraints
 
 using JuMP: Model
+using Test
 
 @testset "BasicSink" begin
 

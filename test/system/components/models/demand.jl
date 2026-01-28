@@ -1,12 +1,14 @@
-using Nosy: MassCarrier, EnergyCarrier
+using Nosy: MassCarrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Stepwise
 using Nosy: _getport, _hasinput, _hasoutput
+using Nosy: carrier, hasport
 using Nosy: build
-using Nosy: Demand, DemandModel
+using Nosy: Demand
 
 using JuMP: Model, AffExpr
+using Test
 
 @testset "Demand" begin
 

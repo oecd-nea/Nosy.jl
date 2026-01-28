@@ -1,16 +1,14 @@
-using Nosy: mass, energy
+using Nosy: energy
 using Nosy: Sim, TimeMesh, sim
-using Nosy: eachstep, weight
-using Nosy: build
+using Nosy: eachstep
 using Nosy: BasicConverter
 using Nosy: FixedCapacity, UnitCommitment
 using Nosy: StartupCost, StartupCostBehavior
 using Nosy: startupcost, _startupcost
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
-using Nosy: Component, balance
+using Nosy: Component
 using JuMP: Model, AffExpr
-using ArgCheck: ArgumentError
+using Test
 
 @testset "StartupCost" begin
 

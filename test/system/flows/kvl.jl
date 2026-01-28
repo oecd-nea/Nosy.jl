@@ -5,11 +5,14 @@ using Nosy: VariableCost, FixedCapacity
 using Nosy: energy
 using Nosy: Sim, TimeMesh
 using Nosy: Component, Node, Snapshot, connect!
-using Nosy: extract, optimize!, cost
+using Nosy: optimize!, cost
 using Nosy: _transmissionbalance, balance
+import Nosy
 
 using JuMP: set_silent, is_solved_and_feasible
+import JuMP
 using HiGHS
+using Test
 
 @testset "KVL" begin
     # single AC line without cycles: verify basic power flow works when no KVL constraint applies

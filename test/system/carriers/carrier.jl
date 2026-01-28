@@ -1,9 +1,9 @@
 using Nosy: MassCarrier, EnergyCarrier, CO2Carrier, PowerCarrier
-using Nosy: carrierstyle
 using Nosy: defaultmodifier, mass, energy, co2
 using Nosy: Sim, TimeMesh, sim
-using Nosy: eachhour, eachstep
+using Nosy: eachstep
 using JuMP: Model
+using Test
 
 @testset "Carriers" begin
 

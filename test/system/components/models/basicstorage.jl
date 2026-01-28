@@ -1,9 +1,9 @@
-using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy, co2
-using Nosy: Sim, TimeMesh
-using Nosy: portstructure, getport, PortRef
+using Nosy: MassCarrier
+using Nosy: mass, co2
+using Nosy: Sim, TimeMesh, sim
+using Nosy: PortRef
 using Nosy: _input, _output, _level
-using Nosy: BasicStorage, BasicStorageModel
+using Nosy: BasicStorage
 using Nosy: FixedCapacity
 using Nosy: Component
 using Nosy: nvariables, nconstraints
@@ -11,9 +11,10 @@ using Nosy: _extract
 using Nosy: _balance
 
 import JuMP
-import JuMP: Model, @constraint, set_objective, set_silent, MAX_SENSE, MIN_SENSE
+import JuMP: Model, @constraint, set_objective, MAX_SENSE, MIN_SENSE
 using ArgCheck: ArgumentError
 import HiGHS
+using Test
 
 @testset "BasicStorage" begin
 

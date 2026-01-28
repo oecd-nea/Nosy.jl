@@ -1,9 +1,14 @@
 # Unit tests for Duration behavior 
 using Test
-using JuMP: MAX_SENSE, set_silent
+using JuMP: Model, MAX_SENSE, set_silent
+import JuMP
 using Nosy: Duration, buildbehavior, DurationBehavior, _capacitypname, _hours
 using Nosy: _balance, balance
 using Nosy: PortRef
+using Nosy: Sim, TimeMesh, sim
+using Nosy: EnergyCarrier, BasicStorage, Component
+using Nosy: FixedCapacity, VariableCapacity, CapacityMultiplier
+using Nosy: energy
 using HiGHS
 
 @testset "Duration" begin

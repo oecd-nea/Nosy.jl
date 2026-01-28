@@ -1,13 +1,12 @@
 using Nosy: mass
 using Nosy: Sim, TimeMesh
-using Nosy: build, buildbehavior
-using Nosy: VariableCapacity, VariableCapacityBehavior, _capacity
+using Nosy: VariableCapacity, VariableCapacityBehavior
 using Nosy: BasicConverter, BasicConverterModel
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component, model, sim
 using Nosy: behaviors, uniquebehavior, hasbehavior
 using JuMP: Model, GenericAffExpr
+using Test
 
 @testset "Component" begin
 

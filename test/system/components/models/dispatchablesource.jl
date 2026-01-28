@@ -1,11 +1,13 @@
-using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
+using Nosy: MassCarrier
+using Nosy: energy
 using Nosy: Sim, TimeMesh, sim
 using Nosy: _getport, _hasinput, _hasoutput, hasport
+using Nosy: carrier
 using Nosy: build
-using Nosy: DispatchableSource, DispatchableSourceModel
+using Nosy: DispatchableSource
 
 using JuMP: Model
+using Test
 
 @testset "DispatchableSource" begin
 

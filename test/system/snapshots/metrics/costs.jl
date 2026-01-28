@@ -1,13 +1,13 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: VariableCapacity, FixedCapacity, UnitCommitment
+using Nosy: FixedCapacity, UnitCommitment
 using Nosy: BasicConverter
 using Nosy: VariableCost, FixedCost, NoLoadCost, StartupCost
 using Nosy: fixedcost, variablecost, noloadcost, startupcost, cost
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!, getcomponent, balance, getport
-using JuMP: Model, GenericAffExpr
-using ArgCheck: ArgumentError
+using JuMP: Model, GenericAffExpr, AffExpr
+using Test
 
 @testset "Snapshot costs" begin
 

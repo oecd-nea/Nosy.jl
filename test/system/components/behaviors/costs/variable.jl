@@ -1,15 +1,13 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: build
 using Nosy: BasicConverter
-using Nosy: LinkedJointFlow
 using Nosy: VariableCost, VariableCostBehavior
 using Nosy: variablecost, _variablecost
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component, balance
-using JuMP: Model, GenericAffExpr
+using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
+using Test
 
 @testset "VariableCost" begin
 

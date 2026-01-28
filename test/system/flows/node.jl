@@ -1,14 +1,15 @@
-using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: MassCarrier
 using Nosy: mass, energy, co2
 using Nosy: Stepwise
 using Nosy: Sim, TimeMesh
 using Nosy: Port
-using Nosy: PortStructure, addinput!, addoutput!, addlevel!
+using Nosy: PortStructure, addinput!, addoutput!
 using Nosy: Node
 using Nosy: DualPrice
 using Nosy: _flow, flow
 
-using JuMP: Model, GenericAffExpr
+using JuMP: Model, AffExpr
+using Test
 
 @testset "Node flow" begin
 

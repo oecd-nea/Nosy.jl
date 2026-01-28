@@ -6,6 +6,7 @@ using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!
 using Nosy: finalize!, is_finalized
 using JuMP: Model
+using Test
 
 @testset "Snapshot finalization" begin
 

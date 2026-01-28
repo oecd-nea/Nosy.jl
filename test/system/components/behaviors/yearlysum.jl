@@ -1,15 +1,16 @@
 using Nosy: mass, energy
-using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim
+using Nosy: Sim, TimeMesh, sim
 using Nosy: FixedCapacity
 using Nosy: YearlySum
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component
 using Nosy: balance, _extract
-using JuMP: Model, AffExpr, set_objective, MIN_SENSE, MAX_SENSE
+using JuMP: Model, set_objective, MIN_SENSE, MAX_SENSE
 import JuMP
 using ArgCheck: ArgumentError
 import HiGHS
+using Test
 
 @testset "YearlySum" begin
 

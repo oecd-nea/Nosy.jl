@@ -2,15 +2,16 @@ using Nosy: energy
 using Nosy: Sim, TimeMesh, Model
 using Nosy: DispatchableSource, Demand
 using Nosy: EnergyCarrier
-using Nosy: VariableCapacity, FixedCost
+using Nosy: VariableCapacity, FixedCost, VariableCost
 using Nosy: Component, Node, Snapshot, connect!, optimize!
-using Nosy: cost, capacity
-using Nosy: extract, _extract
-using Nosy: dualprice
+using Nosy: cost
+using Nosy: _extract
+using Nosy: dualprice, Stepwise
 
-using JuMP: set_silent, objective_value, value
+using JuMP: set_silent
 using HiGHS: Optimizer
 using ArgCheck: ArgumentError
+using Test
 
 @testset "Dual price" begin
 

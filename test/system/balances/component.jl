@@ -3,9 +3,10 @@ using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: BasicConverter, LinkedJointFlow
 using Nosy: Component
-using Nosy: _balance
+using Nosy: PortRef, balance, _balance
 
 using JuMP: Model, AffExpr
+using Test
 
 @testset "Component balance" begin
 

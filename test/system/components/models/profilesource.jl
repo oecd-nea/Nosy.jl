@@ -1,12 +1,12 @@
-using Nosy: MassCarrier, EnergyCarrier, carrier
-using Nosy: mass, energy
+using Nosy: MassCarrier, carrier
 using Nosy: Sim, TimeMesh, sim
 using Nosy: Stepwise
 using Nosy: _getport, _hasinput, _hasoutput, hasport
 using Nosy: build
-using Nosy: ProfileSource, ProfileSourceModel, _profile
+using Nosy: ProfileSource, _profile
 
-using JuMP: Model, AffExpr
+using JuMP: Model
+using Test
 
 @testset "ProfileSource" begin
 

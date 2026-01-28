@@ -1,12 +1,11 @@
-using Nosy: mass
 using Nosy: Sim, TimeMesh, nvariables, nconstraints
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component, Node, connect!, apply_constraints!
-using Nosy: Snapshot, components, nodes, connect!
+using Nosy: Snapshot
 
-using JuMP: Model, GenericAffExpr
+using JuMP: Model
+using Test
 
 @testset "Node constraints" begin
 

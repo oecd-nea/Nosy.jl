@@ -1,15 +1,14 @@
-using Nosy: MassCarrier, EnergyCarrier
+using Nosy: MassCarrier
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: portstructure, getport
-using Nosy: _input, _output, _level
-using Nosy: LazyStorage, LazyStorageModel
+using Nosy: _input, _output, _level, PortRef
+using Nosy: LazyStorage
 using Nosy: FreeJointFlow
 using Nosy: Component
 using Nosy: nvariables, nconstraints
 
 using JuMP: Model
-using ArgCheck: ArgumentError
+using Test
 
 @testset "LazyStorage" begin
 

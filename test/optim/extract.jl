@@ -1,14 +1,17 @@
 using Nosy: energy
 using Nosy: Sim, TimeMesh, Model
+using Nosy: Stepwise
 using Nosy: DispatchableSource, Demand
 using Nosy: EnergyCarrier
 using Nosy: VariableCapacity, FixedCost
 using Nosy: Component, Node, Snapshot, connect!, optimize!
 using Nosy: cost, capacity, balance
 using Nosy: extract, _extract
+import Nosy
 
-using JuMP: set_silent, objective_value, value
+using JuMP: set_silent, objective_value, AffExpr
 using HiGHS: Optimizer
+using Test
 
 @testset "Snapshot extraction" begin
 

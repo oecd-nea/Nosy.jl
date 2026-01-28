@@ -1,6 +1,7 @@
 using Nosy: TimeMesh, Hourly, Stepwise
 using Nosy: nhours, nsteps, eachhour, eachstep, shift
 using JuMP: AffExpr
+using Test
 
 @testset "Time series" begin
 

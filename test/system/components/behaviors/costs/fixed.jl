@@ -1,15 +1,15 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: build
 using Nosy: VariableCapacity, FixedCapacity
+using Nosy: FixedCapacityBehavior, _capacity
 using Nosy: BasicConverter
 using Nosy: FixedCost, FixedCostBehavior
 using Nosy: fixedcost, _fixedcost
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component
 using JuMP: Model, AffExpr
 using ArgCheck: ArgumentError
+using Test
 
 @testset "FixedCost" begin
 

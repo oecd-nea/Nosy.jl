@@ -1,5 +1,5 @@
 using Nosy: mass
-using Nosy: Sim, TimeMesh, nvariables, nconstraints
+using Nosy: Sim, TimeMesh
 using Nosy: LinkedJointFlow
 using Nosy: DispatchableSource, BasicConverter, Demand
 using Nosy: MassCarrier, EnergyCarrier
@@ -7,7 +7,8 @@ using Nosy: mass, energy
 using Nosy: Component, Node, portstructure, isfullyconnected, is_used, getport
 using Nosy: hasinput, hasoutput, _input, _output
 using Nosy: Snapshot, components, nodes, connect!, assertconnected
-using JuMP: Model, GenericAffExpr
+using JuMP: Model
+using Test
 
 @testset "Connect" begin
 

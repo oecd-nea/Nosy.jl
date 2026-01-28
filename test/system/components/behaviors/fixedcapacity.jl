@@ -1,13 +1,14 @@
-using Nosy: mass
-using Nosy: Sim, TimeMesh, nvariables, nconstraints
-using Nosy: build, buildbehavior
-using Nosy: FixedCapacity, FixedCapacityBehavior, _capacity, _nbunits, nbunits
-using Nosy: BasicConverter, ProfileSource, Demand
+using Nosy: mass, energy, co2
+using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim
+using Nosy: buildbehavior
+using Nosy: FixedCapacity, _capacity, _nbunits, nbunits
+using Nosy: BasicConverter, ProfileSource
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
+using Nosy: LinkedJointFlow
 using Nosy: Component
-using JuMP: Model, lower_bound, upper_bound, has_lower_bound, has_upper_bound
+using JuMP: Model
 using ArgCheck: ArgumentError
+using Test
 
 @testset "FixedCapacity" begin
 

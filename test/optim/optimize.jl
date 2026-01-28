@@ -4,10 +4,11 @@ using Nosy: DispatchableSource, Demand
 using Nosy: EnergyCarrier
 using Nosy: VariableCapacity, FixedCost
 using Nosy: Component, Node, Snapshot, connect!, optimize!
-using Nosy: cost
+using Nosy: cost, capacity
 
 using JuMP: set_silent, is_solved_and_feasible, objective_value, value
 using HiGHS: Optimizer
+using Test
 
 @testset "Snapshot optimization" begin
 

@@ -1,10 +1,10 @@
 using Nosy: Stepwise
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy, carrier
-using Nosy: Sim, TimeMesh
+using Nosy: Sim, TimeMesh, sim
 using Nosy: _getport, _hasinput, _hasoutput, hasport
 using Nosy: build
-using Nosy: BasicConverter, BasicConverterModel
+using Nosy: BasicConverter
 
 using JuMP: Model
 using ArgCheck: ArgumentError

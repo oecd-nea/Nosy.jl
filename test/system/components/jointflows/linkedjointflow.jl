@@ -1,12 +1,13 @@
-using Nosy: mass
-using Nosy: Sim, TimeMesh, nvariables, nconstraints
-using Nosy: LinkedJointFlow, LinkedJointFlowModel
+using Nosy: mass, energy
+using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim
+using Nosy: LinkedJointFlow
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component
 using Nosy: portstructure, _input, _output, PortRef, hasinput, hasoutput, getport
+using Nosy: balance
 using JuMP: Model, GenericAffExpr
+using Test
 
 @testset "LinkedJointFlow" begin
 

@@ -1,20 +1,17 @@
-using Nosy: mass, energy
-using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim, nsteps
-using Nosy: VariableCapacity, FixedCapacity, capacity
+using Nosy: energy
+using Nosy: Sim, TimeMesh, sim
+using Nosy: FixedCapacity
 using Nosy: UnitCommitment
 using Nosy: Ramping
-using Nosy: getbehaviors
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
-using Nosy: ProfileSource
 using Nosy: Component
 using Nosy: _balance, _extract
-using Nosy: nvariables, nconstraints
-using JuMP: Model, AffExpr, set_objective, MIN_SENSE, MAX_SENSE, @constraint
+using JuMP: Model, set_objective, MIN_SENSE, MAX_SENSE, @constraint
 import JuMP
 using ArgCheck: ArgumentError
 import HiGHS
+using Test
 
 @testset "Ramping" begin
 

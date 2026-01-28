@@ -1,11 +1,10 @@
-using Nosy: mass
 using Nosy: Sim, TimeMesh
 using Nosy: DispatchableSource
-using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
+using Nosy: MassCarrier
 using Nosy: Component, Node
 using Nosy: Snapshot
-using Nosy: tag!, getcomponents
+using Nosy: tag!, getcomponents, getnodes, connect!
+using JuMP: Model
 using Test
 
 @testset "Tags" begin

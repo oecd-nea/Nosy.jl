@@ -1,21 +1,19 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim, nsteps, nhours
-using Nosy: VariableCapacity, FixedCapacity, capacity
+using Nosy: VariableCapacity, FixedCapacity
 using Nosy: UnitCommitment, FleetUnitCommitmentBehavior, _up
 using Nosy: getbehaviors
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
-using Nosy: ProfileSource
 using Nosy: Component
 using Nosy: _balance, _extract
-using Nosy: nvariables, nconstraints
-using JuMP: Model, AffExpr, lower_bound, upper_bound, has_lower_bound, has_upper_bound, set_objective, MIN_SENSE, MAX_SENSE, @constraint
+using JuMP: Model, set_objective, MIN_SENSE, MAX_SENSE, @constraint
 import JuMP
 using ArgCheck: ArgumentError
 import HiGHS
 using DataFrames
 using Primes: nextprime
+using Test
 
 """
 Testing unit commitment constraints is difficult.

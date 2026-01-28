@@ -1,14 +1,12 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: build
 using Nosy: VariableCapacity, FixedCapacity
 using Nosy: BasicConverter
 using Nosy: capacity
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component, Node, Snapshot, connect!
 using JuMP: Model, GenericAffExpr
-using ArgCheck: ArgumentError
+using Test
 
 @testset "Snapshot capacity" begin
 

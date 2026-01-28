@@ -1,16 +1,16 @@
 using Nosy: mass
 using Nosy: Sim, TimeMesh
 using Nosy: VariableCapacity, FixedCapacity
-using Nosy: FixedCapacity, FixedCapacityBehavior
 using Nosy: FixedCost, VariableCost
-using Nosy: BasicConverter, BasicConverterModel
+using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
-using Nosy: Component, model, sim
+using Nosy: Component, getport
 using Nosy: capacity
 using Nosy: fixedcost, variablecost, cost
-using JuMP: Model, GenericAffExpr
-using JuMP: has_lower_bound, has_upper_bound, lower_bound, upper_bound
+using JuMP: Model, GenericAffExpr, AffExpr
+using JuMP: has_upper_bound, lower_bound
+using Test
 
 @testset "Component metrics" begin
 

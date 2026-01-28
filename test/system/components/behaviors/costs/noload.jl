@@ -1,17 +1,15 @@
-using Nosy: mass, energy
-using Nosy: Sim, TimeMesh
+using Nosy: energy
+using Nosy: Sim, TimeMesh, sim
 using Nosy: eachstep, weight
-using Nosy: build
 using Nosy: BasicConverter
-using Nosy: LinkedJointFlow
 using Nosy: NoLoadCost, NoLoadCostBehavior
+using Nosy: UnitCommitment, FixedCapacity
 using Nosy: _up
 using Nosy: noloadcost, _noloadcost
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
-using Nosy: Component, balance
+using Nosy: Component
 using JuMP: Model, AffExpr
-using ArgCheck: ArgumentError
+using Test
 
 @testset "NoLoadCost" begin
 

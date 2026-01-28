@@ -1,16 +1,19 @@
-using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
+using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: PortRef
-using Nosy: BasicConverter, LinkedJointFlow
+using Nosy: BasicConverter
 using Nosy: Component
 using Nosy: _flow, flow
 using Nosy: _extract
+using Nosy: balance
 
-using JuMP: Model, GenericAffExpr, @constraint, set_objective, set_silent
+using JuMP: Model, @constraint, set_objective, set_silent
+import JuMP
 import JuMP: MAX_SENSE
 
 using HiGHS
+using Test
 
 @testset "Component flow" begin
 

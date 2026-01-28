@@ -1,12 +1,13 @@
-using Nosy: mass
-using Nosy: Sim, TimeMesh, nvariables, nconstraints, eachstep
-using Nosy: FreeJointFlow, FreeJointFlowModel
+using Nosy: energy
+using Nosy: Sim, TimeMesh, nvariables, nconstraints, eachstep, sim
+using Nosy: FreeJointFlow
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
-using Nosy: mass, energy
 using Nosy: Component
-using Nosy: portstructure, _input, _output
+using Nosy: portstructure, _input, PortRef
+using Nosy: flow, getport, hasinput, hasoutput
 using JuMP: Model, GenericAffExpr
+using Test
 
 @testset "FreeJointFlow" begin
 
