@@ -241,14 +241,6 @@ function _apply_constraint_uc_variable_flow!(c::Component, b::AbstractFleetUnitC
     end
 end
 
-# the constraint below is redundant
-# it may guide the solver, but is not mandatory (already included in the uc flow constraint)
-# function _apply_constraints_uc_units!(c::Component, b::FleetUnitCommitmentBehavior)
-#     @constraint(lowermodel(sim(c)), 
-#         b.state.data .<= nbunits(c)
-#     )
-# end
-
 function _apply_constraints_uc_minuptime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = sim(c).mesh
 
@@ -320,17 +312,11 @@ function _apply_constraint_su_sd(c::Component, b::AbstractFleetUnitCommitmentBeh
         b.shutdown.data .<= b.state.data
     )
 
-    # cannot startup more units than not committed
-    # this constraint is not mandatory, but it might guide the solver
-    # @constraint(lowermodel(sim(c)),
-    #     b.startup.data .<= nbunits(c) .- shift(b.state, -1)
-    # )
 end
 
 function _apply_constraints!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     _apply_constraint_uc_switch!(c, b)
     _apply_constraint_uc_variable_flow!(c, b)
-    # _apply_constraints_uc_units!(c, b)
     _apply_constraints_uc_minuptime!(c, b)
     _apply_constraints_uc_mindowntime!(c, b)
     _apply_constraints_uc_shutdownselector!(c,b)

@@ -57,7 +57,6 @@ function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where 
     else
         @warn "No capacity for component " * name(c) * "(port name: " * pname * ")"
         return Inf64
-        #throw(AssertionError("Component $(c.name) has no capacity associated with port $pname"))
     end
     local m = 1.
     if multiplier

@@ -43,30 +43,17 @@ end
 
 # return a VariableCapacityBehavior
 function buildbehavior(c::Component, b::VariableCapacity)    
-    # _check_model_compat_cap(model(c), b)
     @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     if b.unitsize isa Number
         # variable is number of units
         v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units" * "_" * sim(c).suffix, lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
-        # v2 = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
-        # 
-        # @constraint(sim(c).model, v .== v2)
-
         # warmstart
         if !isnothing(b.warmstart)
             set_start_value(v, b.warmstart / b.unitsize)
         end
         
         e = v * b.unitsize
-
-        # alternative implementation
-        # can be used if solver complains objective range is too large
-        # NB may make crossover phase of Barrier algorithm much longer
-        # v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap", lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
-        # e = _to_affexpr(v, sim(c).model)
-        # u = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units", lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
-        # @constraint(lowermodel(sim(c)), v == u * b.unitsize)
     else
         # variable is capacity
         v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap" * "_" * sim(c).suffix, lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
@@ -98,27 +85,6 @@ Apply capacity constraints.
 # can target model port or joint flow port
 function __apply_constraint_general!(c::Component, b::VariableCapacityBehavior)
     @constraint(lowermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
-
-    # set upper bounds for the flow
-    # makes the problem more tight (possibly better for MIP) but makes the matrix less sparse (possibly worse for LP)
-    # _cap = _capacity(b)
-    # if (length(_cap.terms) == 1) && iszero(_cap.constant)
-    #     if has_upper_bound(first(_cap.terms)[1])
-    #         _ubcap = upper_bound(first(_cap.terms)[1]) * first(_cap.terms)[2]
-    #         vf = b.data.modifier(getport(c, b.data.pname)).data
-    #         # check first element, assume others are built the same way
-    #         if iszero(first(vf).constant) && length(first(vf).terms) == 1
-    #             for e in vf
-    #                 var = first(e.terms)[1]
-    #                 ub = _ubcap / first(e.terms)[2]
-    #                 if (!has_upper_bound(var)) || upper_bound(var) > ub 
-    #                     set_upper_bound(var, ub, force=true)
-    #                 end
-    #             end
-    #         end
-    #     end
-    # end
-
 end
 
 # special case - ProfileSourceModel: behavior is enforced throuhg _addbehavior!

@@ -63,7 +63,6 @@ function __aggregate_balance(b::AbstractDict{PortRef,Stepwise{T}}, s::Sim) where
         # not returning the "differentzerovector" because it is not supposed to every be assigned a non-zero value for any step
         # a simple zero vector is returned instead
         return Stepwise(zeros(T, nsteps(s)), s.mesh)
-        # return Stepwise(differentzerovector(T, nsteps(s)), s.mesh) # too many allocations
     else
         return sum(values(b))
     end

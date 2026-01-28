@@ -11,12 +11,9 @@ const VAL = Union{Float64,GenericAffExpr}
 
 
 _to_affexpr(e::GenericAffExpr, ::Any) = e
-#_to_affexpr(n::Number) = GenericAffExpr(n)
 
 _to_affexpr(n::Number, ::JuMP.Model) = convert(AffExpr, n)
 _to_affexpr(n::Number, ::BilevelJuMP.BilevelModel) = convert(BilevelAffExpr, n)
-
-#_to_affexpr(r::VariableRef) = __to_affexpr(r, r.model)
 _to_affexpr(r::VariableRef, ::JuMP.Model) = convert(AffExpr, r)
 _to_affexpr(r::BilevelVariableRef, ::BilevelJuMP.BilevelModel) = convert(BilevelAffExpr, r)
 

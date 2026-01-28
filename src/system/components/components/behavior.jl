@@ -25,7 +25,6 @@ end
 
 # return true if the component c has a behavior of type B, false otherwise
 function hasbehavior(c::Component, B)
-    # return any(b isa B for b in behaviors(c)) # allocates
     for b in behaviors(c)
         if b isa B
             return true
