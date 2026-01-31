@@ -47,7 +47,7 @@ function buildbehavior(c::Component, b::VariableCapacity)
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
     if b.unitsize isa Number
         # variable is number of units
-        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units" * "_" * sim(c).suffix, lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
+        v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units" * "_" * sim(c).suffix, lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
         # warmstart
         if !isnothing(b.warmstart)
             set_start_value(v, b.warmstart / b.unitsize)
@@ -56,7 +56,7 @@ function buildbehavior(c::Component, b::VariableCapacity)
         e = v * b.unitsize
     else
         # variable is capacity
-        v = @variable(lowermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap" * "_" * sim(c).suffix, lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
+        v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "cap" * "_" * sim(c).suffix, lower_bound=b.lb, upper_bound=b.ub, integer=false, binary=false)
         
         # warmstart
         if !isnothing(b.warmstart)
@@ -73,7 +73,7 @@ end
 # in particular: before call to VariableCost, which requires the flow being defined
 function _addbehavior!(c::Component, b::VariableCapacityBehavior, m::ProfileSourceModel)
     @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
-    c.model.s.output[PortRef(name(c), "output")].series .= convert.(AffExpr, _capacity(b) * _profile(m))
+    c.model.s.output[PortRef(name(c), "output")].series .= _to_affexpr.(_capacity(b) * _profile(m), sim(c).model)
     push!(c.behaviors, b)
 end
 

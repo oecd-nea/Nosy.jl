@@ -5,6 +5,7 @@ Extraction of solution.
 using JuMP: GenericAffExpr, value, is_solved_and_feasible
 using JuMP: termination_status, OPTIMIZE_NOT_CALLED
 
+
 """
     extract(s::Snapshot)
 Return a Snapshot populated with values corresponding to the optimized system.

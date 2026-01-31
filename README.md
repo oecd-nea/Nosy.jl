@@ -925,6 +925,181 @@ julia> table(result, capacity)
 
 The optimization objective passed to `optimize!` is very flexible. Its only constraint is that it must be a function `f(s::Snapshot{T})::Union{<:Number,T}`, in other words it must be a function of the snapshot returning a JuMP expression (or a number, in which case the objective is constant).
 
+### Example 3.3: Single-level vs bilevel capacity expansion & dispatch
+
+In this example, we apply two different optimization strategies to the same snapshot.
+
+#### Part A: Single-level benchmark
+
+This is the single-level version of the same system. The objective is total system cost (all investment + dispatch costs).
+
+```julia
+using Nosy
+using HiGHS
+
+s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
+
+elec_carrier = EnergyCarrier("power", s)
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi/2) .+ 120 .* sin.(season_angle .- pi/2)
+
+# Snapshot initialization
+snapshot = Snapshot(s)
+
+# One electricity node
+grid = Node("grid", elec_carrier, rule=:curtailed)
+
+# Component: Electricity consumption
+consumption = Component(
+    "consumption",
+    Demand(elec_carrier, load_profile),
+)
+connect!(snapshot, consumption, grid)
+
+# Component: user-owned dispatchable (variable capacity)
+user_dispatchable = Component(
+    "user_dispatchable",
+    DispatchableSource(elec_carrier),
+    [
+        VariableCapacity("output", energy),
+        FixedCost(:capex, "output", energy, 50000),
+        VariableCost(:dispatch, "output", energy, 45.),
+    ]
+)
+connect!(snapshot, user_dispatchable, grid)
+
+# Component: user-owned intermittent source (variable capacity)
+cf_c = [x < 1e-6 ? 0.0 : x for x in [max(0, cos((h%24 - 12)/12*pi) * (0.7 + 0.3*sin(2*pi*(h/24)/365))) for h in 1:8760]]
+user_intermittent = Component(
+    "user_intermittent",
+    ProfileSource(elec_carrier, cf_c),
+    [
+        VariableCapacity("output", energy),
+        FixedCost(:capex, "output", energy, 55000),
+    ]
+)
+connect!(snapshot, user_intermittent, grid)
+
+# Component: other-owned dispatchable (fixed capacity)
+other_dispatchable = Component(
+    "other_dispatchable",
+    DispatchableSource(elec_carrier),
+    [
+        FixedCapacity("output", energy, 3500),
+        VariableCost(:dispatch, "output", energy, 25.),
+    ]
+)
+connect!(snapshot, other_dispatchable, grid)
+
+# Single-level optimization
+optimize!(snapshot, cost)
+result_s = extract(snapshot)
+```
+
+#### Part B: Bilevel
+
+Nosy supports bilevel optimization via [BilevelJuMP](https://github.com/joaquimg/BilevelJuMP.jl). In this example, the lower level (system operator) minimizes dispatch costs for all producers. The upper level (owner of the user assets) minimizes its own investment cost plus its own dispatch cost. We use Gurobi as this example is more computationally intensive.
+
+```julia
+using Nosy
+using Gurobi
+using BilevelJuMP: BilevelModel, IndicatorMode
+
+s = Sim(
+    BilevelModel(
+        Gurobi.Optimizer,
+        mode = IndicatorMode(),
+    );
+    mesh=TimeMesh()
+)
+
+elec_carrier = EnergyCarrier("power", s)
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi/2) .+ 120 .* sin.(season_angle .- pi/2)
+
+# Snapshot initialization
+snapshot = Snapshot(s)
+
+# One electricity node
+grid = Node("grid", elec_carrier, rule=:curtailed)
+
+# Component: Electricity consumption
+consumption = Component(
+    "consumption",
+    Demand(elec_carrier, load_profile),
+)
+connect!(snapshot, consumption, grid)
+
+# Component: user-owned dispatchable (variable capacity)
+user_dispatchable = Component(
+    "user_dispatchable",
+    DispatchableSource(elec_carrier),
+    [
+        VariableCapacity("output", energy),
+        FixedCost(:capex, "output", energy, 50000),
+        VariableCost(:dispatch, "output", energy, 45.),
+    ]
+)
+connect!(snapshot, user_dispatchable, grid)
+
+# Component: user-owned intermittent source (variable capacity)
+cf_c = [x < 1e-6 ? 0.0 : x for x in [max(0, cos((h%24 - 12)/12*pi) * (0.7 + 0.3*sin(2*pi*(h/24)/365))) for h in 1:8760]]
+user_intermittent = Component(
+    "user_intermittent",
+    ProfileSource(elec_carrier, cf_c),
+    [
+        VariableCapacity("output", energy),
+        FixedCost(:capex, "output", energy, 55000),
+    ]
+)
+connect!(snapshot, user_intermittent, grid)
+
+# Component: other-owned dispatchable (fixed capacity)
+other_dispatchable = Component(
+    "other_dispatchable",
+    DispatchableSource(elec_carrier),
+    [
+        FixedCapacity("output", energy, 3500),
+        VariableCost(:dispatch, "output", energy, 25.),
+    ]
+)
+connect!(snapshot, other_dispatchable, grid)
+
+# Lower-level: minimize operating cost for all (dispatch)
+# Upper-level: minimize user investment cost + user dispatch cost
+optimize!(snapshot, variablecost, s -> cost(s, "user_dispatchable") + cost(s, "user_intermittent"))
+result_b = extract(snapshot)
+```
+
+We can compare `result_s` and `result_b` to analyze the impact of bilevel optimization.
+
+```julia
+julia> cost(result_s)
+6.7586359241188e8
+
+julia> cost(result_s, "user_dispatchable") + cost(result_s, "user_intermittent")
+1.5692279376419443e8
+
+julia> cost(result_b)
+7.016918356637425e8
+
+julia> cost(result_b, "user_dispatchable") + cost(result_b, "user_intermittent")
+1.1410273417100954e8
+```
+
+The results above show the following:
+  * single-level optimization has a lower total cost
+  * bilevel optimization has a higher total cost, however the user-related cost is lower.
+
+
 ## Authors
   * Guillaume KRIVTCHIK, OECD Nuclear Energy Agency (main author)
   * Yuri BAE, Korea Institute of Energy Technology
