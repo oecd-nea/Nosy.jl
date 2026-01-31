@@ -117,8 +117,8 @@ function addlosses!(n::Node)
 end
 
 # throw exception when carriers are different between node and port
-addinput!(::Node{T,C1}, ::String, ::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))")) # not used ??
-addoutput!(::Node{T,C1}, ::String, ::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("$name is not compatible with node $(Nosy.name(n))")) # not used ??
+addinput!(n::Node{T,C1}, pname::String, cname::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("Port $pname of $cname is not compatible with node $(Nosy.name(n))")) # not used ??
+addoutput!(n::Node{T,C1}, pname::String, cname::String, ::Port{T,C2}) where {T,C1,C2} =  throw(AssertionError("Port $pname pf $cname is not compatible with node $(Nosy.name(n))")) # not used ??
 
 # cannot add level to node
 addlevel!(::Node{T,C1}, ::String, ::String, ::Port{T,C2}) where {T,C1, C2} = throw(ArgumentError("Ports cannot have a level"))

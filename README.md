@@ -100,7 +100,7 @@ Every flow is associated with a carrier type (e.g. `MassCarrier`, `EnergyCarrier
   * `energy` (default modifier for `EnergyCarrier`)
   * `mass` (default modifier for `MassCarrier`, `CO2Carrier`)
   * `co2`
-  * `defaultmodifier` (used as a fallback if modifier is not specified)
+  * `defaultmodifier` (used as a fallback if modifier is not specified, not exported)
 
 
 ## Examples
