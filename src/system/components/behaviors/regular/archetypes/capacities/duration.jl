@@ -73,7 +73,7 @@ function _apply_constraints!(c::Component, b::DurationBehavior)
             _bmod(getport(c, _levelpname(b))).data .<= _bcap * _hours(b)
         )        
     elseif _capacitypname(b) == _outputpname(b)
-         cap = getcapacitybehavior(c, _inputpname(b))
+         cap = getcapacitybehavior(c, _outputpname(b))
         _bmod = _modifier(cap)
         _bcap = _capacity(cap)
 
