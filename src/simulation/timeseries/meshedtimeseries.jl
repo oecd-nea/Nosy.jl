@@ -1,5 +1,4 @@
 
-using LinearAlgebra: dot # scalar product
 using ArgCheck
 using JuMP: GenericAffExpr, VariableRef
 using OrderedCollections: OrderedDict
@@ -197,7 +196,7 @@ function Base.sum(s::Stepwise{<:GenericAffExpr})
     return _res
 end
 
-Base.sum(s::Stepwise{Float64}) = dot(s.data, s.mesh.weight)
+Base.sum(s::Stepwise{Float64}) = sum(s.data .* s.mesh.weight)
 
 # The sum of a Hourly is a regular sum
 # We use addto! just to make it faster, it doesn't change the result
