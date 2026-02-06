@@ -33,6 +33,10 @@ function buildbehavior(c::Component, b::Duration)
     !hasport(c, b.outputpname) && throw(AssertionError("Component $(name(c)) does not have port named $(b.outputpname)"))
     !hasport(c, b.levelpname) && throw(AssertionError("Component $(name(c)) does not have port named $(b.levelpname)"))
 
+    for _ in getbehaviors(c, AbstractComposedCapacityBehavior)
+        throw(AssertionError("Duration behavior is not compatible with composed capacities."))
+    end
+
     # check which port is already linked to a capacity
     _hasicap = hascapacitybehavior(c, b.inputpname)
     _hasocap = hascapacitybehavior(c, b.outputpname)

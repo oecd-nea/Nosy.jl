@@ -7,7 +7,7 @@ using Nosy: _balance, balance
 using Nosy: PortRef
 using Nosy: Sim, TimeMesh, sim
 using Nosy: EnergyCarrier, BasicStorage, Component
-using Nosy: FixedCapacity, VariableCapacity, CapacityMultiplier
+using Nosy: FixedCapacity, VariableCapacity, VariableComposedCapacity, CapacityMultiplier
 using Nosy: energy
 using HiGHS
 
@@ -108,6 +108,15 @@ using HiGHS
     # Error (if there isn't capacity)
     let
         vb = [Duration(6)]
+        @test_throws AssertionError makecomp(vb)
+    end
+
+    # Duration is not compatible with composed capacities
+    let
+        vb = [
+            VariableComposedCapacity(["input", "output"], energy, lb=0., ub=200.),
+            Duration(6),
+        ]
         @test_throws AssertionError makecomp(vb)
     end
 

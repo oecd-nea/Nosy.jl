@@ -1,6 +1,6 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
-using Nosy: VariableCapacity, FixedCapacity
+using Nosy: VariableCapacity, VariableComposedCapacity, FixedCapacity, FixedComposedCapacity
 using Nosy: FixedCapacityBehavior, _capacity
 using Nosy: BasicConverter
 using Nosy: FixedCost, FixedCostBehavior
@@ -63,6 +63,35 @@ using Test
         # component metric
         @test fixedcost(m) == _capacity(m.behaviors[1]) * 10.
 
+    end
+
+    let m = makeconv([FixedCost(:overnight, "input", energy, 10.), VariableComposedCapacity(["input", "output"], energy, lb=5., ub=20.)])
+
+        # adapting to composed capacity
+        @test _fixedcost(m.behaviors[2]) == _capacity(m.behaviors[1]) * 10.
+
+        # component metric
+        @test fixedcost(m) == _capacity(m.behaviors[1]) * 10.
+
+    end
+
+    let m = makeconv([FixedCost(:overnight, "input", energy, 10.), FixedComposedCapacity(["input", "output"], energy, 5.)])
+
+        # adapting to fixed composed capacity
+        @test _fixedcost(m.behaviors[2]) == 5. * 10.
+
+        # component metric
+        @test fixedcost(m) == AffExpr(5. * 10.)
+
+    end
+
+    let
+        vb = [
+            FixedCost(:overnight, "input", energy, 10.),
+            VariableCapacity("input", energy, lb=0., ub=20.),
+            VariableComposedCapacity(["input", "output"], energy, lb=0., ub=20.),
+        ]
+        @test_throws AssertionError makeconv(vb)
     end
 
     # no fixed cost

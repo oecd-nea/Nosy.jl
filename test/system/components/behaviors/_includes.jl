@@ -1,4 +1,6 @@
 include("variablecapacity.jl")
+include("variablecomposedcapacity.jl")
+include("fixedcomposedcapacity.jl")
 include("fixedcapacity.jl")
 include("capacitymultiplier.jl")
 include("fleetcommitment.jl")

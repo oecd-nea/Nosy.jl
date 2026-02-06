@@ -26,7 +26,7 @@ function FixedCapacity(pname::String, modifier::Function, val::Number; unitsize:
     FixedCapacity(pname, modifier, Float64(val), unitsize)
 end
 
-struct FixedCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
+struct FixedCapacityBehavior{T<:VAL,M<:Function} <: AbstractSingleCapacityBehavior{T}
     data::FixedCapacity{M}
     val::T
 end

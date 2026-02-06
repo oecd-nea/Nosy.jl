@@ -11,7 +11,7 @@ export DispatchableSource, ProfileSource
 export BasicStorage, LazyStorage
 export ACLine, DCLine
 
-export VariableCapacity, FixedCapacity
+export VariableCapacity, VariableComposedCapacity, FixedCapacity, FixedComposedCapacity
 export CapacityMultiplier, Duration
 export UnitCommitment
 export Ramping

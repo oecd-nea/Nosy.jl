@@ -64,9 +64,18 @@ struct FleetUnitCommitmentFromIniBehavior{T<:VAL,M<:Function} <: AbstractFleetUn
 end
 
 function buildbehavior(c::Component, b::FleetUnitCommitmentFromIni)
+    for compcap in getbehaviors(c, AbstractComposedCapacityBehavior)
+        if b.pname in _portname(compcap)
+            throw(AssertionError("FleetUnitCommitmentFromIni is not compatible with composed capacities. Port $(b.pname) is covered by a composed capacity behavior."))
+        end
+    end
+
     cap = getcapacitybehavior(c, b.pname)
     if isnothing(cap) 
         throw(AssertionError("Component does not have capacity behavior associated with port $(b.pname)"))
+    end
+    if !(cap isa AbstractSingleCapacityBehavior)
+        throw(AssertionError("FleetUnitCommitmentFromIni requires a single-port capacity behavior on port $(b.pname)."))
     end
     if isnothing(_unitsize(cap))
         throw(AssertionError("Not implemented"))

@@ -36,7 +36,7 @@ function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::
     VariableCapacity(pname, modifier, Float64(lb), Float64(ub), w, unitsize, integer)
 end
 
-struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractCapacityBehavior{T}
+struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractSingleCapacityBehavior{T}
     data::VariableCapacity{M}
     val::T
 end

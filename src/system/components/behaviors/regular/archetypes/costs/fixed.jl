@@ -24,10 +24,45 @@ struct FixedCostBehavior{T<:VAL,M<:Function} <: AbstractCostBehavior{T}
     val::T # (ov cost of behavior data) x (capacity of component)
 end
 
+# return true if capacity behavior `cap` targets port name `pname`
+function _matchescostcapacityport(cap::AbstractCapacityBehavior, pname::String)
+    _pname = _portname(cap)
+    if _pname isa String
+        return _pname == pname
+    elseif _pname isa AbstractVector{<:AbstractString}
+        return pname in _pname
+    else
+        return false
+    end
+end
+
+# return the unique capacity behavior targeted by fixed cost
+function _fixedcostcapacitybehavior(c::Component, b::FixedCost)
+    matches = AbstractCapacityBehavior[]
+    for cap in getbehaviors(c, AbstractCapacityBehavior)
+        if _matchescostcapacityport(cap, b.pname)
+            push!(matches, cap)
+        end
+    end
+    isempty(matches) && throw(AssertionError("No capacity associated with port $(b.pname) was found in component $(name(c))"))
+
+    compatible = AbstractCapacityBehavior[]
+    for cap in matches
+        if _modifier(cap) == b.modifier
+            push!(compatible, cap)
+        end
+    end
+    isempty(compatible) && throw(ArgumentError("Modifiers are not compatible ($(_modifier(first(matches))) / $(b.modifier))"))
+    if length(compatible) > 1
+        throw(AssertionError("Multiple capacities are associated with port $(b.pname) and modifier $(b.modifier). FixedCost is ambiguous."))
+    end
+    return first(compatible)
+end
+
 # must not use the fallback function on model: we need the component to get the capacity behavior
 function buildbehavior(c::Component, b::FixedCost)
     # get the associated capacity behavior
-    cap = getcapacitybehavior(c, b.pname, b.modifier)
+    cap = _fixedcostcapacitybehavior(c, b)
     cost = convert(exptype(sim(c)), _capacity(cap) * b.val)
     return FixedCostBehavior(b, cost)
 end

@@ -7,6 +7,23 @@ Component metrics.
 _capacity(::Nothing, T::DataType) = 0. # type inference fail still less expensive than GenericAffExpr(0.)
 _capacity(c::AbstractCapacityBehavior, ::DataType) = _capacity(c)
 
+function _matchingmultipliers(c::Component{T}, cap::AbstractCapacityBehavior{T}) where T
+    vm = CapacityMultiplierBehavior{T}[]
+    _capport = _portname(cap)
+    for mult in getbehaviors(c, CapacityMultiplierBehavior{T})
+        if _capport isa String
+            if _portname(mult) == _capport
+                push!(vm, mult)
+            end
+        elseif _capport isa AbstractVector{<:AbstractString}
+            if _portname(mult) in _capport
+                push!(vm, mult)
+            end
+        end
+    end
+    return vm
+end
+
 
 """
     capacity(c::Component)
@@ -19,12 +36,11 @@ function capacity(c::Component{T}; multiplier::Bool=false) where T
     isnothing(cap) && return _capacity(cap, T)
     local m = 1.
     if multiplier
-        vm = getbehaviors(c, CapacityMultiplierBehavior{T})
-        for mult in vm
-            if _portname(mult) == _portname(cap)
-                m = _mult(mult)
-                break
-            end
+        vm = _matchingmultipliers(c, cap)
+        if length(vm) > 1
+            throw(AssertionError("Multiple CapacityMultiplier behaviors match the selected capacity behavior of component $(name(c))."))
+        elseif length(vm) == 1
+            m = _mult(first(vm))
         end
     end
     return m * _capacity(cap, T)
