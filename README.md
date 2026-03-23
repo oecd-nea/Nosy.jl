@@ -1,26 +1,25 @@
 # Nosy.jl
 
-Nosy (the *Node Systems* model) is a component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MIP formalism, and analyze the results. It can be used directly, or as a library to develop higher-level models.
+Nosy is a component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MILP formalism, and analyze the results. It can be used directly, or as a library to develop higher-level models.
 
 Nosy is used at the OECD NEA to model energy systems in the frame of System costs studies.
 System cost studies at the NEA include:
   * [Achieving Net Zero Carbon Emissions in Switzerland in 2050](https://www.oecd-nea.org/jcms/pl_74877/achieving-net-zero-carbon-emissions-in-switzerland-in-2050-low-carbon-scenarios-and-their-system-costs?details=true)
-  * System costs study of Sweden (tentative title, to be published)
-  * System costs study of South Korea (tentative title, to be published)
+  * [A Least-cost Capacity Mix to Satisfy Growing Electricity Demand without Carbon Emissions in Sweden](https://www.oecd-nea.org/jcms/pl_116142/a-least-cost-capacity-mix-to-satisfy-growing-electricity-demand-without-carbon-emissions-in-sweden)
 
 License is MIT.
 
 ## Highlights
-- Compose systems from carriers, nodes, and components enriched with reusable behaviors (capacities, costs, ramping, unit commitment, joint flows).
+- Compose systems from carriers, nodes, and components enriched with reusable behaviors (capacities, costs, ramping, unit commitment, joint flows, operational reserves).
 - Model multiple electricity nodes, hydrogen, fuels, commodities with automatic conversions.
-- Work with flexible time discretizations.
+- Work with flexible time discretization.
 - Solve problems through JuMP while staying solver-agnostic (HiGHS, Gurobi etc.).
 - Inspect solutions with built-in metrics: cost breakdowns, capacities, flow balances, prices, and tabular summaries.
 - Tag and query components or nodes to drive scenario dashboards and custom reporting.
 
 ## Requirements
-Nosy requires a LP/MIP solver compatible with [JuMP](https://jump.dev/JuMP.jl/stable/).
-In the examples below we will use [HiGHS](https://highs.dev/) which is open-source and has a [Julia wrapper](https://ergo-code.github.io/HiGHS/dev/interfaces/julia/) compatible with JuMP.
+Nosy requires a LP/MILP solver compatible with [JuMP](https://jump.dev/JuMP.jl/stable/).
+In the examples below we use [HiGHS](https://highs.dev/) which is open-source and has a [Julia wrapper](https://ergo-code.github.io/HiGHS/dev/interfaces/julia/) compatible with JuMP. List of LP/MILP solvers compatible with JuMP can be found [here](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers).
 
 
 ## Available tools
@@ -46,9 +45,12 @@ The philosophy of Nosy is:
   * refine components using as many behaviors and joint flows as required
 
 ### Components, nodes and snapshots
-The `Component`s are the moving parts of the system. Components emit or consume flows, and can have a level. `Component`s are generated ad hoc, from the combination of one model archetype plus any number of behaviors and joint flows defined below. 
-The `Node`s are the passive parts of the system. Nodes are where energy or mass balances are performed. By default, at each hour, the sum of the input flows of a node is equal to the sum of the output flows of a node.
+The `Component`s are the active parts of the system. Components emit and/or consume flows, and can have a level. `Component`s are generated ad hoc, from the combination of one model archetype plus any number of behaviors and joint flows defined below. 
+
+The `Node`s are the passive parts of the system. A `Node` is a point where flows converge, split, are produced or consumed. Nodes are the accounting junctions where energy or mass are tracked. For instance, the "supply is equal to demand" rule is applied at the level of `Node`s. By default, at each hour, the sum of the input flows of a node is equal to the sum of the output flows of a node.
 Nodes and components must be connected together. A component is only connected to nodes, and nodes are only connected to components. 
+
+
 The `Snapshot` is the system in which all components and nodes live, and is generally optimized by Nosy.
 
 
@@ -61,9 +63,10 @@ Nosy has a small list of model archetypes that define the most basic functions o
   * `BasicConverter`: converts an input flow into an output flow (ex: hydrogen turbine with model of hydrogen input flow)
   * `BasicStorage`: converts a flexible input flow into a flexible output flow and a level (ex: battery storage)
   * `LazyStorage`: converts any input flow into any output flow and a level (ex: hydro reservoir)
+  * `ACLine` and `DCLine`: AC and DC power lines, required for the DC-OPF formalism.
 
 ### Behaviors
-Behaviors refine how the component operates, beyond the model archetypes. Behaviors are:
+Behaviors refine how the component operates, beyond the model archetypes. Most common behaviors are:
   * `FixedCapacity`: set the capacity of a model port to a numeric value
   * `VariableCapacity`: set the capacity of a model port to a variable value
   * `CapacityMultiplier`: refines the capacity behaviors by adding time-dependent modification of the capacity
@@ -73,6 +76,8 @@ Behaviors refine how the component operates, beyond the model archetypes. Behavi
   * `ReserveUp`: constrain upward reserve on a port (increased discharge or reduced charging) by headroom, ramping, and storage energy limits
   * `ReserveDown`: constrain downward reserve on a port (reduced discharge or increased charging) by headroom, ramping, and storage energy limits
   * `UnitCommitment`: assign unit commitment characteristics (min ratio, min uptime, min downtime, startup duration, shutdown duration, linear/integer commitment) to the flow of a port
+
+Costs also are modeled as behaviors:
   * `FixedCost`: add a cost related to capacity
   * `VariableCost`: add a cost related to flow
   * `StartupCost`: add a cost related to startup
@@ -85,7 +90,7 @@ Joint flows add additional flows to the component (in addition to the model arch
   * `LinkedJointFlow`: a flow that can be expressed as a function of another flow of the component
 
 ### Metrics
-Metrics are functions that can be applied to a `Snapshot` and return a scalar. The metrics detailed below are available.
+Metrics are functions that can be applied to a `Component` or a `Snapshot` and return a scalar. The metrics detailed below are available.
   * `capacity`
   * `nbunits`
   * `cost`
@@ -104,6 +109,17 @@ Every flow is associated with a carrier type (e.g. `MassCarrier`, `EnergyCarrier
   * `co2`
   * `defaultmodifier` (used as a fallback if modifier is not specified, not exported)
 
+
+### Balances
+Flows going in and out of components and nodes can be evaluated using the following functions:
+  * `balance`: return the flow going in or out of a component or a node, with filters on sense and modifier, as well as options for aggregating flows together and returning time series or yearly sums.
+  * `flow`: return the flow going in or out of a component or a node, with filters on sense and modifier, at a given hour.
+
+### Note on time modeling
+  * Nosy uses a `TimeMesh` letting the user deciding the duration of timesteps. The default `TimeMesh` is 8760 hours. Under the hood, Nosy is able to work with rational fractions of time, however the hourly values are returned to the user.
+  * A `TimeMesh` is expected to represent a full year, whether or not it contains 8760 hours.
+  * For one given `Snapshot`, time is considered as cyclical (the hour after the last hour is the first hour). This design choice was made to improve the fidelity of technical behaviors.
+  * `balance` returns `Hourly` vectors, which is a custom circular array for which `h[n] == h[n+8760]`. Any integer index of a `Hourly` vector can be queried.
 
 ## Examples
 
