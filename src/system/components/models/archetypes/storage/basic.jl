@@ -102,3 +102,10 @@ function _apply_constraints!(c::AbstractComponent, m::BasicStorageModel)
 end
 
 modelname(::BasicStorageModel) = "basic storage"
+
+# helper function to get efficiency from storage models
+function _get_eta_storage(c::AbstractComponent, pname::String, m::BasicStorageModel)
+    @argcheck (hasinput(c, pname) || hasoutput(c, pname)) "Port '$pname' must be an input or output port"
+    hasoutput(c, pname) && return m.data.eff_o
+    return m.data.eff_i
+end

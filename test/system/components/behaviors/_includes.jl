@@ -7,5 +7,6 @@ include("fleetcommitment.jl")
 include("ramping.jl")
 include("yearlysum.jl")
 include("duration.jl")
+include("reserve.jl")
 
 include("costs/_includes.jl")

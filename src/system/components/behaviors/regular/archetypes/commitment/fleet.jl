@@ -326,6 +326,7 @@ end
 
 portname(uc::AbstractFleetUnitCommitmentBehavior) = uc.data.pname
 
+_state(uc::AbstractFleetUnitCommitmentBehavior) = uc.state
 
 behaviorname(::AbstractFleetUnitCommitmentBehavior) = "Fleet unit commitment"
 
@@ -335,4 +336,15 @@ function Base.show(io::IO, b::AbstractFleetUnitCommitmentBehavior)
       io, 
       "Behavior \"$(behaviorname(b))\""
   )
+end
+
+# helper function for other behaviors to get unit commitment behavior
+# returns AbstractUnitCommitmentBehavior if found, nothing otherwise
+function getunitcommitmentbehavior(c::Component, pname::String)
+    for uc in getbehaviors(c, AbstractUnitCommitmentBehavior)
+        if uc.data.pname == pname
+            return uc
+        end
+    end
+    return nothing
 end

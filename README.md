@@ -1,4 +1,4 @@
-﻿# Nosy.jl
+# Nosy.jl
 
 Nosy (the *Node Systems* model) is a component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MIP formalism, and analyze the results. It can be used directly, or as a library to develop higher-level models.
 
@@ -70,6 +70,8 @@ Behaviors refine how the component operates, beyond the model archetypes. Behavi
   * `Duration`: set a relationship between the input, output and level capacity of a component associated with a level
   * `YearlySum`: constrain the sum of the flow of a port to a numeric value
   * `Ramping`: constrain the variation of the flow of a port to be below a numeric value at every timestep (up or down)
+  * `ReserveUp`: constrain upward reserve on a port (increased discharge or reduced charging) by headroom, ramping, and storage energy limits
+  * `ReserveDown`: constrain downward reserve on a port (reduced discharge or increased charging) by headroom, ramping, and storage energy limits
   * `UnitCommitment`: assign unit commitment characteristics (min ratio, min uptime, min downtime, startup duration, shutdown duration, linear/integer commitment) to the flow of a port
   * `FixedCost`: add a cost related to capacity
   * `VariableCost`: add a cost related to flow
@@ -664,6 +666,231 @@ julia> balance(result, "PEM", :output, energy, collapse=true, aggregate=true) # 
 2.919707999999801e6
 ```
 
+### Example 2.4: Operating reserve (up and down) with a minimum requirement
+
+In this example, a gas plant and a nuclear unit both provide upward and downward reserve. Each direction uses its own reserve name (`"reserve_up_15min"` and `"reserve_down_15min"`), with a 0.25 h delivery duration (15 minutes). A minimum reserve at the node (50 MW in each direction) is enforced by adding a constraint with `reserve(snap, node_name, sense, rname)` and JuMP's `@constraint(model(sim(snapshot)), ...)`.
+
+```julia
+using Nosy
+using HiGHS
+import JuMP: @constraint # do not use `using JuMP`; both JuMP and Nosy export `optimize!`
+
+s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
+elec_carrier = EnergyCarrier("power", s)
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi/2) .+ 120 .* sin.(season_angle .- pi/2)
+
+# Snapshot initialization
+snapshot = Snapshot(s)
+
+# One electricity node
+grid = Node("grid", elec_carrier, rule=:curtailed)
+
+# Component: Electricity consumption
+consumption = Component("consumption", Demand(elec_carrier, load_profile))
+connect!(snapshot, consumption, grid)
+
+# Component: gas plant (dispatchable, ramping, reserve up and down, 15 min duration)
+gasplant = Component("gasplant", DispatchableSource(elec_carrier), 
+    [
+    FixedCapacity("output", energy, 2000.0),
+    Ramping("output", :up, 100.0; modifier=energy),
+    Ramping("output", :down, 100.0; modifier=energy),
+    VariableCost(:fuel, "output", energy, 50.0),
+    ReserveUp("reserve_up_15min", "output", :up, 0.25; modifier=energy),
+    ReserveDown("reserve_down_15min", "output", :down, 0.25; modifier=energy),
+])
+connect!(snapshot, gasplant, grid)
+
+# Component: nuclear (dispatchable, ramping, reserve up and down, 15 min duration)
+nuclear = Component("nuclear", DispatchableSource(elec_carrier), 
+    [
+    FixedCapacity("output", energy, 3000.0),
+    Ramping("output", :up, 50.0; modifier=energy),
+    Ramping("output", :down, 50.0; modifier=energy),
+    VariableCost(:dispatch, "output", energy, 10.0),
+    ReserveUp("reserve_up_15min", "output", :up, 0.25; modifier=energy),
+    ReserveDown("reserve_down_15min", "output", :down, 0.25; modifier=energy),
+])
+connect!(snapshot, nuclear, grid)
+
+# Minimum reserve at node "grid": total up / total down >= 50 MW (each uses its own reserve name)
+@constraint(model(sim(snapshot)), reserve(snapshot, "grid", :up, "reserve_up_15min").data .>= 50.0)
+@constraint(model(sim(snapshot)), reserve(snapshot, "grid", :down, "reserve_down_15min").data .>= 50.0)
+
+# Optimization
+optimize!(snapshot, cost)
+result = extract(snapshot)
+```
+
+Reserve can be inspected at three levels (snapshot total, node total, per component). Upward reserve uses `rname` `"reserve_up_15min"` with sense `:up`; downward reserve uses `"reserve_down_15min"` with sense `:down`.
+
+  * `reserve(result, :up, "reserve_up_15min")` / `reserve(result, :down, "reserve_down_15min")` - total over all components
+  * `reserve(result, "grid", :up, "reserve_up_15min")` - total upward reserve at node `"grid"` (and similarly with `:down`, `"reserve_down_15min"`)
+  * `reserve(result, "gasplant", :up, "reserve_up_15min")` (and similarly for `"nuclear"`) - per component
+
+Upward reserve (example):
+
+```julia
+julia> reserve(result, :up, "reserve_up_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 50.0
+ 50.0
+...
+
+julia> reserve(result, "grid", :up, "reserve_up_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 50.0
+ 50.0
+...
+
+julia> reserve(result, "gasplant", :up, "reserve_up_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 0.024
+...
+
+julia> reserve(result, "nuclear", :up, "reserve_up_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 49.97
+...
+```
+
+Downward reserve (same pattern with `:down` and `"reserve_down_15min"`): total and node are 50 MW each step; gas and nuclear split it (often one at 50, the other at 0, depending on the step).
+
+```julia
+julia> reserve(result, :down, "reserve_down_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 50.0
+ 50.0
+...
+
+julia> reserve(result, "gasplant", :down, "reserve_down_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 0.0
+ 50.0
+...
+
+julia> reserve(result, "nuclear", :down, "reserve_down_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 50.0
+ 0.0
+...
+```
+
+### Example 2.5: PV, battery, and upward reserve
+
+In this example, demand, PV, and a battery are on the same curtailed node. The battery adds two `ReserveUp` behaviors `:up` sense on the output port and `:down` sense on the input port (headroom to cut charging), with reserve names `"reserve_up_discharge_15min"` and `"reserve_up_charge_15min"` and 0.25 h duration. A single `@constraint` forces the sum of `reserve(snapshot, "grid", :up, ...)` for those names to be at least 600MW each timestep
+
+```julia
+using Nosy
+using HiGHS
+import JuMP: @constraint # do not use `using JuMP`; both JuMP and Nosy export `optimize!`
+
+s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
+elec_carrier = EnergyCarrier("power", s)
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi/2) .+ 120 .* sin.(season_angle .- pi/2)
+
+# Synthetic data for PV
+cf_pv = [x < 1e-6 ? 0.0 : x for x in [max(0, cos((h%24 - 12)/12*pi) * (0.6 + 0.4*sin(2*pi*(h/24)/365))) for h in 1:8760]]
+
+# Snapshot initialization
+snapshot = Snapshot(s)
+
+# One electricity node
+grid = Node("grid", elec_carrier, rule=:curtailed)
+
+# Component: Electricity consumption
+consumption = Component("consumption", Demand(elec_carrier, load_profile))
+connect!(snapshot, consumption, grid)
+
+# Component: PV
+pv = Component(
+    "PV",
+    ProfileSource(elec_carrier, cf_pv),
+    [
+        VariableCapacity("output", energy),
+        FixedCost(:capex, "output", energy, 50000),
+    ],
+)
+connect!(snapshot, pv, grid)
+
+# Component: battery (fixed capacities, ramping)
+# ReserveUp: output with :up (more discharge), input with :down (less charging)
+battery = Component(
+    "battery",
+    BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy, eff_i=0.85),
+    [
+        FixedCapacity("output", energy, 5000.0),
+        FixedCapacity("input", energy, 5000.0),
+        FixedCapacity("level", energy, 30000.0),
+        Ramping("output", :up, 5000.0; modifier=energy),
+        Ramping("output", :down, 5000.0; modifier=energy),
+        Ramping("input", :up, 5000.0; modifier=energy),
+        Ramping("input", :down, 5000.0; modifier=energy),
+        ReserveUp("reserve_up_discharge_15min", "output", :up, 0.25; modifier=energy),
+        ReserveUp("reserve_up_charge_15min", "input", :down, 0.25; modifier=energy),
+    ],
+)
+connect!(snapshot, battery, grid)
+
+# Minimum combined upward reserve at node "grid" (600 MW per timestep)
+@constraint(
+    model(sim(snapshot)),
+    reserve(snapshot, "grid", :up, "reserve_up_discharge_15min").data .+
+    reserve(snapshot, "grid", :up, "reserve_up_charge_15min").data .>= 600.0,
+)
+
+# Optimization
+optimize!(snapshot, cost)
+result = extract(snapshot)
+```
+
+When the level is high, discharge upward reserve often supplies the 6 MW; when it is low, more shifts to the charge upward reserve. Only the battery provides these reserves here, so totals at the grid match the battery.
+
+```julia
+julia> balance(result, "battery", :level, energy, collapse=false, aggregate=true)
+8760-element Nosy.Hourly{Float64}:
+ 8942.300011154877
+ 7536.744365437882
+ 6030.707710824039
+ 4330.556648912984
+ 2355.886348958197
+ 0.0
+ 0.0
+...
+
+julia> reserve(result, "battery", :up, "reserve_up_discharge_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+ 0.0
+ 0.0
+...
+
+julia> reserve(result, "battery", :up, "reserve_up_charge_15min")
+8760-element Nosy.Stepwise{Float64}:
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 0.0
+ 600.0
+ 600.0
+...
+```
+
 ### Example 3.1: PV and gas, problem infeasibility and conflicts analysis
 
 In this example, we will analyze the infeasibility of a problem. We assume a PV + gas plant production and a consumption. The capacity of the gas plant is variable but has a higher bound that is too low and makes the problem infeasible.
@@ -1098,7 +1325,6 @@ julia> cost(result_b, "user_dispatchable") + cost(result_b, "user_intermittent")
 The results above show the following:
   * single-level optimization has a lower total cost
   * bilevel optimization has a higher total cost, however the user-related cost is lower.
-
 
 ## Authors
   * Guillaume KRIVTCHIK, OECD Nuclear Energy Agency (main author)

@@ -16,6 +16,7 @@ export CapacityMultiplier, Duration
 export UnitCommitment
 export Ramping
 export YearlySum
+export ReserveUp, ReserveDown
 export VariableCost, FixedCost, NoLoadCost, StartupCost
 
 export LinkedJointFlow, FreeJointFlow, FixedJointFlow
@@ -27,6 +28,7 @@ export capacity, nbunits
 export cost, variablecost, fixedcost, noloadcost, startupcost
 export dualprice
 
+export reserve
 export costs, table
 
 export balance, flow

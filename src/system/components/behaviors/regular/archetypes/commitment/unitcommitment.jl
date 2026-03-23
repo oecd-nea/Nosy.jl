@@ -65,6 +65,14 @@ end
 # unitcommitment will branch into fleet commitment or single unit commitment depending on whether unitsize is defined @ capacity associated with port pname
 abstract type AbstractUnitCommitmentBehavior{T} <: AbstractRegularBehavior{T} end
 
+"""
+AbstractUnitCommitmentBehavior interface.
+
+Concrete types of AbstractUnitCommitmentBehavior must implement:
+  * _state(uc::AbstractUnitCommitmentBehavior) -> return the unit commitment state
+"""
+_state(uc::AbstractUnitCommitmentBehavior) = throw(AssertionError("Not Implemented"))
+
 function buildbehavior(c::Component, b::UnitCommitment)
     for compcap in getbehaviors(c, AbstractComposedCapacityBehavior)
         if b.pname in _portname(compcap)

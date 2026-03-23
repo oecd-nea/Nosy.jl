@@ -59,6 +59,12 @@ function _geteff(m::LazyStorageModel, pname::String)
     return m.data.eff[pname]
 end
 
+# helper function to get efficiency from storage models
+function _get_eta_storage(c::AbstractComponent, pname::String, m::LazyStorageModel)
+    @argcheck (hasinput(c, pname) || hasoutput(c, pname)) "Port '$pname' must be an input or output port"
+    return _geteff(m, pname)
+end
+
 # implementation of special case for component / model constraints
 # this constraint is applied after the joint flows built
 function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel) 

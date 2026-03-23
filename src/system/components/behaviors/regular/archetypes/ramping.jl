@@ -130,3 +130,14 @@ function Base.show(io::IO, b::RampingBehavior)
         "Behavior \"$(behaviorname(b))\""
     )
   end
+
+# helper function for other behaviors to query ramping behavior
+# returns RampingBehavior if found, nothing otherwise (currently used by ReserveUp, maybe used by ReserveDown too)
+function getrampingbehavior(c::Component, pname::String, sense::Symbol)
+    for b in getbehaviors(c, RampingBehavior)
+        if b.data.pname == pname && b.data.sense == sense
+            return b
+        end
+    end
+    return nothing
+end
