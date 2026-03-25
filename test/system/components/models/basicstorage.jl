@@ -1,5 +1,5 @@
-using Nosy: MassCarrier
-using Nosy: mass, co2
+using Nosy: EnergyCarrier, MassCarrier
+using Nosy: energy, mass, co2
 using Nosy: Sim, TimeMesh, sim
 using Nosy: PortRef
 using Nosy: _input, _output, _level
@@ -96,4 +96,32 @@ using Test
         @test all(_c.model.s.level[PortRef("sto", "level")].series[1:5] .== [40., 38.75, 36.25, 33.75, 31.25])
 
     end
+
+    # test self-discharge, testing with simplified model (input, output are considered as flat during each timestep)
+    let s = tsim()
+
+        ec = EnergyCarrier("m", s)
+
+        m = BasicStorage(ec, eff_i=1., eff_o=1., self_discharge=0.1, simplified=true) # 10% self-discharge per hour, using simplified model assuming flat input profile
+        icap = FixedCapacity("input", energy, 40.)
+        ocap = FixedCapacity("output", energy, 40.)
+        lcap = FixedCapacity("level", energy, 40.)
+
+        # test on component
+        c = Component("sto", m, [icap, ocap, lcap])
+
+        @constraint(sim(c).model, c.model.s.level[PortRef("sto", "level")].series[1:5] .== [0., 10., 20., 30., 40.]) # constraining level on first steps 
+
+        set_objective(sim(c).model, MIN_SENSE, _balance(c, :input, energy, collapse=true))
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        _c = _extract(c)
+
+        @test all(_c.model.s.level[PortRef("sto", "level")].series[1:5] .== [0., 10., 20., 30., 40.])
+        @test all(_balance(_c, :output, energy, collapse=false)[1:4] .== [0., 0., 0., 0.])       
+        l = exp(-0.1 * 0.5) # ratio of energy loss per half-hour
+        @test all(isapprox.(_balance(_c, :input, energy, collapse=false)[1:4], [(10 - 0 * l)/0.5, (20 - 10 * l)/0.5, (30 - 20 *l)/0.5, (40 - 30 * l)/0.5]))
+        
+    end
+
 end

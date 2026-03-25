@@ -16,16 +16,18 @@ struct BasicStorage{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,
     modifier::M
     eff_i::Float64 # efficiency of input
     eff_o::Float64 # efficiency of output
+    self_discharge::Float64 # between 0 and 1
     simplified::Bool
 
-    function BasicStorage(input::CI, output::CO, level::CL, modifier::M, eff_i::Number, eff_o::Number, simplified::Bool) where {CI,CO,CL,M}
+    function BasicStorage(input::CI, output::CO, level::CL, modifier::M, eff_i::Number, eff_o::Number, self_discharge::Number, simplified::Bool) where {CI,CO,CL,M}
         @argcheck eff_i >= 0. "Efficiency of input must be positive or zero"
         @argcheck eff_o > 0. "Efficiency of output must be strictly positive"
+        @argcheck 0 <= self_discharge <= 1 "Self-discharge must be between 0 and 1"
         @argcheck hasmodifier(input, modifier) "input carrier is not compatible with given modifier"
         @argcheck hasmodifier(output, modifier) "output carrier is not compatible with given modifier"
         @argcheck hasmodifier(level, modifier) "level carrier is not compatible with given modifier"
         @argcheck input.sim == output.sim == level.sim "input, output and level carriers must have the same simulation"
-        return new{CI,CO,CL,M}(input.sim, input, output, level, modifier, Float64(eff_i), Float64(eff_o), simplified)
+        return new{CI,CO,CL,M}(input.sim, input, output, level, modifier, Float64(eff_i), Float64(eff_o), Float64(self_discharge), simplified)
     end
 end
 
@@ -34,8 +36,8 @@ end
 Return a model BasicStorage model associated with carrier `carrier`.
 The model also has the input effiency `input` and output efficiency `output` (inferior to 1 for losses).
 """
-function BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., modifier=_defaultmodifier(carrierstyle(carrier)), simplified::Bool=false)
-    return BasicStorage(carrier, carrier, carrier, modifier, eff_i, eff_o, simplified)
+function BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., modifier=_defaultmodifier(carrierstyle(carrier)), simplified::Bool=false)
+    return BasicStorage(carrier, carrier, carrier, modifier, eff_i, eff_o, self_discharge, simplified)
 end
 
 """
@@ -47,11 +49,12 @@ Return a model BasicStorage model associated with:
   * `modifier`: modifier for all carriers
   * `eff_i`: efficiency of input (inferior to 1 for losses)
   * `eff_o`: efficiency of output (inferior to 1 for losses)
+  * `self_discharge`: hourly rate of self-discharge
 The model also has the input effiency `input` and output efficiency `output`.
 NB storage is periodic: the step after the last step is the first step.
 """
-function BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1., simplified::Bool=false)
-    return BasicStorage(input, output, level, modifier, eff_i, eff_o, simplified)
+function BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., simplified::Bool=false)
+    return BasicStorage(input, output, level, modifier, eff_i, eff_o, self_discharge, simplified)
 end
 
 struct BasicStorageModel{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,M<:Function,T<:VAL} <: AbstractModel{T}
@@ -85,17 +88,20 @@ function _apply_constraints!(c::AbstractComponent, m::BasicStorageModel)
     _out = m.data.modifier(getport(c, "output"))
     _level = m.data.modifier(getport(c, "level"))
     
+    # multiplicator representing 1 - self-discharge, taking timestep duration into account
+    # NB multiplicator does not consider variation of level, it is applied to initial level at each step
+    sdmult = exp.(- m.data.self_discharge .* weight(sim(c).mesh))
+
     # constraint: conservation of modified, efficiency-weighted flows & storage
-    
     if m.data.simplified
         # step flow
         @constraint(lowermodel(sim(c)), 
-            (shift(_level,1) - _level).data .== ((_in * m.data.eff_i - _out / m.data.eff_o) .* weight(sim(c).mesh)).data
+            (shift(_level,1) - _level .* sdmult).data .== ((_in * m.data.eff_i - _out / m.data.eff_o) .* weight(sim(c).mesh)).data
         )
     else
         # we consider flow varies linearly during a timestep
         @constraint(lowermodel(sim(c)), 
-            (shift(_level,1) - _level).data .== (((shift(_in,1) + _in) * m.data.eff_i - (shift(_out,1) + _out) / m.data.eff_o) .* weight(sim(c).mesh) / 2.).data
+            (shift(_level,1) - _level .* sdmult).data .== (((shift(_in,1) + _in) * m.data.eff_i - (shift(_out,1) + _out) / m.data.eff_o) .* weight(sim(c).mesh) / 2.).data
         )
     end
 
