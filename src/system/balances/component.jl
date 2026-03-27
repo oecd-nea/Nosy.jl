@@ -100,3 +100,39 @@ Return zero if the port is not compatible with `modifier`.
 function flow(c::Component, sense::Symbol, modifier::Function, hour::Int)
     return _flow(c, sense, modifier, step(sim(c).mesh, hour))
 end
+
+"""
+    table(c::Component, modifier::Function; collapse::Bool=false)
+Perform a balance at all the ports of the component, following a given modifier.
+If collapse, return an OrderedDict of (portname => yearly balance).
+If collapse is false, return a DataFrame of Hourly time series per port. 
+"""
+function table(c::Component{T}, modifier::Function; collapse::Bool=false) where T
+    b = OrderedDict(
+        :input => balance(c, :input, modifier, aggregate=false, collapse=collapse),
+        :output => balance(c, :output, modifier, aggregate=false, collapse=collapse),
+    )
+    if !collapse
+        b[:level] = balance(c, :level, modifier, aggregate=false, collapse=false)
+    end
+    
+    if collapse
+        res = OrderedDict{String,T}()
+        for (_,v) in b
+            for (k2, v2) in v
+                res[k2] = v2
+            end
+        end
+    else
+        # merging the sub dicts together, all ports have different name by invariance
+        d = OrderedDict{String,Vector{T}}()
+        for (_,v) in b
+            for (k2,v2) in v
+                d[k2] = v2.data
+            end
+        end
+        res = DataFrame(d)
+    end
+
+    return res
+end
