@@ -14,6 +14,7 @@ struct LazyStorage{C<:AbstractCarrier,M<:Function} <: AbstractModelData
     level::C # only level is provided by component, other ports are added as joint flows (free / linked)
     modifier::M # the balance equation will be performed at the component level after appying this modifier
     eff::LittleDict{String,Float64} # dictionary for efficiencies
+    self_discharge::Float64 # hourly ratio, between 0 and 1
     simplified::Bool
 end
 
@@ -23,7 +24,7 @@ Return a model LazyStorage model which has a level of carrier `level`.
 The lazy storage constraint will be applied to the level and the associated joint flows after applying the `modifier` to flows.`. 
 NB storage is periodic: the step after the last step is the first step.
 """
-function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, simplified::Bool=false)
+function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, self_discharge=0., simplified::Bool=false)
     s = sim(level)
 
     if modifier != defaultmodifier
@@ -36,7 +37,7 @@ function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier,
         d = convert(LittleDict{String,Float64}, eff)
     end
 
-    return LazyStorage(s, level, modifier, d, simplified)
+    return LazyStorage(s, level, modifier, d, self_discharge, simplified)
 end
 
 struct LazyStorageModel{C<:AbstractCarrier,M<:Function,T<:VAL} <: AbstractModel{T}
@@ -82,14 +83,18 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     _out = sum(_geteff(m, k) * v for (k,v) in _balance(c, :output, mod, collapse=false, aggregate=false))
     _lev = mod(first(values(_level(m.s).d)))
 
+    # multiplicator representing 1 - self-discharge, taking timestep duration into account
+    # NB multiplicator does not consider variation of level, it is applied to initial level at each step
+    sdmult = exp.(- m.data.self_discharge .* weight(sim(c).mesh))
+
     # constraint: conservation of modified, efficiency-weighted flows & storage
     if m.data.simplified
         # basic step function for flow... reduce number of terms in equation
-        @constraint(lowermodel(sim(m)), 1. ./ weight(sim(m).mesh) .* (shift(_lev,1) -  _lev).data .== (_in - _out).data)
+        @constraint(lowermodel(sim(m)), 1. ./ weight(sim(m).mesh) .* (shift(_lev,1) -  _lev .* sdmult).data .== (_in - _out).data)
     else
         # we consider flow varies linearly during a timestep
         # constraint is multiplied by 2 both sides to reduce number of operations on GenericAffExpr
-        @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_lev,1) -  _lev).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
+        @constraint(lowermodel(sim(m)), 2. ./ weight(sim(m).mesh) .* (shift(_lev,1) -  _lev .* sdmult).data .== (shift(_in,1) + _in - shift(_out, 1) - _out).data)
     end
 
 end
