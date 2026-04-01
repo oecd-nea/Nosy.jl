@@ -100,7 +100,7 @@ using Test
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
         d = BasicConverter(mc, ec)
-        j = LinkedJointFlow("jflow", mc, :output, "input", x -> x)
+        j = LinkedJointFlow("jflow", mc, :output, "input", x -> x[1])
         c = Component("comp", d, [j, vbehavior...])
         return c
     end

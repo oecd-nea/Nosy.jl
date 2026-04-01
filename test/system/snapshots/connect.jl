@@ -119,7 +119,7 @@ using Test
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
 
-        j = LinkedJointFlow("j", ec, :output, "input", x->x)
+        j = LinkedJointFlow("j", ec, :output, "input", x->x[1])
         c = makecomp(mc, mc, [j]) # added joint flow (output)
         n = Node("n", ec) # node only compatible with joint flow
         sn = Snapshot(s)
@@ -151,7 +151,7 @@ using Test
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
 
-        j = LinkedJointFlow("j", ec, :output, "input", x->x)
+        j = LinkedJointFlow("j", ec, :output, "input", x->x[1])
         c = makecomp(mc, mc, [j]) # added joint flow (output)
         n = Node("n", mc) # node not compatible with joint flow
         sn = Snapshot(s)
@@ -201,7 +201,7 @@ using Test
             mc = MassCarrier("m", s)
             mn = Node("mass", mc)
     
-            disp = Component("disp", DispatchableSource(ec), [LinkedJointFlow("link", mc, :output, "output", x->x)])
+            disp = Component("disp", DispatchableSource(ec), [LinkedJointFlow("link", mc, :output, "output", x->x[1])])
             cons = Component("cons", Demand(ec, 10), [])
             conv = Component("conv", BasicConverter(mc, ec), [])
     

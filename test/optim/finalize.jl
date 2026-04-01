@@ -23,7 +23,7 @@ using Test
         mc = MassCarrier("m", s)
         mn = Node("mass", mc)
 
-        disp = Component("disp", DispatchableSource(ec), [LinkedJointFlow("link", mc, :output, "output", x->x)])
+        disp = Component("disp", DispatchableSource(ec), [LinkedJointFlow("link", mc, :output, "output", x->x[1])])
         
         conv = Component("conv", BasicConverter(mc, ec), [])
       

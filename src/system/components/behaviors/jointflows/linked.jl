@@ -8,7 +8,7 @@ struct LinkedJointFlow{C<:AbstractCarrier,F<:Function,M<:Function} <: AbstractJo
     name::String
     carrier::C
     sense::Symbol # sense of the joint flow
-    baseflow::String # name of the existing flow in the component
+    baseflows::Vector{String} # names of the existing flow in the component
     f::F # affine function such that joint flow = f(target flow)
     modifier::M # modifier applied to both flows (existing in component and joint)
     mustconnect::Bool
@@ -18,13 +18,18 @@ end
     LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
 Return a LinkedJointFlow with following characteristics:
   * `sense`: sense of the joint flow
-  * `baseflow`: name of the flow of the target component to evaluate the joint flow from
-  * `f`: affine function to calculate the joint flow in function of the `baseflow`
+  * `baseflows`: name(s) of the flow of the target component to evaluate the joint flow from. Must be String or iterable of Strings.
+  * `f`: affine function to calculate the joint flow in function of the `baseflows` e.g. x->x[1] + 2 * x[2].
   * `modifier`: modifier applied before `f` to both flows
 """
-function LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
+function LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflows, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
     @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"
-    LinkedJointFlow(name, carrier, sense, baseflow, f, modifier, mustconnect)
+    if baseflows isa String
+        bf = [baseflows]
+    else 
+        bf = collect(baseflows)
+    end
+    LinkedJointFlow(name, carrier, sense, bf, f, modifier, mustconnect)
 end
 
 struct LinkedJointFlowModel{T<:VAL,C,F,M} <: AbstractJointFlow{T}
@@ -34,8 +39,8 @@ end
 
 # return a LinkedJointFlowBehavior
 function buildjointflow(c::Component, j::LinkedJointFlow)
-    s0 = j.modifier(getport(c, j.baseflow))
-    sj = Stepwise(j.f(s0) .* defaultmodifier(j.carrier) ./ j.modifier(j.carrier), s0.mesh)
+    vs0 = [j.modifier(getport(c, bf)) for bf in j.baseflows] # vector of modified base flows
+    sj = Stepwise(j.f(vs0) .* defaultmodifier(j.carrier) ./ j.modifier(j.carrier), first(vs0).mesh)
     return LinkedJointFlowModel(j, sj)
 end
 

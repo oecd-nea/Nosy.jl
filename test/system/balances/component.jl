@@ -57,7 +57,7 @@ using Test
         ec = EnergyCarrier("e", s)
         cc = CO2Carrier("co2", s, weight=0.1)
         d = BasicConverter(mc, ec)
-        c = Component("comp", d, [LinkedJointFlow("linked", cc, :output, "input", x->x, modifier=mass)])
+        c = Component("comp", d, [LinkedJointFlow("linked", cc, :output, "input", x->x[1], modifier=mass)])
         return c
     end
 
@@ -77,7 +77,7 @@ using Test
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
         ec = EnergyCarrier("e", s)
         d = BasicConverter(mc, ec)
-        c = Component("comp", d, [LinkedJointFlow("linked", mc, :input, "input", x->3 * x, modifier=mass)])
+        c = Component("comp", d, [LinkedJointFlow("linked", mc, :input, "input", x->3 * x[1], modifier=mass)])
         return c
     end 
     

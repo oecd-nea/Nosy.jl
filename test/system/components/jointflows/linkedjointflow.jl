@@ -31,7 +31,7 @@ using Test
     let m = makeconvdata() # model data for converter
 
         mc = m.input # mass carrier
-        lf = LinkedJointFlow("lf", mc, :input, "input", x->1.5*x, modifier=mass)
+        lf = LinkedJointFlow("lf", mc, :input, "input", x->1.5*x[1], modifier=mass)
 
         @test lf isa LinkedJointFlow
 
@@ -57,7 +57,7 @@ using Test
     let m = makeconvdata() # model data for converter
 
         mc = m.input # mass carrier
-        lf = LinkedJointFlow("lf", mc, :output, "input", x->1.5*x, modifier=mass)
+        lf = LinkedJointFlow("lf", mc, :output, "input", x->1.5*x[1], modifier=mass)
 
         @test lf isa LinkedJointFlow
 
@@ -80,7 +80,7 @@ using Test
     let m = makeconvdata() # model data for converter
 
         mc = m.input # mass carrier
-        lf = LinkedJointFlow("lf", mc, :output, "output", x->1.5*x) # default modifier
+        lf = LinkedJointFlow("lf", mc, :output, "output", x->1.5*x[1]) # default modifier
 
         @test lf isa LinkedJointFlow
 
@@ -100,8 +100,8 @@ using Test
     let m = makeconvdata() # model data for converter
 
         mc = m.input # mass carrier
-        lf = LinkedJointFlow("lf", mc, :input, "input", x->1.5*x, modifier=mass)
-        lf2 = LinkedJointFlow("lf2", mc, :output, "lf", x->2.0*x, modifier=energy)
+        lf = LinkedJointFlow("lf", mc, :input, "input", x->1.5*x[1], modifier=mass)
+        lf2 = LinkedJointFlow("lf2", mc, :output, "lf", x->2.0*x[1], modifier=energy)
 
         @test lf2 isa LinkedJointFlow
 
@@ -123,11 +123,30 @@ using Test
     end
 
 
+    # input = f(multiple flows)
+    let m = makeconvdata() # model data for converter
+
+        mc = m.input # mass carrier
+        lf = LinkedJointFlow("lf", mc, :input, ("input", "output"), x->x[1] - 1.5 * x[2], modifier=energy)
+
+        @test lf isa LinkedJointFlow
+
+        c = Component("test", m, [lf])
+
+        @test length(c.jointflows) == 1
+
+        @test hasinput(c, "lf")
+        @test !hasoutput(c, "lf")
+        
+        @test all(balance(c, :input, energy, collapse=false, aggregate=false)["lf"] .== balance(c, :input, energy, collapse=false, aggregate=false)["input"] - 1.5 * balance(c, :output, energy, collapse=false, aggregate=false)["output"])
+
+    end
+    
     # error case: try level-type joint flow
     let m = makeconvdata() # model data for converter
 
         mc = m.input # mass carrier
-        @test_throws ArgumentError LinkedJointFlow("lf", mc, :level, "input", x->1.5*x, modifier=mass)
+        @test_throws ArgumentError LinkedJointFlow("lf", mc, :level, "input", x->1.5*x[1], modifier=mass)
 
     end
 

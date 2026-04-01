@@ -87,7 +87,7 @@ Costs also are modeled as behaviors:
 Joint flows add additional flows to the component (in addition to the model archetype's flows). Joint flows are:
   * `FixedJointFlow`: an exogenously defined flow
   * `FreeJointFlow`: an infinitely flexible flow
-  * `LinkedJointFlow`: a flow that can be expressed as a function of another flow of the component
+  * `LinkedJointFlow`: a flow that can be expressed as a function of other flows of the component
 
 ### Metrics
 Metrics are functions that can be applied to a `Component` or a `Snapshot` and return a scalar. The metrics detailed below are available.
@@ -315,7 +315,7 @@ gasplant = Component(
         VariableCapacity("output", energy),
         FixedCost(:capex, "output", energy, 60000),
         VariableCost(:fuel, "output", energy, 50.),
-        LinkedJointFlow("co2", co2_carrier, :output, "output", x->0.400*x), # 0.4 tCO2/MWh of energy (electricity) coming out of the gas plant
+        LinkedJointFlow("co2", co2_carrier, :output, "output", x->0.400*x[1]), # 0.4 tCO2/MWh of energy (electricity) coming out of the gas plant
         VariableCost(:co2tax, "co2", co2, 100.), # the co2 joint flow is treated as a dedicated port for costing. Add a carbon tax of 100 €/t of CO2 emitted by the plant. Modifier is co2.
     ]
 )
