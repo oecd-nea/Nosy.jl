@@ -1,19 +1,21 @@
 # Nosy.jl
 
-Nosy is a component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MILP formalism, and analyze the results. It can be used directly, or as a library to develop higher-level models.
+Nosy is a composable, component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MILP formalism, and analyze the results. Components are built by composing a model archetype with any number of behaviors and joint flows, making it straightforward to represent a wide range of technologies without multiplying model types. It can be used directly, or as a library to develop higher-level models.
 
 Nosy is used at the OECD NEA to model energy systems in the frame of System costs studies.
 System cost studies at the NEA include:
   * [Achieving Net Zero Carbon Emissions in Switzerland in 2050](https://www.oecd-nea.org/jcms/pl_74877/achieving-net-zero-carbon-emissions-in-switzerland-in-2050-low-carbon-scenarios-and-their-system-costs?details=true)
   * [A Least-cost Capacity Mix to Satisfy Growing Electricity Demand without Carbon Emissions in Sweden](https://www.oecd-nea.org/jcms/pl_116142/a-least-cost-capacity-mix-to-satisfy-growing-electricity-demand-without-carbon-emissions-in-sweden)
 
-License is MIT.
+## License
+
+This project is licensed under the [MIT License](LICENSE.md).
 
 ## Highlights
 - Compose systems from carriers, nodes, and components enriched with reusable behaviors (capacities, costs, ramping, unit commitment, joint flows, operational reserves).
 - Model multiple electricity nodes, hydrogen, fuels, commodities with automatic conversions.
 - Work with flexible time discretization.
-- Solve problems through JuMP while staying solver-agnostic (HiGHS, Gurobi etc.).
+- Solve problems through JuMP while staying solver-agnostic.
 - Inspect solutions with built-in metrics: cost breakdowns, capacities, flow balances, prices, and tabular summaries.
 - Tag and query components or nodes to drive scenario dashboards and custom reporting.
 
@@ -29,7 +31,7 @@ The list of model archetypes, behaviors, joint flows, modifiers and metrics is d
 All functions exported by Nosy are supported with a docstring accessible using the `?`character for help mode.
 
 ```julia
-help? VariableCapacity
+?VariableCapacity
   VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, unitsize::Union{Nothing,Number}, integer::Bool)
 
   Return a VariableCapacity behavior data, associated with port name `pname` and modifier `modifier`. Optional parameters:
@@ -90,7 +92,7 @@ Joint flows add additional flows to the component (in addition to the model arch
   * `LinkedJointFlow`: a flow that can be expressed as a function of other flows of the component
 
 ### Metrics
-Metrics are functions that can be applied to a `Component` or a `Snapshot` and return a scalar. The metrics detailed below are available.
+Metrics are functions that can be applied to a `Component` or a `Snapshot` and return a number or a vector of numbers. The metrics detailed below are available.
   * `capacity`
   * `nbunits`
   * `cost`
@@ -98,17 +100,16 @@ Metrics are functions that can be applied to a `Component` or a `Snapshot` and r
   * `variablecost`
   * `noloadcost`
   * `startupcost`
+  * `reserve`
 
 NB most of these metrics can use additional arguments to modify the evaluation. For instance, all the cost metrics accept a `type::Symbol` optional argument that is a tag defined when instantiating cost behaviors.
 
 
 ### Modifiers
-Every flow is associated with a carrier type (e.g. `MassCarrier`, `EnergyCarrier` etc.). Modifiers help manipulating multiple aspects of a single `Carrier`. For instance, H2 can be viewed either through its mass (t) or energy (MWh). Each carrier has a default modifier used as a fallback if no modifier is specified.
+Every flow is associated with a carrier type (e.g. `MassCarrier`, `EnergyCarrier` etc.). Modifiers help manipulating multiple aspects of a single `Carrier`. For instance, H2 can be viewed either through its mass (t) or energy (MWh). Each carrier has a default modifier used as a fallback if no modifier is specified (e.g. energy for EnergyCarrier etc.).
   * `energy` (default modifier for `EnergyCarrier`)
   * `mass` (default modifier for `MassCarrier`, `CO2Carrier`)
   * `co2`
-  * `defaultmodifier` (used as a fallback if modifier is not specified, not exported)
-
 
 ### Balances
 Flows going in and out of components and nodes can be evaluated using the following functions:
@@ -120,6 +121,11 @@ Flows going in and out of components and nodes can be evaluated using the follow
   * A `TimeMesh` is expected to represent a full year, whether or not it contains 8760 hours.
   * For one given `Snapshot`, time is considered as cyclical (the hour after the last hour is the first hour). This design choice was made to improve the fidelity of technical behaviors.
   * `balance` returns `Hourly` vectors, which is a custom circular array for which `h[n] == h[n+8760]`. Any integer index of a `Hourly` vector can be queried.
+
+
+## Related model: POSY2
+POSY2 is a country- and regional-level power systems model developed at the NEA on top of Nosy, currently planned for open-source release. Where Nosy exposes the building blocks (models and behaviors) directly, POSY2 adds a higher-level layer targeting energy analysts who are not optimization modellers: it ships a curated library of pre-defined technology components (nuclear plants, PV, wind turbines, battery storage, electrolysers, etc.), sector coupling across electricity, hydrogen and other carriers, and a user-friendly post-processing layer for results analysis.
+
 
 ## Examples
 
@@ -401,7 +407,7 @@ connect!(snapshot, pv, grid)
 # Component: battery storage
 battery = Component(
     "battery",
-    BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy, eff_i=0.85), # Battery storage with 85% roundtrip efficiency
+    BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy, eff_i=0.85), # Battery storage with 85% roundtrip efficiency (modeled as input efficiency)
     [
         VariableCapacity("input", energy), # Behavior: variable capacity associated with the input of the battery # in MW
         FixedCost(:capex, "input", energy, 50000), # Behavior: annualized fixed cost, tagged as capex, associated with the capacity of the input of the battery (in €/MW)
@@ -457,7 +463,6 @@ using HiGHS
 s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
 
 elec_carrier = EnergyCarrier("power", s)
-co2_carrier = CO2Carrier("co2", s)
 
 # Synthetic data for load
 hours = 1:8760
@@ -870,7 +875,7 @@ optimize!(snapshot, cost)
 result = extract(snapshot)
 ```
 
-When the level is high, discharge upward reserve often supplies the 6 MW; when it is low, more shifts to the charge upward reserve. Only the battery provides these reserves here, so totals at the grid match the battery.
+When the level is high, discharge upward reserve often supplies the 600 MW; when it is low, more shifts to the charge upward reserve. Only the battery provides these reserves here, so totals at the grid match the battery.
 
 ```julia
 julia> balance(result, "battery", :level, energy, collapse=false, aggregate=true)
