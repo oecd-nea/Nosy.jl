@@ -130,6 +130,6 @@ function Base.show(io::IO, n::Node)
     ntype = iscurtailed(n) ? "curtailed" : "not curtailed"
     print(
         io,
-        "Node \"$(name(n))\" ($ntype) with $nin _input(s), $nout _output(s)"
+        "Node \"$(name(n))\" ($ntype) with $nin input(s), $nout output(s)"
     )
 end
