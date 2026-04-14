@@ -1,6 +1,6 @@
 # Unit tests for Duration behavior 
 using Test
-using JuMP: Model, MAX_SENSE, set_silent
+using JuMP: Model, MAX_SENSE, set_silent, @variable
 import JuMP
 using Nosy: Duration, buildbehavior, DurationBehavior, _capacitypname, _hours
 using Nosy: _balance, balance
@@ -84,6 +84,60 @@ using HiGHS
         JuMP.optimize!(sim(c).model)
         result = JuMP.value.(_balance(c, :input, energy, collapse=false))
         @test all(result .<= 200.0)
+    end
+
+    # check Duration interaction with capacity from expression (input): shared capacity hits ub = 200
+    let
+        s = tsim()
+        ec = EnergyCarrier("e", s)
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        vb = [
+            VariableCapacity("input", energy; expression=1.0 * shared_cap, lb=0.0, ub=200.0),
+            Duration(6),
+        ]
+        c = Component("battery", BasicStorage(ec), vb)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        result = JuMP.value.(_balance(c, :input, energy, collapse=false))
+        @test isapprox(JuMP.value(shared_cap), 200.0; atol=1e-6)
+        @test all(result .<= 200.0)
+    end
+
+    # check Duration interaction with capacity from expression (output): shared capacity hits ub = 200
+    let
+        s = tsim()
+        ec = EnergyCarrier("e", s)
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        vb = [
+            VariableCapacity("output", energy; expression=1.0 * shared_cap, lb=0.0, ub=200.0),
+            Duration(6),
+        ]
+        c = Component("battery", BasicStorage(ec), vb)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        result = JuMP.value.(_balance(c, :input, energy, collapse=false))
+        @test isapprox(JuMP.value(shared_cap), 200.0; atol=1e-6)
+        @test all(result .<= 200.0)
+    end
+
+    # check Duration interaction with capacity from expression (level): shared capacity hits ub = 600 and input is capped at 100 (= 600/6)
+    let
+        s = tsim()
+        ec = EnergyCarrier("e", s)
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        vb = [
+            VariableCapacity("level", energy; expression=1.0 * shared_cap, lb=0.0, ub=600.0),
+            Duration(6),
+        ]
+        c = Component("battery", BasicStorage(ec), vb)
+        JuMP.set_objective(sim(c).model, MAX_SENSE, balance(c, :input, energy, collapse=true))
+        set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        result = JuMP.value.(_balance(c, :input, energy, collapse=false))
+        @test isapprox(JuMP.value(shared_cap), 600.0; atol=1e-6)
+        @test all(result .<= 100.0)
     end
 
     # Different durations i = 1,2,5,10 -> limit = level / i

@@ -9,7 +9,7 @@ using Nosy: cost, capacity, balance
 using Nosy: extract, _extract
 import Nosy
 
-using JuMP: set_silent, objective_value, AffExpr
+using JuMP: set_silent, objective_value, AffExpr, @variable, value
 using HiGHS: Optimizer
 using Test
 
@@ -159,6 +159,46 @@ using Test
         # test whether the extraction happened
         @test extract(snap) isa Snapshot{Float64}
         @test cost(extract(snap)) == 0.
+
+    end
+
+    # extraction with linked variable capacity
+    let s = tsim()
+
+        set_silent(s.model) # deactivate JuMP output
+
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec)
+
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy; expression=1.0 * shared_cap, lb=0.0, ub=40.0), FixedCost(:overnight, "output", energy, 2.)])
+        cons = Component("cons", Demand(ec, 10), [])
+
+        connect!(snap, cons, en)
+        connect!(snap, disp, en)
+
+        optimize!(snap, cost(snap))
+
+        # check optimization is correct
+        @test isapprox(objective_value(s.model), 20.)
+        @test isapprox(value(shared_cap), 10.0)
+
+        # behavior value is extracted
+        @test _extract(disp.behaviors[1]) isa Nosy.VariableCapacityBehavior{Float64}
+
+        let 
+            @test _extract(disp) isa Component{Float64}
+            @test isapprox(capacity(_extract(disp)), 10.0)
+            @test isapprox(cost(_extract(disp)), 20.0)
+        end
+
+        let 
+            @test extract(snap) isa Snapshot{Float64}
+            @test isapprox(capacity(extract(snap), "disp"), 10.0)
+            @test isapprox(cost(extract(snap), "disp"), 20.0)
+        end
 
     end
 

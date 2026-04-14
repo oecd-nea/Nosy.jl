@@ -1,11 +1,11 @@
-using JuMP: @variable, GenericAffExpr, set_upper_bound, set_lower_bound, set_start_value
+using JuMP: @variable, @constraint, GenericAffExpr, GenericVariableRef, set_integer, set_upper_bound, set_lower_bound, set_start_value
 using ArgCheck: @argcheck
 
 """
 Behavior: variable capacity.
 """
 
-struct VariableCapacity{M<:Function} <: AbstractCapacityData
+struct VariableCapacity{M<:Function,E<:Union{Nothing,GenericVariableRef,GenericAffExpr}} <: AbstractCapacityData
     pname::String
     modifier::M
     lb::Float64
@@ -13,31 +13,62 @@ struct VariableCapacity{M<:Function} <: AbstractCapacityData
     warmstart::Union{Nothing,Float64}
     unitsize::Union{Nothing,Float64}
     integer::Bool
+    expr::E
 end
 
 """
-    VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, unitsize::Union{Nothing,Number}, integer::Bool)
+    VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false, expression::Union{Nothing,GenericVariableRef,GenericAffExpr,Number}=nothing)
 Return a VariableCapacity behavior data, associated with port name `pname` and modifier `modifier`.
 Optional parameters:
 * lb: lower bound
 * ub: upper bound
 * unitsize: size of the unit when considering a fleet
 * integer: if unitsize is a number, constrains the number of units to be integer
+* expression: reused capacity input (Nothing / GenericVariableRef / GenericAffExpr / Number)
+  - Number is interpreted as fixed capacity by setting lb = ub = expression.
+NB: warmstart is not supported when `expression` is provided.
+NB: integer is supported only when `expression` is a GenericVariableRef.
 """
-function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
+function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false, expression::Union{Nothing,GenericVariableRef,GenericAffExpr,Number}=nothing)
     @argcheck lb >= 0. "Capacity cannot be negative"
     @argcheck lb <= ub "Lower bound is bigger than upper bound"
     if unitsize isa Number
         @argcheck unitsize > 0 "unitsize must be a strictly positive Number or nothing"
         unitsize = Float64(unitsize)
     end
-    @argcheck !integer || !isnothing(unitsize) "unitsize must be provided to activate an integer number of units"
-    w = isnothing(warmstart) ? nothing : Float64(warmstart)
-    VariableCapacity(pname, modifier, Float64(lb), Float64(ub), w, unitsize, integer)
+    return _variablecapacity_from_expression(pname, modifier, Float64(lb), Float64(ub), warmstart, unitsize, integer, expression)
 end
 
-struct VariableCapacityBehavior{T<:VAL,M<:Function} <: AbstractSingleCapacityBehavior{T}
-    data::VariableCapacity{M}
+function _variablecapacity_from_expression(pname::String, modifier::Function, lb::Float64, ub::Float64, warmstart::Union{Nothing,Number}, unitsize::Union{Nothing,Float64}, integer::Bool, ::Nothing)
+    @argcheck !integer || !isnothing(unitsize) "unitsize must be provided to activate an integer number of units"
+    w = isnothing(warmstart) ? nothing : Float64(warmstart)
+    return VariableCapacity{typeof(modifier),Nothing}(pname, modifier, lb, ub, w, unitsize, integer, nothing)
+end
+
+function _variablecapacity_from_expression(pname::String, modifier::Function, lb::Float64, ub::Float64, warmstart::Union{Nothing,Number}, unitsize::Union{Nothing,Float64}, integer::Bool, expression::GenericVariableRef)
+    # reused variable: no warmstart here
+    @argcheck isnothing(warmstart) "`warmstart` must be nothing when `expression` is provided"
+    return VariableCapacity{typeof(modifier),GenericVariableRef}(pname, modifier, lb, ub, nothing, unitsize, integer, expression)
+end
+
+function _variablecapacity_from_expression(pname::String, modifier::Function, lb::Float64, ub::Float64, warmstart::Union{Nothing,Number}, unitsize::Union{Nothing,Float64}, integer::Bool, expression::GenericAffExpr)
+    # affine expression is not a variable: no integer here
+    @argcheck !integer "`integer` must be false when `expression` is provided"
+    # no variable created here: no warmstart target
+    @argcheck isnothing(warmstart) "`warmstart` must be nothing when `expression` is provided"
+    return VariableCapacity{typeof(modifier),GenericAffExpr}(pname, modifier, lb, ub, nothing, unitsize, false, expression)
+end
+
+function _variablecapacity_from_expression(pname::String, modifier::Function, lb::Float64, ub::Float64, warmstart::Union{Nothing,Number}, unitsize::Union{Nothing,Float64}, integer::Bool, expression::Number)
+    @argcheck isnothing(warmstart) "`warmstart` must be nothing when `expression` is provided"
+    # Number input: fixed capacity (lb = ub = expression)
+    # keep expr = nothing for the standard no expression path
+    fixedvalue = Float64(expression)
+    return VariableCapacity{typeof(modifier),Nothing}(pname, modifier, fixedvalue, fixedvalue, nothing, unitsize, false, nothing)
+end
+
+struct VariableCapacityBehavior{T<:VAL,M<:Function,E<:Union{Nothing,GenericVariableRef,GenericAffExpr}} <: AbstractSingleCapacityBehavior{T}
+    data::VariableCapacity{M,E}
     val::T
 end
 
@@ -45,6 +76,11 @@ end
 function buildbehavior(c::Component, b::VariableCapacity)    
     @argcheck hasport(c, b.pname) "Component does not have port named $(b.pname)"
     @argcheck hasmodifier(getport(c, b.pname), b.modifier) "Target port does not have the required modifier"
+    return _buildbehavior_from_expr(c, b, b.expr)
+end
+
+# default case: no expression provided
+function _buildbehavior_from_expr(c::Component, b::VariableCapacity, ::Nothing)
     if b.unitsize isa Number
         # variable is number of units
         v = @variable(uppermodel(sim(c)), base_name=name(c) * "_" * b.pname * "_" * modifiername(b.modifier) * "_" * "units" * "_" * sim(c).suffix, lower_bound=b.lb / b.unitsize, upper_bound=b.ub / b.unitsize, integer=b.integer, binary=false)
@@ -64,6 +100,36 @@ function buildbehavior(c::Component, b::VariableCapacity)
         end
         
         e = _to_affexpr(v, sim(c).model)
+    end
+    return VariableCapacityBehavior(b, e)
+end
+
+# expression case: direct variable reuse
+function _buildbehavior_from_expr(c::Component, b::VariableCapacity, expr::GenericVariableRef)
+    @argcheck isnothing(b.warmstart) "`warmstart` must be nothing when `expr` is provided"
+    # apply integer on reused variable
+    if b.integer
+        set_integer(expr)
+    end
+    e = _to_affexpr(expr, sim(c).model)
+    um = uppermodel(sim(c))
+    @constraint(um, e >= b.lb)
+    if b.ub < Inf
+        @constraint(um, e <= b.ub)
+    end
+    return VariableCapacityBehavior(b, e)
+end
+
+# expression case: affine expression (integer unsupported)
+function _buildbehavior_from_expr(c::Component, b::VariableCapacity, expr::GenericAffExpr)
+    # affine expression: no integer support
+    @argcheck !b.integer "`integer` must be false when `expr` is provided"
+    @argcheck isnothing(b.warmstart) "`warmstart` must be nothing when `expr` is provided"
+    e = _to_affexpr(expr, sim(c).model)
+    um = uppermodel(sim(c))
+    @constraint(um, e >= b.lb)
+    if b.ub < Inf
+        @constraint(um, e <= b.ub)
     end
     return VariableCapacityBehavior(b, e)
 end

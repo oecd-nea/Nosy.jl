@@ -1,4 +1,4 @@
-# Nosy.jl
+﻿# Nosy.jl
 
 Nosy is a composable, component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MILP formalism, and analyze the results. Components are built by composing a model archetype with any number of behaviors and joint flows, making it straightforward to represent a wide range of technologies without multiplying model types. It can be used directly, or as a library to develop higher-level models.
 
@@ -447,8 +447,96 @@ julia> sum(p)/length(p) # unweighted average
 111.78592911234246
 ```
 
+### Example 2.2: PV and battery storage with linked capacities
 
-### Example 2.2: PV and battery storage on two power nodes
+In this example, we use the same PV+battery system as Example 2.1, but the battery input capacity is linked to the PV capacity:
+  * PV output capacity is defined by a shared variable `pv_cap`
+  * battery input capacity is constrained to `50%` of this same variable through an affine expression
+  * battery duration remains fixed at 6h
+
+```julia
+using Nosy
+using HiGHS
+import JuMP: @variable
+
+s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
+
+elec_carrier = EnergyCarrier("power", s)
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi/2) .+ 120 .* sin.(season_angle .- pi/2)
+
+# Synthetic data for PV
+cf_pv = [x < 1e-6 ? 0.0 : x for x in [max(0, cos((h%24 - 12)/12*pi) * (0.6 + 0.4*sin(2*pi*(h/24)/365))) for h in 1:8760]]
+
+# Snapshot initialization
+snapshot = Snapshot(s)
+
+# One electricity node
+grid = Node("grid", elec_carrier, rule=:curtailed, evalprice=true)
+
+# Component: Electricity consumption
+consumption = Component(
+    "consumption",
+    Demand(elec_carrier, load_profile),
+)
+connect!(snapshot, consumption, grid)
+
+# Shared PV capacity variable
+pv_cap = @variable(model(s), lower_bound=0.0, base_name="pv_cap")
+
+# Component: PV
+pv = Component(
+    "PV",
+    ProfileSource(elec_carrier, cf_pv),
+    [
+        VariableCapacity("output", energy; expression=1.0 * pv_cap, lb=0.0, ub=100000.0),
+        FixedCost(:capex, "output", energy, 50000),
+    ]
+)
+connect!(snapshot, pv, grid)
+
+# Component: battery storage
+battery = Component(
+    "battery",
+    BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy, eff_i=0.85),
+    [
+        VariableCapacity("input", energy; expression=0.5 * pv_cap, lb=0.0, ub=50000.0),
+        FixedCost(:capex, "input", energy, 50000),
+        Duration(6),
+    ]
+)
+connect!(snapshot, battery, grid)
+
+# Optimization
+optimize!(snapshot, cost(snapshot))
+result = extract(snapshot)
+```
+
+The table of capacities of the optimized system is given below.
+
+```julia
+julia> table(result, capacity)
+1×3 DataFrame
+ Row │ PV       battery  consumption
+     │ Float64  Float64  Float64
+─────┼───────────────────────────────
+   1 │ 46987.5  23493.7          0.0
+```
+
+As expected, the battery capacity is `50%` of the PV capacity by construction.
+
+```julia
+julia> capacity(result, "battery") / capacity(result, "PV")
+0.5
+```
+
+NB: in the previous example, we have used used a JuMP variable for multiple components in the same snapshot. A real-life application of this feature is ensuring multiple components across different snapshots have the same capacity when running stochastic optimization.
+
+### Example 2.3: PV and battery storage on two power nodes
 
 In the following example, the system has two power nodes.
   * grid 1: has PV, consumption
@@ -549,8 +637,7 @@ julia> table(result, capacity)
    1 │ 10000.0  40282.4  5491.59          0.0        8000.0
 ```
 
-
-### Example 2.3: PV, battery storage and electrolyzer with power and hydrogen demand
+### Example 2.4: PV, battery storage and electrolyzer with power and hydrogen demand
 
 In the following example, we have two demands:
   * power (variable demand in MW)
@@ -687,7 +774,7 @@ julia> balance(result, "PEM", :output, energy, collapse=true, aggregate=true) # 
 2.919707999999801e6
 ```
 
-### Example 2.4: Operating reserve (up and down) with a minimum requirement
+### Example 2.5: Operating reserve (up and down) with a minimum requirement
 
 In this example, a gas plant and a nuclear unit both provide upward and downward reserve. Each direction uses its own reserve name (`"reserve_up_15min"` and `"reserve_down_15min"`), with a 0.25 h delivery duration (15 minutes). A minimum reserve at the node (50 MW in each direction) is enforced by adding a constraint with `reserve(snap, node_name, sense, rname)` and JuMP's `@constraint(model(sim(snapshot)), ...)`.
 
@@ -802,7 +889,7 @@ julia> reserve(result, "nuclear", :down, "reserve_down_15min")
 ...
 ```
 
-### Example 2.5: PV, battery, and upward reserve
+### Example 2.6: PV, battery, and upward reserve
 
 In this example, demand, PV, and a battery are on the same curtailed node. The battery adds two `ReserveUp` behaviors `:up` sense on the output port and `:down` sense on the input port (headroom to cut charging), with reserve names `"reserve_up_discharge_15min"` and `"reserve_up_charge_15min"` and 0.25 h duration. A single `@constraint` forces the sum of `reserve(snapshot, "grid", :up, ...)` for those names to be at least 600MW each timestep
 
@@ -1147,7 +1234,7 @@ connect!(snapshot, gasplant, grid)
 @constraint(model(s), cost(snapshot) <= c0 * 1.01) # model(s) returns the JuMP Model
 
 # Optimization
-optimize!(snapshot, x->-capacity(x, "gasplant"))
+optimize!(snapshot, -capacity(snapshot, "gasplant"))
 result = extract(snapshot)
 ```
 
@@ -1323,7 +1410,7 @@ connect!(snapshot, other_dispatchable, grid)
 
 # Lower-level: minimize operating cost for all (dispatch)
 # Upper-level: minimize user investment cost + user dispatch cost
-optimize!(snapshot, variablecost, s -> cost(s, "user_dispatchable") + cost(s, "user_intermittent"))
+optimize!(snapshot, variablecost(snapshot), cost(snapshot, "user_dispatchable") + cost(snapshot, "user_intermittent"))
 result_b = extract(snapshot)
 ```
 

@@ -1,14 +1,17 @@
 using Nosy: mass, energy, co2
-using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim
+using Nosy: Sim, TimeMesh, nsteps, nvariables, nconstraints, sim
 using Nosy: buildbehavior
-using Nosy: VariableCapacity, _capacity, _nbunits, nbunits
+using Nosy: VariableCapacity, VariableCapacityBehavior, _capacity, _nbunits, nbunits
+using Nosy: getbehaviors
 using Nosy: BasicConverter, ProfileSource, Demand
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: LinkedJointFlow, capacity
 using Nosy: Component
-using JuMP: Model, GenericAffExpr, lower_bound, has_upper_bound
+using JuMP: Model, @variable, @objective, GenericAffExpr, lower_bound, has_upper_bound, value, set_silent
+import JuMP
 using ArgCheck: ArgumentError
 using Test
+import HiGHS
 
 @testset "VariableCapacity" begin
 
@@ -246,5 +249,102 @@ using Test
     end
 
     @test_throws ArgumentError makeconsumption()
+
+    # linked capacity, reuse an existing affine expression as capacity
+    let
+        s = tsim()
+        shared_cap = @variable(s.model, base_name="shared_cap", lower_bound=0.0)
+        cap_expr = 1.0 * shared_cap
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        cap = VariableCapacity("input", mass; expression=cap_expr, lb=3.0, ub=40.0, unitsize=2.5)
+        nvars_before = nvariables(s) # only `shared_cap` exists before the component is built
+        c = Component("comp", d, [cap])
+        @test nvariables(s) == nvars_before + nsteps(s) # no extra variable for capacity
+        vb = first(getbehaviors(c, VariableCapacityBehavior))
+        @test _capacity(vb) isa GenericAffExpr
+        @test lower_bound(shared_cap) == 0.0
+        @test nbunits(c) == capacity(c) / 2.5
+    end
+
+    # linked capacity, lb/ub enforced as constraints on the expression
+    let
+        s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(1//2, 10)))
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        cap_expr = 1.0 * shared_cap
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        cap = VariableCapacity("input", mass; expression=cap_expr, lb=2.0, ub=15.0)
+        c = Component("comp", d, [cap])
+        set_silent(s.model)
+        @objective(s.model, Max, shared_cap)
+        JuMP.optimize!(s.model)
+        @test isapprox(value(shared_cap), 15.0)
+    end
+
+    # expression variable: integer=true is allowed and applied on reused variable
+    let
+        s = tsim()
+        shared_cap = @variable(s.model, base_name="shared_cap", lower_bound=0.0)
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        cap = VariableCapacity("input", mass; expression=shared_cap, integer=true)
+        Component("comp", d, [cap])
+        @test JuMP.is_integer(shared_cap)
+    end
+
+    # affine expression: integer=true is rejected at constructor
+    let
+        s = tsim()
+        shared_cap = @variable(s.model, base_name="shared_cap", lower_bound=0.0)
+        @test_throws ArgumentError VariableCapacity("input", mass; expression=1.0 * shared_cap, integer=true)
+    end
+
+    # warmstart is not compatible with variable expression
+    let
+        s = tsim()
+        shared_cap = @variable(s.model, base_name="shared_cap", lower_bound=0.0)
+        @test_throws ArgumentError VariableCapacity("input", mass; expression=shared_cap, warmstart=1.0)
+    end
+
+    # warmstart is not compatible with affine expression
+    let
+        s = tsim()
+        shared_cap = @variable(s.model, base_name="shared_cap", lower_bound=0.0)
+        @test_throws ArgumentError VariableCapacity("input", mass; expression=1.0 * shared_cap, warmstart=1.0)
+    end
+
+    # warmstart is not compatible with Number expression
+    let
+        @test_throws ArgumentError VariableCapacity("input", mass; expression=10.0, warmstart=1.0)
+    end
+
+    # Number expression: integer=true still gives fixed capacity bounds
+    let
+        m = makecomp()
+        c = VariableCapacity("input", mass; expression=10.0, integer=true)
+        b = buildbehavior(m, c)
+        var = getvariable(_capacity(b))
+        @test lower_bound(var) == 10.0
+        @test JuMP.upper_bound(var) == 10.0
+    end
+
+    # expression variable: lb/ub are enforced as constraints on reused variable
+    let
+        s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(1//2, 10)))
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        cap = VariableCapacity("input", mass; expression=shared_cap, lb=2.0, ub=15.0)
+        Component("comp", d, [cap])
+        set_silent(s.model)
+        @objective(s.model, Max, shared_cap)
+        JuMP.optimize!(s.model)
+        @test isapprox(value(shared_cap), 15.0)
+    end
 
 end
