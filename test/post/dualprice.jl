@@ -38,7 +38,7 @@ using Test
         connect!(snap, cons, en)
         connect!(snap, disp, en)
 
-        optimize!(snap, cost)
+        optimize!(snap, cost(snap))
 
 
         let e = _extract(en)
@@ -70,7 +70,7 @@ using Test
         connect!(snap, cons, en)
         connect!(snap, disp, en)
 
-        optimize!(snap, cost)
+        optimize!(snap, cost(snap))
 
 
         let e = _extract(en)

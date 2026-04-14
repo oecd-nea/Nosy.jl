@@ -31,19 +31,13 @@ function cleanup_bounds!(s::Snapshot, threshold::Number)
     end
 end
 
-# set objective to simulation based on snapshot and metric
+# set objective to simulation based on an expression
 # filter expression of objective using threshold
 # convention is: minimization
 # objectivetype can be :upper or :lower (in reference to bilevel optimization)
 # both are equivalent for single objective optimization
-function set_objective!(s::Snapshot{<:GenericAffExpr}, metric::Function; threshold=1E-15, objectivetype=:upper)
-    obj = metric(s)
-
+function set_objective!(s::Snapshot{<:GenericAffExpr}, obj::Union{GenericAffExpr,Number}; threshold=1E-15, objectivetype=:upper)
     obj isa Number && @warn "The optimization objective is a constant number, not an expression."
-
-    if !(obj isa VAL) 
-        throw(AssertionError("`metric(s)` does not return an GenericAffExpr or a Number"))
-    end
 
     filterexpression!(obj, threshold)
 
@@ -55,49 +49,78 @@ function set_objective!(s::Snapshot{<:GenericAffExpr}, metric::Function; thresho
         throw(ArgumentError("objectivetype must be either :upper or :lower"))
     end
 end
-set_objective!(::Snapshot{Float64}, ::Function, threshold=1E-15) = throw(AssertionError("Snapshot is already optimized"))
-
-
+set_objective!(::Snapshot{Float64}, ::Union{GenericAffExpr,Number}; threshold=1E-15, objectivetype=:upper) = throw(AssertionError("Snapshot is already optimized"))
 
 ### Single-level problem ###
 
 """
-    optimize!(s::Snapshot{AffExpr}, metric::Function; expthreshold=1E-9, boundthreshold=1E-3)
-Optimize a Snapshot. This function does not return a Snapshot, but modifies the sim.model of `s`.
+    optimize!(snapshots, obj::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3)
+Optimize snapshots sharing the same simulation. `snapshots` accepts either one `Snapshot` or an `AbstractVector` of `Snapshot`s. This function does not return a Snapshot, but modifies the underlying simulation model.
 Keyword arguments:
   * expthreshold: relative threshold for costs in the objective expression
   * boundthreshold: absolute threshold for upper bounds of all variables (if upper bound is lower: fix variable @ zero)
 """
-function optimize!(s::Snapshot{AffExpr}, metric::Function; expthreshold=1E-9, boundthreshold=1E-3)
+function optimize!(s::Snapshot{AffExpr}, obj::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3)
     # if snapshot is not finalized yet, finalize it
     !is_finalized(s) && finalize!(s)
-
     cleanup_bounds!(s, boundthreshold)
-    set_objective!(s, metric, threshold=expthreshold)
-
+    set_objective!(s, obj, threshold=expthreshold)
     JuMP.optimize!(sim(s).model)
 end
-optimize!(::Snapshot{Float64}, ::Function; threshold=1E-9, boundthreshold=1E-3) = throw(ArgumentError("Snapshot is already optimized"))
+optimize!(::Snapshot{Float64}, ::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3) = throw(ArgumentError("Snapshot is already optimized"))
+
+# general case: multiple snapshots
+function optimize!(snapshots::AbstractVector{<:Snapshot{AffExpr}}, obj::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3)
+    isempty(snapshots) && throw(ArgumentError("Snapshot collection cannot be empty"))
+    sref_sim = sim(first(snapshots))
+    for s in snapshots
+        sim(s) === sref_sim || throw(ArgumentError("unsupported optimization on snapshots with different simulations"))
+        !is_finalized(s) && finalize!(s)
+    end
+
+    # all snapshots share the same simulation, using the first one is enough
+    sref = first(snapshots)
+    cleanup_bounds!(sref, boundthreshold)
+    set_objective!(sref, obj, threshold=expthreshold)
+
+    JuMP.optimize!(sim(sref).model)
+end
 
 
 ### Bilevel problem ###
 
 """
-    optimize!(s::Snapshot{<:GenericAffExpr}, lowermetric::Function, uppermetric::Function; expthreshold=1E-9, boundthreshold=1E-3)
-Optimize a Snapshot using bilevel optimization. This function does not return a Snapshot, but modifies the sim.model of `s`.
+    optimize!(snapshots, lowerobj::Union{GenericAffExpr,Number}, upperobj::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3)
+Optimize snapshots sharing the same simulation using bilevel optimization. `snapshots` accepts either one `Snapshot` or an `AbstractVector` of `Snapshot`s. This function does not return a Snapshot, but modifies the underlying simulation model.
 Keyword arguments:
   * expthreshold: relative threshold for costs in the objective expression
   * boundthreshold: absolute threshold for upper bounds of all variables (if upper bound is lower: fix variable @ zero)
 """
-function optimize!(s::Snapshot{<:GenericAffExpr}, lowermetric::Function, uppermetric::Function; expthreshold=1E-9, boundthreshold=1E-3)
+function optimize!(s::Snapshot{<:GenericAffExpr}, lowerobj::Union{GenericAffExpr,Number}, upperobj::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3)
     # if snapshot is not finalized yet, finalize it
     !is_finalized(s) && finalize!(s)
-
     cleanup_bounds!(s, boundthreshold)
-
-    set_objective!(s, lowermetric, threshold=expthreshold, objectivetype=:lower)
-    set_objective!(s, uppermetric, threshold=expthreshold, objectivetype=:upper)
-
+    set_objective!(s, lowerobj, threshold=expthreshold, objectivetype=:lower)
+    set_objective!(s, upperobj, threshold=expthreshold, objectivetype=:upper)
     JuMP.optimize!(sim(s).model)
 end
-optimize!(::Snapshot{Float64}, ::Function, ::Function; threshold=1E-9, boundthreshold=1E-3) = throw(ArgumentError("Snapshot is already optimized"))
+optimize!(::Snapshot{Float64}, ::Union{GenericAffExpr,Number}, ::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3) = throw(ArgumentError("Snapshot is already optimized"))
+
+# general case: multiple snapshots (bilevel)
+function optimize!(snapshots::AbstractVector{<:Snapshot{<:GenericAffExpr}}, lowerobj::Union{GenericAffExpr,Number}, upperobj::Union{GenericAffExpr,Number}; expthreshold=1E-9, boundthreshold=1E-3)
+    isempty(snapshots) && throw(ArgumentError("Snapshot collection cannot be empty"))
+    sref_sim = sim(first(snapshots))
+    for s in snapshots
+        sim(s) === sref_sim || throw(ArgumentError("unsupported optimization on snapshots with different simulations"))
+        !is_finalized(s) && finalize!(s)
+    end
+
+    # all snapshots share the same simulation, using the first one is enough
+    sref = first(snapshots)
+    cleanup_bounds!(sref, boundthreshold)
+
+    set_objective!(sref, lowerobj, threshold=expthreshold, objectivetype=:lower)
+    set_objective!(sref, upperobj, threshold=expthreshold, objectivetype=:upper)
+
+    JuMP.optimize!(sim(sref).model)
+end

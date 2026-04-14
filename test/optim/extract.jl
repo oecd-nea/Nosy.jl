@@ -66,7 +66,7 @@ using Test
         # snapshot not optimized yet
         @test_throws AssertionError extract(snap)
 
-        optimize!(snap, cost)
+        optimize!(snap, cost(snap))
 
         @assert isapprox(objective_value(s.model), 20.) # check optimization is correct
 
@@ -154,7 +154,7 @@ using Test
       
         connect!(snap, disp, en)
 
-        optimize!(snap, cost)
+        optimize!(snap, cost(snap))
 
         # test whether the extraction happened
         @test extract(snap) isa Snapshot{Float64}

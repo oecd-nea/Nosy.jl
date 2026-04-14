@@ -44,7 +44,7 @@ using Test
         connect!(s, l, n2, "to_in")
         connect!(s, l, n2, "to_out")
 
-        optimize!(s, cost)
+        optimize!(s, cost(s))
         @assert is_solved_and_feasible(sim.model)
 
         # After optimization, the generator’s hourly output must equal the sum of demand time series (KCL check)    
@@ -83,7 +83,7 @@ using Test
         connect!(s, l, n2, "to_in")
         connect!(s, l, n2, "to_out")
 
-        optimize!(s, cost)
+        optimize!(s, cost(s))
         @assert is_solved_and_feasible(sim.model)
 
         # After optimization, the generator’s hourly output must equal the sum of demand time series (KCL check)    
@@ -138,7 +138,7 @@ using Test
         connect!(s, l31, n3, "from_out"); connect!(s, l31, n3, "from_in")
         connect!(s, l31, n1, "to_in"); connect!(s, l31, n1, "to_out")
 
-        optimize!(s, cost)
+        optimize!(s, cost(s))
         @assert is_solved_and_feasible(sim.model)
 
         # KVL: sum( net_flow_ij / B_ij ) = 0  (net_flow = from->to - to->from)
@@ -201,7 +201,7 @@ using Test
         connect!(s, ldc, n2, "from_out"); connect!(s, ldc, n2, "from_in")
         connect!(s, ldc, n4, "to_in"); connect!(s, ldc, n4, "to_out")
 
-        optimize!(s, cost)
+        optimize!(s, cost(s))
         @assert is_solved_and_feasible(sim.model)
 
         # check KVL still holds for AC loop (n1-n2-n3)

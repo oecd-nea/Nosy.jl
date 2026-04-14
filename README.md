@@ -191,7 +191,7 @@ gasplant = Component(
 connect!(snapshot, gasplant, grid) # connect the gas plant to the grid
 
 # Optimization
-optimize!(snapshot, cost) # optimize the problem using the cost of the full snapshot as the objective
+optimize!(snapshot, cost(snapshot)) # optimize the problem using the cost of the full snapshot as the objective
 result = extract(snapshot) # return a snapshot populated with the optimal solution
 ```
 
@@ -329,7 +329,7 @@ connect!(snapshot, gasplant, grid) # connect the gas plant to the grid
 connect!(snapshot, gasplant, co2_node) # connect the gas plant to the CO2 node
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 ```
 
@@ -417,7 +417,7 @@ battery = Component(
 connect!(snapshot, battery, grid) # connect the battery to the grid. NB both input and output will be connected
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 ```
 
@@ -534,7 +534,7 @@ connect!(snapshot, transmission, grid2, "input") # selective connection of the i
 connect!(snapshot, transmission, grid1, "output") # selective connection of the output of the transmission to grid 1
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 ```
 
@@ -652,7 +652,7 @@ h2storage = Component(
 connect!(snapshot, h2storage, h2_node)
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 ```
 
@@ -744,7 +744,7 @@ connect!(snapshot, nuclear, grid)
 @constraint(model(sim(snapshot)), reserve(snapshot, "grid", :down, "reserve_down_15min").data .>= 50.0)
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 ```
 
@@ -871,7 +871,7 @@ connect!(snapshot, battery, grid)
 )
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 ```
 
@@ -969,7 +969,7 @@ gasplant = Component(
 connect!(snapshot, gasplant, grid)
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 ```
 
 The model warns that the problem was not solved.
@@ -1068,7 +1068,7 @@ gasplant = Component(
 connect!(snapshot, gasplant, grid)
 
 # Optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
 
 c0 = cost(result) # minimum system cost
@@ -1244,7 +1244,7 @@ other_dispatchable = Component(
 connect!(snapshot, other_dispatchable, grid)
 
 # Single-level optimization
-optimize!(snapshot, cost)
+optimize!(snapshot, cost(snapshot))
 result_s = extract(snapshot)
 ```
 

@@ -30,7 +30,7 @@ using Test
         connect!(snap, cons, en)
         connect!(snap, disp, en)
 
-        optimize!(snap, cost)
+        optimize!(snap, cost(snap))
 
         # check that the JuMP model was solved
         @test is_solved_and_feasible(s.model)
