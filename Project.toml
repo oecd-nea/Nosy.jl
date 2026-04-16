@@ -1,6 +1,6 @@
 name = "Nosy"
 uuid = "b62be552-3e07-49d0-bbfa-d9387eb027f7"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Guillaume KRIVTCHIK"]
 
 [deps]
