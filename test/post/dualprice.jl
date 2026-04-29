@@ -2,13 +2,14 @@ using Nosy: energy
 using Nosy: Sim, TimeMesh, Model
 using Nosy: DispatchableSource, Demand
 using Nosy: EnergyCarrier
-using Nosy: VariableCapacity, FixedCost, VariableCost
-using Nosy: Component, Node, Snapshot, connect!, optimize!
+using Nosy: VariableCapacity, FixedCapacity, FixedCost, VariableCost
+using Nosy: UnitCommitment
+using Nosy: Component, Node, Snapshot, connect!, optimize!, extract
 using Nosy: cost
 using Nosy: _extract
 using Nosy: dualprice, Stepwise
 
-using JuMP: set_silent
+using JuMP: has_duals, set_silent
 using HiGHS: Optimizer
 using ArgCheck: ArgumentError
 using Test
@@ -79,6 +80,38 @@ using Test
             @test isnothing(dualprice(e))
 
         end
+    end
+
+    # duals are unavailable for MIP solutions, even when node constraints are saved
+    let s = tsim()
+
+        set_silent(s.model) # deactivate JuMP output
+
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec, evalprice=true)
+
+        disp = Component("disp", DispatchableSource(ec), [
+            FixedCapacity("output", energy, 10.0, unitsize=10.0),
+            UnitCommitment("output", 0.0, integer=true),
+            VariableCost(:fuel, "output", energy, 1.0),
+        ])
+        cons = Component("cons", Demand(ec, 10), [])
+
+        connect!(snap, cons, en)
+        connect!(snap, disp, en)
+
+        optimize!(snap, cost(snap))
+
+        @test !has_duals(s.model)
+
+        e = @test_logs (:warn, "Duals are not available - setting price to -Inf") extract(snap)
+
+        @test e isa Snapshot{Float64}
+        @test dualprice(e.nodes["energy"]) isa Stepwise{Float64}
+        @test all(==(-Inf), dualprice(e.nodes["energy"]))
+
     end
 
 end
