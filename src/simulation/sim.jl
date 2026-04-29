@@ -26,6 +26,32 @@ function Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::R
     )
 end
 
+"""
+    Sim(optimizer_constructor; constraint_scaling=true, scaling_target=1e5, kwargs...)
+Build a `JuMP.Model` from `optimizer_constructor` and return a `Sim`.
+By default, scalar affine constraints are scaled before they reach the solver.
+Extra keyword arguments are forwarded to `JuMP.Model`.
+"""
+function Sim(
+    optimizer_constructor;
+    options::Dict=_defaultoptions(),
+    mesh::RTimeMesh=TimeMesh(),
+    suffix::String="",
+    constraint_scaling::Bool=true,
+    scaling_target::Real=1e5,
+    kwargs...,
+)
+    factory = constraint_scaling ?
+        ScaledOptimizer(optimizer_constructor; target=scaling_target) :
+        optimizer_constructor
+    return Sim(
+        JuMP.Model(factory; kwargs...);
+        options=options,
+        mesh=mesh,
+        suffix=suffix,
+    )
+end
+
 nsteps(s::Sim) = nsteps(s.mesh)
 nhours(s::Sim) = nhours(s.mesh)
 eachstep(s::Sim) = eachstep(s.mesh)
