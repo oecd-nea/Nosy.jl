@@ -1,41 +1,10 @@
 import MathOptInterface as MOI
 
-"""
-    ScaledOptimizer(optimizer_constructor; target = 1e5)
-
-Return an optimizer factory that wraps `optimizer_constructor` in a constraint
-scaling layer.
-
-Scalar affine constraints in `LessThan`, `GreaterThan`, `EqualTo`, and
-`Interval` sets are scaled before they are passed to the wrapped optimizer. The
-geometric mean of the smallest and largest finite nonzero absolute values among
-the left-hand-side coefficients and right-hand-side bounds is scaled to `target`.
-Variable bounds, integrality constraints, vector constraints, quadratic
-constraints, and nonlinear constraints are passed through unchanged.
-"""
-mutable struct ScaledOptimizer{O<:MOI.ModelLike} <: MOI.AbstractOptimizer
-    inner::O
-    target::Float64
-    scales::Dict{Any,Any}
-end
-
-function ScaledOptimizer(optimizer_constructor; target::Real = 1e5)
-    return () -> ScaledOptimizer(MOI.instantiate(optimizer_constructor); target)
-end
-
-function ScaledOptimizer(inner::MOI.ModelLike; target::Real = 1e5)
-    target > 0 || throw(ArgumentError("constraint scaling target must be positive"))
-    return ScaledOptimizer(inner, Float64(target), Dict{Any,Any}())
-end
-
-_inner(model::ScaledOptimizer) = model.inner
-
 const _SCALABLE_FUNCTION = MOI.ScalarAffineFunction
 const _SCALABLE_SET =
     Union{MOI.LessThan,MOI.GreaterThan,MOI.EqualTo,MOI.Interval}
-
-_scale(model::ScaledOptimizer, index::MOI.ConstraintIndex) =
-    get(model.scales, index, 1.0)
+const _SCALABLE_SET_OF{T} =
+    Union{MOI.LessThan{T},MOI.GreaterThan{T},MOI.EqualTo{T},MOI.Interval{T}}
 
 function _update_minmax((minabs, maxabs)::Tuple{Float64,Float64}, value)
     absvalue = abs(Float64(value))
@@ -81,10 +50,7 @@ function _scale_factor(
     return target / (sqrt(minabs) * sqrt(maxabs))
 end
 
-function _scale_function(
-    func::MOI.ScalarAffineFunction{T},
-    scale,
-) where {T}
+function _scale_function(func::MOI.ScalarAffineFunction{T}, scale) where {T}
     return MOI.ScalarAffineFunction(
         MOI.ScalarAffineTerm{T}[
             MOI.ScalarAffineTerm(scale * term.coefficient, term.variable)
@@ -123,378 +89,237 @@ _scale_value(::Nothing, scale) = nothing
 _unscale_value(value, scale) = value / scale
 _unscale_value(::Nothing, scale) = nothing
 
-function MOI.add_variable(model::ScaledOptimizer)
-    return MOI.add_variable(_inner(model))
+"""
+    ScaledConstraintBridge{Target,T,S}
+
+Scale one scalar affine constraint row before it reaches the optimizer.
+"""
+mutable struct ScaledConstraintBridge{Target,T,S<:_SCALABLE_SET} <:
+               MOI.Bridges.Constraint.AbstractBridge
+    constraint::MOI.ConstraintIndex{MOI.ScalarAffineFunction{T},S}
+    scale::T
 end
 
-function MOI.add_variables(model::ScaledOptimizer, n::Integer)
-    return MOI.add_variables(_inner(model), n)
-end
-
-function MOI.add_constrained_variable(
-    model::ScaledOptimizer,
-    set::MOI.AbstractScalarSet,
-)
-    return MOI.add_constrained_variable(_inner(model), set)
-end
-
-function MOI.add_constrained_variables(
-    model::ScaledOptimizer,
-    set::MOI.AbstractVectorSet,
-)
-    return MOI.add_constrained_variables(_inner(model), set)
-end
-
-function MOI.add_constraint(
-    model::ScaledOptimizer,
-    func::_SCALABLE_FUNCTION,
+function _typed_scale(
+    ::Type{T},
+    func::MOI.ScalarAffineFunction,
     set::_SCALABLE_SET,
-)
-    scale = _scale_factor(func, set, model.target)
-    index = MOI.add_constraint(
-        _inner(model),
+    target::Float64,
+) where {T}
+    return T(_scale_factor(func, set, target))
+end
+
+function MOI.supports_constraint(
+    ::Type{<:ScaledConstraintBridge{Target,T}},
+    ::Type{MOI.ScalarAffineFunction{T}},
+    ::Type{S},
+) where {Target,T,S<:_SCALABLE_SET_OF{T}}
+    return true
+end
+
+function MOI.Bridges.Constraint.concrete_bridge_type(
+    ::Type{<:ScaledConstraintBridge{Target,T}},
+    ::Type{MOI.ScalarAffineFunction{T}},
+    ::Type{S},
+) where {Target,T,S<:_SCALABLE_SET_OF{T}}
+    return ScaledConstraintBridge{Target,T,S}
+end
+
+function MOI.Bridges.Constraint.bridge_constraint(
+    ::Type{ScaledConstraintBridge{Target,T,S}},
+    model::MOI.ModelLike,
+    func::MOI.ScalarAffineFunction{T},
+    set::S,
+) where {Target,T,S<:_SCALABLE_SET}
+    scale = _typed_scale(T, func, set, Float64(Target))
+    constraint = MOI.add_constraint(
+        model,
         _scale_function(func, scale),
         _scale_set(set, scale),
     )
-    model.scales[index] = scale
-    return index
+    return ScaledConstraintBridge{Target,T,S}(constraint, scale)
 end
 
-function MOI.add_constraint(
-    model::ScaledOptimizer,
-    func::MOI.AbstractFunction,
-    set::MOI.AbstractSet,
+function MOI.Bridges.added_constrained_variable_types(
+    ::Type{<:ScaledConstraintBridge},
 )
-    return MOI.add_constraint(_inner(model), func, set)
+    return Tuple{Type}[]
 end
 
-function MOI.add_constraint(
-    model::ScaledOptimizer,
-    func::MOI.VariableIndex,
-    set::MOI.AbstractSet,
-)
-    return MOI.add_constraint(_inner(model), func, set)
+function MOI.Bridges.added_constraint_types(
+    ::Type{<:ScaledConstraintBridge{Target,T,S}},
+) where {Target,T,S}
+    return Tuple{Type,Type}[(MOI.ScalarAffineFunction{T}, S)]
 end
 
-MOI.optimize!(model::ScaledOptimizer) = MOI.optimize!(_inner(model))
-MOI.compute_conflict!(model::ScaledOptimizer) = MOI.compute_conflict!(_inner(model))
-
-function MOI.empty!(model::ScaledOptimizer)
-    empty!(model.scales)
-    return MOI.empty!(_inner(model))
+function MOI.get(
+    bridge::ScaledConstraintBridge{Target,T,S},
+    ::MOI.NumberOfConstraints{MOI.ScalarAffineFunction{T},S},
+)::Int64 where {Target,T,S}
+    return 1
 end
 
-MOI.is_empty(model::ScaledOptimizer) =
-    isempty(model.scales) && MOI.is_empty(_inner(model))
-
-MOI.is_valid(model::ScaledOptimizer, index::MOI.Index) =
-    MOI.is_valid(_inner(model), index)
-
-function MOI.delete(model::ScaledOptimizer, index::MOI.ConstraintIndex)
-    delete!(model.scales, index)
-    return MOI.delete(_inner(model), index)
+function MOI.get(
+    bridge::ScaledConstraintBridge{Target,T,S},
+    ::MOI.ListOfConstraintIndices{MOI.ScalarAffineFunction{T},S},
+) where {Target,T,S}
+    return [bridge.constraint]
 end
 
-MOI.delete(model::ScaledOptimizer, index::MOI.VariableIndex) =
-    MOI.delete(_inner(model), index)
-
-MOI.delete(model::ScaledOptimizer, indices::Vector{MOI.VariableIndex}) =
-    MOI.delete(_inner(model), indices)
-
-function MOI.delete(model::ScaledOptimizer, indices::Vector{<:MOI.ConstraintIndex})
-    foreach(index -> delete!(model.scales, index), indices)
-    return MOI.delete(_inner(model), indices)
+function MOI.get(::ScaledConstraintBridge, ::MOI.NumberOfVariables)::Int64
+    return 0
 end
 
-function MOI.modify(
-    model::ScaledOptimizer,
-    index::MOI.ConstraintIndex,
-    change::MOI.AbstractFunctionModification,
-)
-    return MOI.modify(
-        _inner(model),
-        index,
-        _scale_change(change, _scale(model, index)),
-    )
+function MOI.get(::ScaledConstraintBridge, ::MOI.ListOfVariableIndices)
+    return MOI.VariableIndex[]
 end
 
-function MOI.modify(
-    model::ScaledOptimizer,
-    attr::MOI.ObjectiveFunction,
-    change::MOI.AbstractFunctionModification,
-)
-    return MOI.modify(_inner(model), attr, change)
+function MOI.delete(model::MOI.ModelLike, bridge::ScaledConstraintBridge)
+    MOI.delete(model, bridge.constraint)
+    return
 end
 
-function MOI.set(
-    model::ScaledOptimizer,
-    ::MOI.ConstraintSet,
-    index::MOI.ConstraintIndex{F,S},
-    set::S,
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return MOI.set(
-        _inner(model),
-        MOI.ConstraintSet(),
-        index,
-        _scale_set(set, _scale(model, index)),
-    )
-end
-
-function MOI.set(
-    model::ScaledOptimizer,
-    ::MOI.ConstraintSet,
-    index::MOI.ConstraintIndex{F,S},
-    set::S,
-) where {F<:MOI.AbstractFunction,S<:MOI.AbstractSet}
-    return MOI.set(_inner(model), MOI.ConstraintSet(), index, set)
-end
-
-function MOI.set(
-    model::ScaledOptimizer,
+function MOI.get(
+    model::MOI.ModelLike,
     ::MOI.ConstraintFunction,
-    index::MOI.ConstraintIndex{F,S},
-    func::F,
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    old_scale = _scale(model, index)
-    original_set = _unscale_set(
-        MOI.get(_inner(model), MOI.ConstraintSet(), index),
-        old_scale,
-    )
-    new_scale = _scale_factor(func, original_set, model.target)
-    MOI.set(
-        _inner(model),
-        MOI.ConstraintFunction(),
-        index,
-        _scale_function(func, new_scale),
-    )
-    MOI.set(
-        _inner(model),
-        MOI.ConstraintSet(),
-        index,
-        _scale_set(original_set, new_scale),
-    )
-    model.scales[index] = new_scale
+    bridge::ScaledConstraintBridge,
+)
+    func = MOI.get(model, MOI.ConstraintFunction(), bridge.constraint)
+    return _unscale_function(func, bridge.scale)
+end
+
+function MOI.get(
+    model::MOI.ModelLike,
+    ::MOI.ConstraintSet,
+    bridge::ScaledConstraintBridge,
+)
+    set = MOI.get(model, MOI.ConstraintSet(), bridge.constraint)
+    return _unscale_set(set, bridge.scale)
+end
+
+function MOI.modify(
+    model::MOI.ModelLike,
+    bridge::ScaledConstraintBridge,
+    change::MOI.AbstractFunctionModification,
+)
+    MOI.modify(model, bridge.constraint, _scale_change(change, bridge.scale))
     return
 end
 
 function MOI.set(
-    model::ScaledOptimizer,
+    model::MOI.ModelLike,
     ::MOI.ConstraintFunction,
-    index::MOI.ConstraintIndex{F},
-    func::F,
-) where {F<:MOI.AbstractFunction}
-    return MOI.set(_inner(model), MOI.ConstraintFunction(), index, func)
+    bridge::ScaledConstraintBridge{Target,T,S},
+    func::MOI.ScalarAffineFunction{T},
+) where {Target,T,S}
+    set = MOI.get(model, MOI.ConstraintSet(), bridge)
+    bridge.scale = _typed_scale(T, func, set, Float64(Target))
+    MOI.set(
+        model,
+        MOI.ConstraintFunction(),
+        bridge.constraint,
+        _scale_function(func, bridge.scale),
+    )
+    MOI.set(
+        model,
+        MOI.ConstraintSet(),
+        bridge.constraint,
+        _scale_set(set, bridge.scale),
+    )
+    return
 end
 
-function MOI.get(
-    model::ScaledOptimizer,
-    ::MOI.ConstraintFunction,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    func = MOI.get(_inner(model), MOI.ConstraintFunction(), index)
-    return _unscale_function(func, _scale(model, index))
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
-    ::MOI.CanonicalConstraintFunction,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    func = MOI.get(_inner(model), MOI.CanonicalConstraintFunction(), index)
-    return _unscale_function(func, _scale(model, index))
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
+function MOI.set(
+    model::MOI.ModelLike,
     ::MOI.ConstraintSet,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    set = MOI.get(_inner(model), MOI.ConstraintSet(), index)
-    return _unscale_set(set, _scale(model, index))
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
-    attr::MOI.ConstraintPrimal,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return MOI.get(_inner(model), attr, index) / _scale(model, index)
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
-    attr::MOI.ConstraintDual,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return _scale(model, index) * MOI.get(_inner(model), attr, index)
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
-    attr::MOI.ConstraintPrimalStart,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return _unscale_value(MOI.get(_inner(model), attr, index), _scale(model, index))
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
-    attr::MOI.ConstraintDualStart,
-    index::MOI.ConstraintIndex{F,S},
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return _scale_value(MOI.get(_inner(model), attr, index), _scale(model, index))
-end
-
-function MOI.set(
-    model::ScaledOptimizer,
-    attr::MOI.ConstraintPrimalStart,
-    index::MOI.ConstraintIndex{F,S},
-    value,
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return MOI.set(
-        _inner(model),
-        attr,
-        index,
-        _scale_value(value, _scale(model, index)),
+    bridge::ScaledConstraintBridge,
+    set::_SCALABLE_SET,
+)
+    MOI.set(
+        model,
+        MOI.ConstraintSet(),
+        bridge.constraint,
+        _scale_set(set, bridge.scale),
     )
-end
-
-function MOI.set(
-    model::ScaledOptimizer,
-    attr::MOI.ConstraintDualStart,
-    index::MOI.ConstraintIndex{F,S},
-    value,
-) where {F<:_SCALABLE_FUNCTION,S<:_SCALABLE_SET}
-    return MOI.set(
-        _inner(model),
-        attr,
-        index,
-        _unscale_value(value, _scale(model, index)),
-    )
-end
-
-function MOI.set(model::ScaledOptimizer, attr::MOI.AbstractOptimizerAttribute, value)
-    return MOI.set(_inner(model), attr, value)
-end
-
-function MOI.set(model::ScaledOptimizer, attr::MOI.AbstractModelAttribute, value)
-    return MOI.set(_inner(model), attr, value)
-end
-
-function MOI.set(
-    model::ScaledOptimizer,
-    attr::MOI.AbstractVariableAttribute,
-    index::MOI.VariableIndex,
-    value,
-)
-    return MOI.set(_inner(model), attr, index, value)
-end
-
-function MOI.set(
-    model::ScaledOptimizer,
-    attr::MOI.AbstractConstraintAttribute,
-    index::MOI.ConstraintIndex,
-    value,
-)
-    return MOI.set(_inner(model), attr, index, value)
-end
-
-MOI.get(model::ScaledOptimizer, attr::MOI.AbstractOptimizerAttribute) =
-    MOI.get(_inner(model), attr)
-
-function MOI.get(model::ScaledOptimizer, attr::MOI.SolverName)
-    return "ScaledOptimizer($(MOI.get(_inner(model), attr)))"
-end
-
-MOI.get(model::ScaledOptimizer, attr::MOI.AbstractModelAttribute) =
-    MOI.get(_inner(model), attr)
-
-function MOI.get(
-    model::ScaledOptimizer,
-    attr::MOI.AbstractVariableAttribute,
-    index::MOI.VariableIndex,
-)
-    return MOI.get(_inner(model), attr, index)
-end
-
-function MOI.get(
-    model::ScaledOptimizer,
-    attr::MOI.AbstractConstraintAttribute,
-    index::MOI.ConstraintIndex,
-)
-    return MOI.get(_inner(model), attr, index)
-end
-
-function MOI.get(model::ScaledOptimizer, index_type::Type{<:MOI.Index}, name::String)
-    return MOI.get(_inner(model), index_type, name)
-end
-
-MOI.supports(model::ScaledOptimizer, attr::MOI.AbstractOptimizerAttribute) =
-    MOI.supports(_inner(model), attr)
-
-MOI.supports(model::ScaledOptimizer, attr::MOI.AbstractModelAttribute) =
-    MOI.supports(_inner(model), attr)
-
-function MOI.supports(
-    model::ScaledOptimizer,
-    attr::MOI.AbstractVariableAttribute,
-    index_type::Type{MOI.VariableIndex},
-)
-    return MOI.supports(_inner(model), attr, index_type)
+    return
 end
 
 function MOI.supports(
-    model::ScaledOptimizer,
-    attr::MOI.AbstractConstraintAttribute,
-    index_type::Type{<:MOI.ConstraintIndex},
+    model::MOI.ModelLike,
+    attr::Union{MOI.ConstraintPrimalStart,MOI.ConstraintDualStart},
+    ::Type{<:ScaledConstraintBridge{Target,T,S}},
+) where {Target,T,S}
+    return MOI.supports(
+        model,
+        attr,
+        MOI.ConstraintIndex{MOI.ScalarAffineFunction{T},S},
+    )
+end
+
+function MOI.get(
+    model::MOI.ModelLike,
+    attr::Union{MOI.ConstraintPrimal,MOI.ConstraintPrimalStart},
+    bridge::ScaledConstraintBridge,
 )
-    return MOI.supports(_inner(model), attr, index_type)
+    return _unscale_value(MOI.get(model, attr, bridge.constraint), bridge.scale)
 end
 
-function MOI.supports_constraint(
-    model::ScaledOptimizer,
-    F::Type{<:MOI.AbstractFunction},
-    S::Type{<:MOI.AbstractSet},
+function MOI.get(
+    model::MOI.ModelLike,
+    attr::Union{MOI.ConstraintDual,MOI.ConstraintDualStart},
+    bridge::ScaledConstraintBridge,
 )
-    return MOI.supports_constraint(_inner(model), F, S)
+    return _scale_value(MOI.get(model, attr, bridge.constraint), bridge.scale)
 end
 
-function MOI.supports_add_constrained_variable(
-    model::ScaledOptimizer,
-    S::Type{<:MOI.AbstractScalarSet},
+function MOI.set(
+    model::MOI.ModelLike,
+    attr::MOI.ConstraintPrimalStart,
+    bridge::ScaledConstraintBridge,
+    value,
 )
-    return MOI.supports_add_constrained_variable(_inner(model), S)
+    MOI.set(model, attr, bridge.constraint, _scale_value(value, bridge.scale))
+    return
 end
 
-function MOI.supports_add_constrained_variables(
-    model::ScaledOptimizer,
-    S::Type{<:MOI.AbstractVectorSet},
+function MOI.set(
+    model::MOI.ModelLike,
+    attr::MOI.ConstraintDualStart,
+    bridge::ScaledConstraintBridge,
+    value,
 )
-    return MOI.supports_add_constrained_variables(_inner(model), S)
+    MOI.set(model, attr, bridge.constraint, _unscale_value(value, bridge.scale))
+    return
 end
 
-function MOI.supports_add_constrained_variables(
-    model::ScaledOptimizer,
-    ::Type{MOI.Reals},
-)
-    return MOI.supports_add_constrained_variables(_inner(model), MOI.Reals)
+"""
+    ScaledOptimizer(optimizer_constructor; target = 1e5)
+
+Return an optimizer factory that scales scalar affine constraints before they
+are passed to `optimizer_constructor`.
+
+Scalar affine constraints in `LessThan`, `GreaterThan`, `EqualTo`, and
+`Interval` sets are scaled. The geometric mean of the smallest and largest
+finite nonzero absolute values among the left-hand-side coefficients and
+right-hand-side bounds is scaled to `target`. Variable bounds, integrality
+constraints, vector constraints, quadratic constraints, and nonlinear
+constraints are passed through unchanged.
+"""
+function ScaledOptimizer(optimizer_constructor; target::Real = 1e5)
+    return () -> ScaledOptimizer(MOI.instantiate(optimizer_constructor); target)
 end
 
-MOI.supports(model::ScaledOptimizer, sub::MOI.AbstractSubmittable) =
-    MOI.supports(_inner(model), sub)
-
-function MOI.submit(model::ScaledOptimizer, sub::MOI.AbstractSubmittable, args...)
-    return MOI.submit(_inner(model), sub, args...)
+function ScaledOptimizer(inner::MOI.ModelLike; target::Real = 1e5)
+    target > 0 || throw(ArgumentError("constraint scaling target must be positive"))
+    bridge_type = ScaledConstraintBridge{Float64(target),Float64}
+    return MOI.Bridges.Constraint.SingleBridgeOptimizer{bridge_type}(inner)
 end
 
-MOI.supports_incremental_interface(model::ScaledOptimizer) =
-    MOI.supports_incremental_interface(_inner(model))
-
-MOI.copy_to(dest::ScaledOptimizer, src::MOI.ModelLike) =
-    MOI.Utilities.default_copy_to(dest, src)
-
-function MOI.Utilities.final_touch(model::ScaledOptimizer, index_map)
-    return MOI.Utilities.final_touch(_inner(model), index_map)
+function MOI.get(
+    model::MOI.Bridges.Constraint.SingleBridgeOptimizer{BT},
+    attr::MOI.SolverName,
+) where {BT<:ScaledConstraintBridge}
+    return "ScaledOptimizer($(MOI.get(model.model, attr)))"
 end
 
 """
