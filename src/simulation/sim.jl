@@ -6,50 +6,56 @@ Sim: data structure containing the information shared with all the simulation.
 struct Sim
     mesh::RTimeMesh
     model::JuMP.AbstractModel # abstract type, would be unpractical to have parametric Sim
-    options::Dict{String,Any}
+    options::Dict{Symbol,Any}
     suffix::String # suffix for variable names
 end
 
 """
-    Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh())
+    Sim(model::JuMP.AbstractModel; mesh::RTimeMesh=TimeMesh())
 Return a Sim based on the JuMP model `model`.
 Optional arguments:
   * `mesh`: TimeMesh for the simulation (default: 8760 hours, 1 step per hour)
-  * `options`: Dict containing options for the simulation
 """
-function Sim(model::JuMP.AbstractModel; options::Dict=_defaultoptions(), mesh::RTimeMesh=TimeMesh(), suffix::String="")
+function Sim(
+    model::JuMP.AbstractModel;
+    mesh::RTimeMesh=TimeMesh(),
+    suffix::String="",
+)
     return Sim(
         mesh,
         model,
-        convert(Dict{String,Any}, options),
+        _defaultoptions(),
         suffix
     )
 end
 
 """
-    Sim(optimizer_constructor; constraint_scaling=true, scaling_target=1e5, kwargs...)
+    Sim(optimizer_constructor; constraint_scaling=true, kwargs...)
 Build a `JuMP.Model` from `optimizer_constructor` and return a `Sim`.
 By default, scalar affine constraints are scaled before they reach the solver.
-Extra keyword arguments are forwarded to `JuMP.Model`.
+Extra keyword arguments override simulation options.
 """
 function Sim(
     optimizer_constructor;
-    options::Dict=_defaultoptions(),
     mesh::RTimeMesh=TimeMesh(),
     suffix::String="",
     constraint_scaling::Bool=true,
-    scaling_target::Real=1e5,
     kwargs...,
 )
+    options = _defaultoptions()
+    for (key, value) in pairs(kwargs)
+        haskey(options, key) ||
+            throw(ArgumentError("Unknown simulation option $key"))
+        options[key] = value
+    end
     factory = constraint_scaling ?
-        ScaledOptimizer(optimizer_constructor; target=scaling_target) :
+        ScaledOptimizer(
+            optimizer_constructor;
+            target=options[:scalingtarget],
+            expthreshold=options[:expthreshold],
+        ) :
         optimizer_constructor
-    return Sim(
-        JuMP.Model(factory; kwargs...);
-        options=options,
-        mesh=mesh,
-        suffix=suffix,
-    )
+    return Sim(mesh, JuMP.Model(factory), options, suffix)
 end
 
 nsteps(s::Sim) = nsteps(s.mesh)
