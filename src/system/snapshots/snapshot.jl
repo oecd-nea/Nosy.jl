@@ -10,18 +10,18 @@ struct Snapshot{T} <: AbstractElement{T}
     sim::Sim
     components::Dict{String,Component{T}}
     nodes::Dict{String,Node{T}}
-    options::Dict
+    options::Dict{Symbol,<:Any}
     finalized::RefValue{Bool}
 end
 
 """
-    Snapshot(sim::Sim, options::Dict=Dict())
+    Snapshot(sim::Sim, options::AbstractDict{Symbol,<:Any}=Dict{Symbol,Any}())
 Create a Snapshot for simulation `sim` with options `options`.
 Options from `sim` are merged with `options`, and an error is thrown if there are duplicate keys.
 """
-function Snapshot(sim::Sim, options::Dict=Dict())
+function Snapshot(sim::Sim, options::AbstractDict{Symbol,<:Any}=Dict{Symbol,Any}())
     # merge options argument with options from sim
-    opt = Dict{String,Any}(k => v for (k,v) in sim.options)
+    opt = copy(sim.options)
     for (k,v) in options
         haskey(opt, k) && throw(ArgumentError("Option $k is already defined in sim options"))
         opt[k] = v
