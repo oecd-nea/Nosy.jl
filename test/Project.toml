@@ -6,3 +6,12 @@ JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+ArgCheck = "2"
+DataFrames = "1"
+HiGHS = "1"
+JuMP = "1"
+MathOptInterface = "1"
+Primes = "0.5"
+julia = "1.11 - 1.12"
