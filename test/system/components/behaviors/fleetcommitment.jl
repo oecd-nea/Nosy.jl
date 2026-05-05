@@ -1,6 +1,6 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, nvariables, nconstraints, sim, nsteps, nhours
-using Nosy: VariableCapacity, FixedCapacity
+using Nosy: VariableCapacity, FixedCapacity, FixedComposedCapacity
 using Nosy: UnitCommitment, FleetUnitCommitmentBehavior, _up
 using Nosy: getbehaviors
 using Nosy: BasicConverter
@@ -760,5 +760,72 @@ Some notes and observations:
         @test all(_m.behaviors[2].shutdown[1:3] .== 0.)
         @test _m.behaviors[2].shutdown[4] == 2.
         @test all(_balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 10., 0., 0., 0., 0., 0., 0.])
+    end
+
+    @testset "Fleet unit commitment from ini" begin
+
+        # FromIni fixes the discrete UC trajectory from an extracted model and
+        # rebuilds only the continuous variable part.
+        function make_fromini(minratio)
+            cap = FixedCapacity("input", mass, 10., unitsize=5.)
+            uc = UnitCommitment("input", minratio, startup=1., shutdown=1., uptime=0., downtime=0., integer=true)
+            m = makecomp([cap, uc])
+            @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
+            set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+            return UnitCommitment(_m.behaviors[2]), _m
+        end
+
+        let
+            ucfromini, ini = make_fromini(0.5)
+
+            @test ucfromini isa Nosy.FleetUnitCommitmentFromIni
+            @test ucfromini.pname == "input"
+            @test ucfromini.minratio == 0.5
+            @test ucfromini.startup == 1.
+            @test ucfromini.shutdown == 1.
+            @test ucfromini.downtime == [0.]
+            @test ucfromini.series_startup === ini.behaviors[2].startup
+            @test ucfromini.series_shutdown === ini.behaviors[2].shutdown
+            @test ucfromini.series_shutdown_selector === ini.behaviors[2].shutdownselector
+            @test ucfromini.series_state === ini.behaviors[2].state
+
+            # FromIni is only meaningful if the rebuilt component has a
+            # capacity on the committed port; otherwise unit count and flow
+            # reconstruction are undefined.
+            @test_throws AssertionError makecomp([ucfromini])
+
+            # The capacity must expose unitsize: FromIni reuses fixed unit
+            # counts from the previous solve, so capacity alone is ambiguous.
+            @test_throws AssertionError makecomp([FixedCapacity("input", mass, 10.), ucfromini])
+
+            # Composed capacities do not provide a single-port unit size for
+            # the committed port, and would make the fixed UC trajectory
+            # ambiguous across ports.
+            @test_throws AssertionError makecomp([FixedComposedCapacity(["input", "output"], energy, 10.), ucfromini])
+
+            rebuilt = makecomp([FixedCapacity("input", mass, 10., unitsize=5.), ucfromini])
+            rebuilduc = rebuilt.behaviors[2]
+            @test rebuilduc isa Nosy.FleetUnitCommitmentFromIniBehavior
+            @test rebuilduc.startup === ucfromini.series_startup
+            @test rebuilduc.shutdown === ucfromini.series_shutdown
+            @test rebuilduc.shutdownselector === ucfromini.series_shutdown_selector
+            @test rebuilduc.state === ucfromini.series_state
+            @test nvariables(sim(rebuilt)) == 20
+            @test all(_up(rebuilduc) .== _up(ini.behaviors[2]))
+        end
+
+        let
+            ucfromini, ini = make_fromini(1.0)
+            rebuilt = makecomp([FixedCapacity("input", mass, 10., unitsize=5.), ucfromini])
+            rebuilduc = rebuilt.behaviors[2]
+
+            @test rebuilduc isa Nosy.FleetUnitCommitmentFromIniBehavior
+            @test nvariables(sim(rebuilt)) == 10
+            @test all(iszero.(rebuilduc.variable.data))
+            @test all(_up(rebuilduc) .== _up(ini.behaviors[2]))
+        end
     end
 end
