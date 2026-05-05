@@ -58,7 +58,7 @@ _extract(d::Dict{String,<:Node}) = Dict{String,Node{Float64}}(k => _extract(v) f
 _extract(d::Dict{PortRef,<:Port}) = Dict{PortRef,Port{Float64}}(k => _extract(v) for (k,v) in d)
 
 # dual price
-_extract(a::DualPrice{<:GenericAffExpr}) = _dualprice(a) # defined in post
+_extract(a::SavedDualPrice{<:GenericAffExpr}) = _dualprice(a) # defined in post
 
 """
 General _extract methods.

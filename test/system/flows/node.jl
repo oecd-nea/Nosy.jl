@@ -5,7 +5,7 @@ using Nosy: Sim, TimeMesh
 using Nosy: Port
 using Nosy: PortStructure, addinput!, addoutput!
 using Nosy: Node
-using Nosy: DualPrice
+using Nosy: SavedDualPrice
 using Nosy: _flow, flow
 
 using JuMP: Model, AffExpr
@@ -31,7 +31,7 @@ using Test
         addinput!(ps, "p1", "n", p1)
         addinput!(ps, "p2", "n", p2)
         addoutput!(ps, "p3", "n", p3)
-        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[]) # not usual constructor, to avoid connection stage
+        return Node("n", p1.carrier, ps, 0., :default, false, SavedDualPrice{AffExpr}(nothing), Symbol[]) # not usual constructor, to avoid connection stage
     end
 
     let s = tsim()
@@ -90,7 +90,7 @@ using Test
         addinput!(ps, "p1", "n", p1)
         addinput!(ps, "p2", "n", p2)
         addoutput!(ps, "p3", "n", p3)
-        return Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[])
+        return Node("n", p1.carrier, ps, 0., :default, false, SavedDualPrice{AffExpr}(nothing), Symbol[])
     end
 
     # test case where carrier mass to energy ratio is not constant

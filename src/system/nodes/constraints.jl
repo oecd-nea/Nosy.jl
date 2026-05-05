@@ -39,6 +39,6 @@ end
 # not done by default as the set of constraints may be memory-intensive (e.g. ~100 MB)
 function _saveconstraint!(n::Node, c)
     if n.evalprice
-        n.dualprice.val = c
+        n.dualprice.constraints = c
     end
 end

@@ -1,4 +1,4 @@
-using JuMP: GenericAffExpr
+using JuMP: ConstraintRef, GenericAffExpr
 using ArgCheck: @argcheck, ArgumentError
 
 """
@@ -7,11 +7,26 @@ Definition of nodes.
 In a node, all flows are associated with the same carrier.
 """
 
-# store dual price
-# will not be accessed often, performance is not required here
-mutable struct DualPrice{T}
-    val
+abstract type AbstractDualPrice{T} end
+
+# Model-referencing dual price: save JuMP constraints until dual prices are extracted.
+mutable struct SavedDualPrice{T<:GenericAffExpr} <: AbstractDualPrice{T}
+    constraints::Union{Nothing,AbstractVector{<:ConstraintRef}}
 end
+
+# Extracted dual price: keep numeric prices without references to the JuMP model.
+mutable struct DualPrice{T<:Float64} <: AbstractDualPrice{T}
+    values::Union{Nothing,Vector{Float64}}
+    # No price was evaluated or defined.
+    DualPrice{T}(values::Nothing) where {T} = new{T}(values)
+    # Already-decoupled numeric price values.
+    DualPrice{T}(values::Vector{Float64}) where {T} = new{T}(values)
+    # Normalize numeric vectors to the serializable value type.
+    DualPrice{T}(values::AbstractVector{<:Number}) where {T} = new{T}(Float64.(values))
+end
+
+_dualpricecontainer(::Type{Float64}) = DualPrice{Float64}(nothing)
+_dualpricecontainer(::Type{T}) where {T} = SavedDualPrice{T}(nothing)
 
 struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     name::String
@@ -20,10 +35,10 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     losses::Float64
     rule::Symbol # :curtailed or :default
     evalprice::Bool
-    dualprice::DualPrice{T}
+    dualprice::AbstractDualPrice{T}
     tags::Vector{Symbol}
 
-    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::DualPrice{T}, tags::Vector{Symbol}) where T
+    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::AbstractDualPrice{T}, tags::Vector{Symbol}) where T
         @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
         @argcheck 0 <= losses <= 1 "Losses must be be between 0 and 1"
         new{T,typeof(carrier)}(name, carrier, s, losses, rule, evalprice, dualprice, tags)
@@ -47,7 +62,7 @@ function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=
         losses,
         rule,
         evalprice,
-        DualPrice{exptype(sim(c))}(nothing),
+        _dualpricecontainer(exptype(sim(c))),
         copy(tags),
     )
 end

@@ -7,9 +7,10 @@ using Nosy: UnitCommitment
 using Nosy: Component, Node, Snapshot, connect!, optimize!, extract
 using Nosy: cost
 using Nosy: _extract
-using Nosy: dualprice, Stepwise
+using Nosy: dualprice, DualPrice, Hourly
+using Nosy: SavedDualPrice
 
-using JuMP: has_duals, set_silent
+using JuMP: AffExpr, ConstraintRef, has_duals, set_silent
 using HiGHS: Optimizer
 using ArgCheck: ArgumentError
 using Test
@@ -17,6 +18,10 @@ using Test
 @testset "Dual price" begin
 
     tsim() = Sim(Model(Optimizer), mesh=TimeMesh(fill(1//2, 10)))
+
+    # Empty saved constraint containers mean "no price was defined", not an
+    # empty time series.
+    @test isnothing(Nosy._dualprice(SavedDualPrice{AffExpr}(ConstraintRef[])).values)
 
 
     # simple problem that can be solved analytically: deploy same capacity of source as demand
@@ -29,6 +34,7 @@ using Test
 
         ec = EnergyCarrier("e", s)
         en = Node("energy", ec, evalprice=true)
+        @test en.dualprice isa SavedDualPrice{AffExpr}
 
         # model not optimized
         @test_throws ArgumentError dualprice(en)
@@ -44,10 +50,12 @@ using Test
 
         let e = _extract(en)
 
-            @test dualprice(e) isa Stepwise{Float64}
-            # first step: overnight cost @ peak demand + variable cost (1/2 hour step)
-            # next steps: demand is not peak so only variable cost (1:2 hour step)
-            @test all(isapprox.(dualprice(e), [2.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]))
+            @test e.dualprice isa DualPrice{Float64}
+            @test fieldnames(typeof(e.dualprice)) == (:values,)
+            @test dualprice(e) isa Hourly{Float64}
+            # first hour: overnight cost @ peak demand + variable cost
+            # next hours: demand is not peak so only variable cost
+            @test all(isapprox.(dualprice(e), [2.5, 0.5, 0.5, 0.5, 0.5]))
 
         end
     end
@@ -109,7 +117,7 @@ using Test
         e = @test_logs (:warn, "Duals are not available - setting price to -Inf") extract(snap)
 
         @test e isa Snapshot{Float64}
-        @test dualprice(e.nodes["energy"]) isa Stepwise{Float64}
+        @test dualprice(e.nodes["energy"]) isa Hourly{Float64}
         @test all(==(-Inf), dualprice(e.nodes["energy"]))
 
     end

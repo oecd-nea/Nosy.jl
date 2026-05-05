@@ -5,7 +5,7 @@ using Nosy: Sim, TimeMesh
 using Nosy: Port, Node
 using Nosy: PortStructure, addinput!, addoutput!
 using Nosy: balance, _balance
-using Nosy: DualPrice
+using Nosy: SavedDualPrice
 
 using JuMP: Model, AffExpr
 using Test
@@ -30,7 +30,7 @@ using Test
         addinput!(ps, "p1", "c1", p1)
         addinput!(ps, "p2", "c2", p2)
         addoutput!(ps, "p3", "c3", p3)
-        return (Node("n", p1.carrier, ps, 0., :default, false, DualPrice{AffExpr}(nothing), Symbol[]), p1, p2, p3)
+        return (Node("n", p1.carrier, ps, 0., :default, false, SavedDualPrice{AffExpr}(nothing), Symbol[]), p1, p2, p3)
     end
 
     let s = tsim()

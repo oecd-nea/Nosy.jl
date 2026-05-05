@@ -6,18 +6,18 @@ using JuMP: dual, has_duals, owner_model
 using ArgCheck: ArgumentError
 
 # extract dual price from node constraint
-function _dualprice(a::DualPrice{<:GenericAffExpr})
+function _dualprice(a::SavedDualPrice{<:GenericAffExpr})
     e = DualPrice{Float64}(nothing)
-    if !isnothing(a.val)
-        if isempty(a.val)
-            e.val = Float64[]
+    if !isnothing(a.constraints)
+        if isempty(a.constraints)
+            e.values = nothing
         else
-            m = owner_model(first(a.val))
+            m = owner_model(first(a.constraints))
             if has_duals(m)
-                e.val = dual.(a.val)
+                e.values = Float64.(dual.(a.constraints))
             elseif issolvedandfeasible(m)
                 @warn "Duals are not available - setting price to -Inf"
-                e.val = fill(-Inf, length(a.val))
+                e.values = fill(-Inf, length(a.constraints))
             else
                 throw(ArgumentError("Cannot evaluate dual price: duals are not available"))
             end
@@ -25,23 +25,24 @@ function _dualprice(a::DualPrice{<:GenericAffExpr})
     end
     return e
 end
-_dualprice(a::DualPrice{Float64}) = a.val
+_dualprice(a::DualPrice{Float64}) = a.values
 
 _dualprice(::Nothing, ::Sim) = nothing
 _dualprice(a::AbstractVector{<:Number}, s::Sim) = Stepwise(a, s.mesh)
 
 function _dualprice(n::Node{<:GenericAffExpr})
-    if isnothing(n.dualprice.val) && !issolvedandfeasible(sim(n).model)
+    if isnothing(n.dualprice.constraints) && !issolvedandfeasible(sim(n).model)
         throw(ArgumentError("Cannot evaluate dual price: model is not optimized"))
     end
-    return _dualprice(_dualprice(n.dualprice).val, sim(n))
+    return _dualprice(_dualprice(n.dualprice).values, sim(n))
 end
-_dualprice(n::Node{Float64}) = _dualprice(n.dualprice.val, sim(n))
+_dualprice(n::Node{Float64}) = _dualprice(n.dualprice.values, sim(n))
+
+_hourlydualprice(::Nothing) = nothing
+_hourlydualprice(a::Stepwise{Float64}) = Hourly(a)
 
 """
     dualprice(n::Node)
 Return the dual price associated with node `n`
 """
-dualprice(n::Node{Float64}) = _dualprice(n)
-
-dualprice(n::Node) = _dualprice(n)
+dualprice(n::Node) = _hourlydualprice(_dualprice(n))
