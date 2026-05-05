@@ -2,7 +2,7 @@
 Extraction of solution.
 """
 
-using JuMP: GenericAffExpr, value, is_solved_and_feasible
+using JuMP: GenericAffExpr, value
 using JuMP: termination_status, OPTIMIZE_NOT_CALLED
 
 
@@ -12,7 +12,7 @@ Return a Snapshot populated with values corresponding to the optimized system.
 """
 function extract(s::Snapshot{<:GenericAffExpr})
     m = sim(s).model
-    if is_solved_and_feasible(m)
+    if issolvedandfeasible(m)
         return _extract(s)
     elseif termination_status(m) == OPTIMIZE_NOT_CALLED
         throw(AssertionError("Optimizer was not called"))

@@ -2,7 +2,7 @@
 Evaluation of dual price.
 """
 
-using JuMP: dual, has_duals, is_solved_and_feasible, owner_model
+using JuMP: dual, has_duals, owner_model
 using ArgCheck: ArgumentError
 
 # extract dual price from node constraint
@@ -15,7 +15,7 @@ function _dualprice(a::DualPrice{<:GenericAffExpr})
             m = owner_model(first(a.val))
             if has_duals(m)
                 e.val = dual.(a.val)
-            elseif is_solved_and_feasible(m)
+            elseif issolvedandfeasible(m)
                 @warn "Duals are not available - setting price to -Inf"
                 e.val = fill(-Inf, length(a.val))
             else
@@ -31,7 +31,7 @@ _dualprice(::Nothing, ::Sim) = nothing
 _dualprice(a::AbstractVector{<:Number}, s::Sim) = Stepwise(a, s.mesh)
 
 function _dualprice(n::Node{<:GenericAffExpr})
-    if isnothing(n.dualprice.val) && !is_solved_and_feasible(sim(n).model)
+    if isnothing(n.dualprice.val) && !issolvedandfeasible(sim(n).model)
         throw(ArgumentError("Cannot evaluate dual price: model is not optimized"))
     end
     return _dualprice(_dualprice(n.dualprice).val, sim(n))

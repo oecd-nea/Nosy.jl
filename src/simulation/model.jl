@@ -7,7 +7,11 @@ Nosy.Upper(m::JuMP.Model) = m
 _model(m::JuMP.Model) = m
 _model(::BilevelJuMP.BilevelModel) = throw(AssertionError("Use lowermodel or uppermodel to access the models of a bilevel simulation."))
 
-function JuMP.is_solved_and_feasible(
+issolvedandfeasible(::JuMP.AbstractModel; kwargs...) = throw(AssertionError("unknown model type"))
+issolvedandfeasible(model::JuMP.Model; kwargs...) = JuMP.is_solved_and_feasible(model; kwargs...)
+issolvedandfeasible(model::BilevelJuMP.InnerBilevelModel; kwargs...) = issolvedandfeasible(BilevelJuMP.bilevel_model(model); kwargs...)
+
+function issolvedandfeasible(
     model::BilevelJuMP.BilevelModel;
     dual::Bool = false,
     allow_local::Bool = true,
