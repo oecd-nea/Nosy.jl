@@ -1,12 +1,15 @@
 using Nosy: mass
 using Nosy: Sim, TimeMesh
 using Nosy: VariableCapacity, FixedCapacity
+using Nosy: FixedComposedCapacity
+using Nosy: CapacityMultiplier, Duration
 using Nosy: FixedCost, VariableCost
-using Nosy: BasicConverter
+using Nosy: BasicConverter, BasicStorage
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, getport
 using Nosy: capacity
+using Nosy: nbunits
 using Nosy: fixedcost, variablecost, cost
 using JuMP: Model, GenericAffExpr, AffExpr
 using JuMP: has_upper_bound, lower_bound
@@ -33,6 +36,7 @@ using Test
         @test capacity(c) == 0.
         @test fixedcost(c) == 0.
         @test cost(c) == 0.
+        @test nbunits(c) === nothing
 
     end    
 
@@ -40,6 +44,8 @@ using Test
     let c = makecomp([VariableCapacity("input", mass, lb=5, ub=Inf64)])
 
         @test capacity(c) isa AffExpr
+        @test_logs (:warn, r"No capacity") @test capacity(c, "output") == Inf64
+        @test_throws AssertionError capacity(c, "missing")
 
         v = getvariable(capacity(c))
         @test lower_bound(v) == 5.
@@ -62,6 +68,67 @@ using Test
         @test cost(c, :overnight) == fixedcost(c, :overnight)
         @test cost(c, :fuel) == variablecost(c, :fuel)
         @test cost(c, :vom) == variablecost(c, :vom)
+
+    end
+
+    # capacity multiplier metrics
+    let c = makecomp([FixedCapacity("input", mass, 10.), CapacityMultiplier("input", 0.1:0.1:1.0)])
+
+        @test capacity(c) == 10.
+        @test capacity(c; multiplier=true).data == collect(0.1:0.1:1.0) .* 10.
+
+    end
+
+    # multiple matching multipliers are rejected by the capacity metric
+    let c = makecomp([FixedCapacity("input", mass, 10.), CapacityMultiplier("input", 0.5), CapacityMultiplier("input", 0.8)])
+
+        @test_throws AssertionError capacity(c; multiplier=true)
+
+    end
+
+    # composed capacities match multipliers on any covered port
+    let
+        s = tsim()
+        from = MassCarrier("from", s)
+        to = MassCarrier("to", s)
+        c = Component(
+            "comp",
+            BasicConverter(from, to),
+            [FixedComposedCapacity(["input", "output"], mass, 10.), CapacityMultiplier("output", 0.1:0.1:1.0)],
+        )
+
+        @test capacity(c) == 10.
+        @test capacity(c; multiplier=true).data == collect(0.1:0.1:1.0) .* 10.
+
+    end
+
+    # capacity derived from storage duration
+    let
+        s = tsim()
+        mc = MassCarrier("m", s)
+        c = Component("sto", BasicStorage(mc, modifier=mass), [FixedCapacity("input", mass, 10.), Duration(2.)])
+
+        @test capacity(c, "input") == 10.
+        @test capacity(c, "output") == 10.
+        @test capacity(c, "level") == 20.
+
+    end
+
+    let
+        s = tsim()
+        mc = MassCarrier("m", s)
+        c = Component("sto", BasicStorage(mc, modifier=mass), [FixedCapacity("level", mass, 20.), Duration(2.)])
+
+        @test capacity(c, "level") == 20.
+        @test capacity(c, "input") == 10.
+        @test capacity(c, "output") == 10.
+
+    end
+
+    # number of units metric
+    let c = makecomp([FixedCapacity("input", mass, 10., unitsize=2.)])
+
+        @test nbunits(c) == 5.
 
     end
 
