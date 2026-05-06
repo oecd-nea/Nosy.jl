@@ -25,4 +25,5 @@ end
 struct DCLineModel{T<:VAL} <: AbstractModel{T}
     data::DCLine
     s::PortStructure{T}
+    flow::Stepwise{T}
 end

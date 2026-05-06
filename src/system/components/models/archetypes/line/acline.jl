@@ -21,4 +21,5 @@ end
 struct ACLineModel{T<:VAL} <: AbstractModel{T}
     data::ACLine
     s::PortStructure{T}
+    flow::Stepwise{T}
 end

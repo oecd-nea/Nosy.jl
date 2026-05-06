@@ -1,5 +1,6 @@
 using Test
 using JuMP: Model
+import JuMP
 using Nosy: Sim, TimeMesh, sim
 using Nosy: PowerCarrier, MassCarrier, Node
 using Nosy: ACLine, DCLine, ACLineModel, DCLineModel
@@ -37,10 +38,19 @@ tsim() = Sim(Model(), mesh=TimeMesh(fill(1//1, 10)))
 
         # carrier/sim consistency
         p_from_out = _getport(acmodel.s, "from_out", "acline", :output)
+        p_from_in = _getport(acmodel.s, "from_in", "acline", :input)
+        p_to_in = _getport(acmodel.s, "to_in", "acline", :input)
         p_to_out = _getport(acmodel.s, "to_out", "acline", :output)
         @test p_from_out.carrier === pc
         @test p_to_out.carrier === pc
         @test sim(acmodel.s) === s
+
+        vars = JuMP.all_variables(s.model)
+        @test length(vars) == 10
+        @test JuMP.coefficient(p_from_out.series[1], vars[1]) == 1.0
+        @test JuMP.coefficient(p_to_out.series[1], vars[1]) == -1.0
+        @test iszero(p_from_in.series[1])
+        @test iszero(p_to_in.series[1])
 
         # parameter validation (B>0)
         @test_throws ArgumentError ACLine(pc, pc, 0.0)
@@ -86,10 +96,19 @@ end
 
         # carrier/sim consistency
         p_from_out = _getport(dcmodel.s, "from_out", "dcline", :output)
+        p_from_in = _getport(dcmodel.s, "from_in", "dcline", :input)
+        p_to_in = _getport(dcmodel.s, "to_in", "dcline", :input)
         p_to_out = _getport(dcmodel.s, "to_out", "dcline", :output)
         @test p_from_out.carrier === pc
         @test p_to_out.carrier   === pc
         @test sim(dcmodel.s) === s
+
+        vars = JuMP.all_variables(s.model)
+        @test length(vars) == 10
+        @test JuMP.coefficient(p_from_out.series[1], vars[1]) == 1.0
+        @test JuMP.coefficient(p_to_out.series[1], vars[1]) == -1.0
+        @test iszero(p_from_in.series[1])
+        @test iszero(p_to_in.series[1])
     end
     
     # type safety: carriers must match PowerCarrier only

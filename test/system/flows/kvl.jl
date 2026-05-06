@@ -221,4 +221,41 @@ using Test
 
     end
 
+    # parallel AC/DC edge: KVL rows must not contain the parallel DC line flow
+    let
+        sim = Sim(Model(), mesh=TimeMesh(fill(1//1, 3)))
+        pc = PowerCarrier("electricity", sim)
+        s = Snapshot(sim)
+
+        n1 = Node("n1", pc, rule=:default)
+        n2 = Node("n2", pc, rule=:default)
+        n3 = Node("n3", pc, rule=:default)
+
+        l12 = Component("l12", ACLine(pc, pc, 1.0), [])
+        l23 = Component("l23", ACLine(pc, pc, 1.0), [])
+        l31 = Component("l31", ACLine(pc, pc, 1.0), [])
+        d12 = Component("d12", DCLine(pc, pc), [])
+
+        connect!(s, l12, n1, "from_out"); connect!(s, l12, n1, "from_in")
+        connect!(s, l12, n2, "to_in"); connect!(s, l12, n2, "to_out")
+
+        connect!(s, l23, n2, "from_out"); connect!(s, l23, n2, "from_in")
+        connect!(s, l23, n3, "to_in"); connect!(s, l23, n3, "to_out")
+
+        connect!(s, l31, n3, "from_out"); connect!(s, l31, n3, "from_in")
+        connect!(s, l31, n1, "to_in"); connect!(s, l31, n1, "to_out")
+
+        connect!(s, d12, n1, "from_out"); connect!(s, d12, n1, "from_in")
+        connect!(s, d12, n2, "to_in"); connect!(s, d12, n2, "to_out")
+
+        Nosy.finalize!(s)
+
+        eqs = JuMP.all_constraints(sim.model, JuMP.AffExpr, JuMP.MOI.EqualTo{Float64})
+        kvl_rows = last(eqs, Nosy.nsteps(sim))
+        for cref in kvl_rows
+            vars = keys(JuMP.constraint_object(cref).func.terms)
+            @test !any(occursin("d12_", JuMP.name(v)) for v in vars)
+        end
+    end
+
 end

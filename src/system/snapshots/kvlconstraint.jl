@@ -125,8 +125,12 @@ function _transmissionbalance(s::Snapshot, from::String, to::String, node_map::U
         m = model(comp)
         if m isa ACLineModel || m isa DCLineModel
 
-            # use cached node_map if available for efficiency
-            if isnothing(node_map) || !haskey(node_map, cname)
+            # use cached node_map if available for efficiency. When a map is
+            # provided by KVL generation, it intentionally contains AC lines
+            # only; components absent from it must not be re-discovered.
+            if !isnothing(node_map) && !haskey(node_map, cname)
+                continue
+            elseif isnothing(node_map)
                 nnames = _find_connected_nodes(s, cname, m)
                 if length(nnames) != 2 || !(from in nnames && to in nnames)
                     continue
@@ -139,27 +143,19 @@ function _transmissionbalance(s::Snapshot, from::String, to::String, node_map::U
                 end
             end
             
-            p_from_out = _getport(m.s, "from_out", cname, :output) 
-            p_to_out = _getport(m.s, "to_out", cname, :output)
-
-            mod_from_out = _defaultmodifier(carrierstyle(carrier(p_from_out)))
-            mod_to_out = _defaultmodifier(carrierstyle(carrier(p_to_out)))
-
-            f_ft = mod_from_out(p_from_out).data
-            f_tf = mod_to_out(p_to_out).data
-
             from_n = nodes(s)[from]
             
             # determine line orientation to compute net flow correctly
             # lines are bidirectional, so we need to know which side each node is on
             from_side = _hasinput(portstructure(from_n), "from_out", cname)
+            flow = m.flow.data
             
             if from_side
-                # from node on "from" side: net = f_ft - f_tf
-                net = isnothing(net) ? (f_ft .- f_tf) : (net .+ (f_ft .- f_tf))
+                # from node on "from" side: positive flow injects at from node
+                net = isnothing(net) ? flow : (net .+ flow)
             else
-                # from node on "to" side: net = f_tf - f_ft
-                net = isnothing(net) ? (f_tf .- f_ft) : (net .+ (f_tf .- f_ft))
+                # from node on "to" side: reverse orientation
+                net = isnothing(net) ? (-1.0 .* flow) : (net .- flow)
             end
         end
     end
