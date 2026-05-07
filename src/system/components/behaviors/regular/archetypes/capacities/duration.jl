@@ -12,7 +12,9 @@ struct Duration <: AbstractBehaviorData
 
     @doc"""
         Duration(hours::Number; inputpname::String="input", outputpname::String="output", levelpname::String="level")
-    Return a Duration behavior data, linking model capacities for ports `flowpname` and `levelpname` by the duration `hours`.
+
+    Return `Duration` behavior data linking storage flow capacity and level capacity by the duration `hours`.
+    Exactly one of `inputpname`, `outputpname`, or `levelpname` must have a capacity behavior.
     """
     Duration(hours::Number; inputpname::String="input", outputpname::String="output", levelpname::String="level") = new(Float64(hours), inputpname, outputpname, levelpname)
 end

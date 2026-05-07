@@ -5,7 +5,8 @@ Generate a table for a given metric.
 using DataFrames
 
 """
-    table(s::Snapshot, metric::Function)
+    table(s::Snapshot, metric::Function; removenothing::Bool=true)
+
 Return a table containing the evaluation of the metric `metric` over the components of Snapshot `s`.
 If `removenothing` is true, the values equal to nothing will be discarded.
 """
@@ -21,8 +22,9 @@ function table(s::Snapshot{T}, metric::Function; removenothing::Bool=true) where
 end
 
 """
-    costs(s::Snapshot; removezero::Bool=true, addtotal::Bool=true)
-Return a DataFrame containing the detail of all the cost items of all the components of Snapshot `s`.
+    costs(s::Snapshot; removezero::Bool=false, addtotal::Bool=true)
+
+Return a DataFrame containing the details of all the cost items of all the components of Snapshot `s`.
 If `removezero`, components with costs equal to zero will not appear.
 If `addtotal`, sums over components and cost types will also be provided.
 """

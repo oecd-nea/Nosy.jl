@@ -5,24 +5,25 @@ using JuMP: @constraint
 """
 Lazy storage.
 
-Has a level, applies storage equality constraint
+Has a level port and applies a storage equality constraint to joint flows.
 """
 
 
 struct LazyStorage{C<:AbstractCarrier,M<:Function} <: AbstractModelData
     sim::Sim
     level::C # only level is provided by component, other ports are added as joint flows (free / linked)
-    modifier::M # the balance equation will be performed at the component level after appying this modifier
+    modifier::M # the balance equation will be performed at the component level after applying this modifier
     eff::LittleDict{String,Float64} # dictionary for efficiencies
     self_discharge::Float64 # hourly ratio, between 0 and 1
     simplified::Bool
 end
 
 """
-    LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier; eff=nothing)
-Return a model LazyStorage model which has a level of carrier `level`.
-The lazy storage constraint will be applied to the level and the associated joint flows after applying the `modifier` to flows.`. 
-NB storage is periodic: the step after the last step is the first step.
+    LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, self_discharge=0., simplified::Bool=false)
+
+Return a `LazyStorage` model archetype with a level of carrier `level`.
+The lazy storage constraint is applied to the level and associated joint flows after applying `modifier` to flows.
+Storage is periodic: the step after the last step is the first step.
 """
 function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, self_discharge=0., simplified::Bool=false)
     s = sim(level)

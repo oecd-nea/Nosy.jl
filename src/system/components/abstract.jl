@@ -16,7 +16,7 @@ abstract type AbstractBehaviorData <: AbstractElement{Float64} end
 
 """
 AbstractBehavior: supertype for behaviors.
-Behaviors themselves are not constructed by the user. 
+Behaviors themselves are not constructed by the user.
 The constructor is called by the component constructor instead.
 """
 

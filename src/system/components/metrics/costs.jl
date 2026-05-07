@@ -2,6 +2,7 @@ _metrictype(c::AbstractCostBehavior) = _costtype(c)
 
 """
     fixedcost(c::Component)
+
 Return the fixed cost of Component `c`.
 If the component has no fixed cost, return zero.
 """
@@ -9,13 +10,15 @@ fixedcost(c::Component{T}) where T = sumofmetric(c, FixedCostBehavior{T}, _fixed
 
 """
     fixedcost(c::Component, type::Symbol)
-Return fixed cost cost of type `type` of Component `c`.
+
+Return the fixed cost of type `type` of Component `c`.
 If the component has no fixed cost, return zero.
 """
 fixedcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, FixedCostBehavior{T}, _fixedcost, type)
 
 """
     variablecost(c::Component)
+
 Return the variable cost of Component `c`.
 If the component has no variable cost, return zero.
 """
@@ -23,13 +26,15 @@ variablecost(c::Component{T}) where T = sumofmetric(c, VariableCostBehavior{T}, 
 
 """
     variablecost(c::Component, type::Symbol)
-Return variable cost cost of type `type` of Component `c`.
+
+Return the variable cost of type `type` of Component `c`.
 If the component has no variable cost, return zero.
 """
 variablecost(c::Component{T}, type::Symbol) where T = sumofmetric(c, VariableCostBehavior{T}, _variablecost, type)
 
 """
     noloadcost(c::Component)
+
 Return the no-load cost of Component `c`.
 If the component has no no-load cost, return zero.
 """
@@ -37,6 +42,7 @@ noloadcost(c::Component{T}) where T = sumofmetric(c, NoLoadCostBehavior{T}, _nol
 
 """
     noloadcost(c::Component, type::Symbol)
+
 Return the no-load cost of type `type` of Component `c`.
 If the component has no no-load cost, return zero.
 """
@@ -44,6 +50,7 @@ noloadcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, NoLoadCostBeh
 
 """
     startupcost(c::Component)
+
 Return the startup cost of Component `c`.
 If the component has no startup cost, return zero.
 """
@@ -51,6 +58,7 @@ startupcost(c::Component{T}) where T = sumofmetric(c, StartupCostBehavior{T}, _s
 
 """
     startupcost(c::Component, type::Symbol)
+
 Return the startup cost of type `type` of Component `c`.
 If the component has no startup cost, return zero.
 """
@@ -70,12 +78,14 @@ const COST_COMPONENT_METRICS = Dict(
 
 """
     cost(c::Component)
+
 Return the cost of Component `c`.
 """
 cost(c::Component) = sum(f(c) for (f,_) in COST_COMPONENT_METRICS)
 
 """
-    cost(c::Component)
+    cost(c::Component, type::Symbol)
+
 Return the cost of type `type` of Component `c`.
 """
 cost(c::Component, type::Symbol) = sum(f(c, type) for (f,_) in COST_COMPONENT_METRICS)

@@ -1,7 +1,7 @@
 using JuMP: Model, num_constraints, num_variables, list_of_constraint_types, solver_name
 
 """
-Sim: data structure containing the information shared with all the simulation.
+Simulation data shared by all nodes, components, carriers, and snapshots.
 """
 struct Sim
     mesh::RTimeMesh
@@ -11,10 +11,13 @@ struct Sim
 end
 
 """
-    Sim(model::JuMP.AbstractModel; mesh::RTimeMesh=TimeMesh())
+    Sim(model::JuMP.AbstractModel; mesh::RTimeMesh=TimeMesh(), suffix::String="")
+
 Return a Sim based on the JuMP model `model`.
+
 Optional arguments:
   * `mesh`: TimeMesh for the simulation (default: 8760 hours, 1 step per hour)
+  * `suffix`: suffix appended to generated variable base names
 """
 function Sim(
     model::JuMP.AbstractModel;
@@ -30,7 +33,8 @@ function Sim(
 end
 
 """
-    Sim(optimizer_constructor; constraint_scaling=true, kwargs...)
+    Sim(optimizer_constructor; mesh::RTimeMesh=TimeMesh(), suffix::String="", constraint_scaling::Bool=true, kwargs...)
+
 Build a `JuMP.Model` from `optimizer_constructor` and return a `Sim`.
 By default, scalar affine constraints are scaled before they reach the solver.
 Extra keyword arguments override simulation options.
@@ -65,18 +69,21 @@ eachhour(s::Sim) = eachhour(s.mesh)
 
 """
     lowermodel(s::Sim)
+
 Return the lower model of a Bilevel problem or the model itself for a single-level problem.
 """
 lowermodel(s::Sim) = Lower(s.model)
 
 """
     uppermodel(s::Sim)
+
 Return the upper model of a Bilevel problem or the model itself for a single-level problem.
 """
 uppermodel(s::Sim) = Upper(s.model)
 
 """
     model(s::Sim)
+
 Return the JuMP model of the simulation for a single-level problem.
 """
 model(s::Sim) = _model(s.model)

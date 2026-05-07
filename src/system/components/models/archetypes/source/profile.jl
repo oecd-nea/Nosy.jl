@@ -17,15 +17,16 @@ end
 
 """
     ProfileSource(carrier::AbstractCarrier, profile)
-Return a model ProfileSource model for carrier `carrier` with a non-negative profile `profile`.
+
+Return a `ProfileSource` model archetype for carrier `carrier` with a non-negative profile `profile`.
 
 If `profile` is a Number: the profile is flat.
 If `profile` is a Vector: it defines the profile.
 
 The values of `profile` above `cutoff` will be set to `cutoff`.
 
-NB: adding a Capacity behavior is mandatory.
-NB: the profile is not renormalized.
+Adding a capacity behavior is mandatory.
+The profile is not renormalised.
 """
 function ProfileSource(carrier::AbstractCarrier, profile; cutoff::Number=Inf64)
     @argcheck all(profile .>= 0.) "The profile cannot be negative"
@@ -63,4 +64,3 @@ function _apply_constraints!(c::AbstractComponent, ::ProfileSourceModel)
 end
 
 modelname(::ProfileSourceModel) = "profile source"
-

@@ -48,11 +48,13 @@ end
 const NODE_RULES = [:default, :curtailed]
 
 """
-    Node(name::String, c::Carrier; rule::Symbol=:default)
-Construct a Node with name `name` associated with carrier `c`. A node has a unique carrier.
-The `rule` defines the node behavior (:default, :curtailed).
-The `losses` is a ratio (between 0 and 1) of the sum of the input that is lost.
-The `tags` are the node tags.
+    Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
+
+Construct a `Node` with name `name` associated with carrier `c`. A node has a unique carrier.
+The `rule` defines the node behavior (`:default` or `:curtailed`).
+The `losses` value is the ratio, between 0 and 1, of input flow that is lost.
+Set `evalprice=true` to store node-balance constraints for dual-price extraction.
+The `tags` argument initialises the node tags.
 """
 function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
     return Node(

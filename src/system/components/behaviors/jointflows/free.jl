@@ -12,7 +12,8 @@ struct FreeJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
 
     @doc """
         FreeJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol; mustconnect::Bool=true)
-    Return a FreeJointFlow with name `name`, of sense `sense` of carrier `carrier`.
+
+    Return a `FreeJointFlow` with name `name`, sense `sense`, and carrier `carrier`.
     """
     function FreeJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol; mustconnect::Bool=true)
         @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"

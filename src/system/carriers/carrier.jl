@@ -19,9 +19,10 @@ struct MassCarrier <: AbstractCarrier
 
     @doc """
         MassCarrier(name::String, sim::Sim; energy=nothing)
-    Return a MassCarrier with name `name` associated with Sim `sim`.
+
+    Return a `MassCarrier` with name `name` associated with `sim`.
     Optional arguments:
-      * energy: Number (or abstract vector of numbers, for each hour or step) describing the energy density in MWh/t.
+      * `energy`: number, or vector with one value per hour or step, describing the energy density in MWh/t.
     """
     function MassCarrier(name::String, sim::Sim; energy=nothing)
         if !isnothing(energy)
@@ -42,9 +43,10 @@ struct EnergyCarrier <: AbstractCarrier
 
     @doc """
         EnergyCarrier(name::String, sim::Sim; energy=nothing)
-    Return an EnergyCarrier with name `name` associated with Sim `sim`.
+
+    Return an `EnergyCarrier` with name `name` associated with `sim`.
     Optional arguments:
-    * energy: Number (or abstract vector of numbers, for each hour or step) describing the energy density in MWh/t.
+      * `energy`: number, or vector with one value per hour or step, describing the energy density in MWh/t.
     """
     function EnergyCarrier(name::String, sim::Sim; energy=nothing)
         if !isnothing(energy)
@@ -69,9 +71,10 @@ struct CO2Carrier <: AbstractCarrier
 
     @doc """
         CO2Carrier(name::String, sim::Sim; weight::Number=1.)
-    Return a CO2Carrier with name `name` associated with Sim `sim`.
+
+    Return a `CO2Carrier` with name `name` associated with `sim`.
     Optional arguments:
-        * weight: Number describing the CO2 equivalent weight in t CO2eq/t.
+      * `weight`: CO2-equivalent weight in t CO2eq/t.
     """
     function CO2Carrier(name::String, sim::Sim; weight::Number=1.) 
         m = Stepwise(1., sim.mesh)
@@ -87,7 +90,8 @@ struct PowerCarrier <: AbstractCarrier
 
     @doc """
         PowerCarrier(name::String, sim::Sim)
-    Return a PowerCarrier with name `name` associated with Sim `sim`.
+
+    Return a `PowerCarrier` with name `name` associated with `sim`.
     """
     function PowerCarrier(name::String, sim::Sim)
         e = Stepwise(1.0, sim.mesh)  

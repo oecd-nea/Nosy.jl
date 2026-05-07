@@ -6,9 +6,11 @@ using ArgCheck: @argcheck, ArgumentError
 
 """
     balance(s::Snapshot, name::String, sense::Symbol, modifier::Function; collapse::Bool=false, aggregate::Bool=false)
+
 Return the flow balance for component or node `name` in snapshot `s` with sense `sense` and modifier `modifier`.
+
 Optional arguments:
-  * `collapse`: if `true`, the flows are summed over time, otherwise Hourly time series are returned
+  * `collapse`: if `true`, the flows are summed over time; otherwise `Hourly` time series are returned
   * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
 """
 function balance(s::Snapshot, name::String, sense::Symbol, modifier::Function; collapse::Bool=false, aggregate::Bool=false)

@@ -18,16 +18,19 @@ end
 
 """
     VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false, expression::Union{Nothing,GenericVariableRef,GenericAffExpr,Number}=nothing)
-Return a VariableCapacity behavior data, associated with port name `pname` and modifier `modifier`.
+
+Return `VariableCapacity` behavior data associated with port name `pname` and modifier `modifier`.
 Optional parameters:
-* lb: lower bound
-* ub: upper bound
-* unitsize: size of the unit when considering a fleet
-* integer: if unitsize is a number, constrains the number of units to be integer
-* expression: reused capacity input (Nothing / GenericVariableRef / GenericAffExpr / Number)
-  - Number is interpreted as fixed capacity by setting lb = ub = expression.
-NB: warmstart is not supported when `expression` is provided.
-NB: integer is supported only when `expression` is a GenericVariableRef.
+  * `lb`: lower bound
+  * `ub`: upper bound
+  * `warmstart`: initial value for the capacity variable
+  * `unitsize`: size of one unit when considering a fleet
+  * `integer`: if `unitsize` is a number, constrain the number of units to be integer
+  * `expression`: reused capacity input (`nothing`, `GenericVariableRef`, `GenericAffExpr`, or `Number`)
+
+A numeric `expression` is interpreted as a fixed capacity by setting `lb = ub = expression`.
+`warmstart` is not supported when `expression` is provided.
+`integer` is supported only when `expression` is a `GenericVariableRef`.
 """
 function VariableCapacity(pname::String, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false, expression::Union{Nothing,GenericVariableRef,GenericAffExpr,Number}=nothing)
     @argcheck lb >= 0. "Capacity cannot be negative"
@@ -153,7 +156,7 @@ function __apply_constraint_general!(c::Component, b::VariableCapacityBehavior)
     @constraint(lowermodel(sim(c)), b.data.modifier(getport(c, b.data.pname)).data .<= _capacity(b))
 end
 
-# special case - ProfileSourceModel: behavior is enforced throuhg _addbehavior!
+# special case - ProfileSourceModel: behavior is enforced through _addbehavior!
 function __apply_constraints_profile!(::Component, ::VariableCapacityBehavior) end
 
 # general case: apply constraint at each timestep

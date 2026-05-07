@@ -3,6 +3,7 @@ import MathOptInterface as MOI
 
 """
     _conflicts(m)
+
 Return the IIS as a vector of constraints in conflict of JuMP model `m`.
 """
 function _conflicts(m::JuMP.Model)
@@ -23,6 +24,7 @@ end
 
 """
     conflicts(s::Sim)
+
 Return the vector of constraints in conflict (IIS) of the simulation of `s`.
 If there are no conflicts, return nothing.
 """

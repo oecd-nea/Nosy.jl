@@ -3,7 +3,7 @@ using JuMP: @variable
 """
 Basic sink.
 
-Flexibly consumes an input flow. Mirrors "BasicSink".
+Flexibly consumes an input flow. Mirrors `DispatchableSource`.
 """
 
 
@@ -14,7 +14,8 @@ end
 
 """
     BasicSink(carrier::AbstractCarrier)
-Return a model BasicSink model for carrier `carrier`.
+
+Return a `BasicSink` model archetype for carrier `carrier`.
 """
 function BasicSink(carrier::AbstractCarrier)
     return BasicSink(sim(carrier), carrier)

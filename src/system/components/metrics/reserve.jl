@@ -4,6 +4,7 @@ Component reserve metrics.
 
 """
     reserve(c::Component, sense::Symbol, rname::String)
+
 Return the reserve of Component `c` for the specified `sense` and `rname`.
 `sense` is `:up` for upward reserve or `:down` for downward reserve.
 """
@@ -19,4 +20,3 @@ function reserve(c::Component{T}, sense::Symbol, rname::String) where T
     
     return result
 end
-

@@ -15,11 +15,12 @@ struct LinkedJointFlow{C<:AbstractCarrier,F<:Function,M<:Function} <: AbstractJo
 end
 
 """
-    LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflow::String, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
-Return a LinkedJointFlow with following characteristics:
+    LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflows, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)
+
+Return a `LinkedJointFlow` with the following characteristics:
   * `sense`: sense of the joint flow
-  * `baseflows`: name(s) of the flow of the target component to evaluate the joint flow from. Must be String or iterable of Strings.
-  * `f`: affine function to calculate the joint flow in function of the `baseflows` e.g. x->x[1] + 2 * x[2].
+  * `baseflows`: name or names of the target component flows used to evaluate the joint flow. Must be a string or an iterable of strings.
+  * `f`: affine function that calculates the joint flow from `baseflows`, e.g. `x -> x[1] + 2 * x[2]`.
   * `modifier`: modifier applied before `f` to both flows
 """
 function LinkedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, baseflows, f::Function; modifier::Function=defaultmodifier, mustconnect::Bool=true)

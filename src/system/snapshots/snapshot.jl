@@ -16,6 +16,7 @@ end
 
 """
     Snapshot(sim::Sim, options::AbstractDict{Symbol,<:Any}=Dict{Symbol,Any}())
+
 Create a Snapshot for simulation `sim` with options `options`.
 Options from `sim` are merged with `options`, and an error is thrown if there are duplicate keys.
 """
@@ -36,6 +37,14 @@ function Snapshot(sim::Sim, options::AbstractDict{Symbol,<:Any}=Dict{Symbol,Any}
     )
 end
 
+"""
+    sim(x)
+
+Return the [`Sim`](@ref) associated with `x`.
+
+The most common use is `sim(snapshot)`, which gives access to the simulation
+object shared by the snapshot and its JuMP model.
+"""
 sim(s::Snapshot) = s.sim
 components(s::Snapshot) = s.components
 nodes(s::Snapshot) = s.nodes
@@ -45,11 +54,18 @@ getcomponent(s::Snapshot, cname::String) = hascomponent(s, cname) ? components(s
 
 _getwithtags(s::Snapshot, f::Function, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = sort(LittleDict([(k,v) for (k,v) in f(s) if (all(hastag(v, tag) for tag in withtags) && !any(hastag(v, tag) for tag in withouttags))]))
 
+"""
+    getcomponents(snapshot; with=Symbol[], without=Symbol[])
+
+Return the components in `snapshot`, optionally filtered by tags.
+"""
 getcomponents(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) = _getwithtags(s, components, with, without)
 
 """
-    getcomponents(s::Snapshot, nodename::String, tags...)
-Return a Dict of components with tags `withtags`, and without tages `withouttags`, connected to Node named `nodename` in Snapshot `s`.
+    getcomponents(s::Snapshot, nodename::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[])
+
+Return components connected to the node named `nodename` in snapshot `s`.
+The `with` and `without` keywords filter connected components by tags.
 """
 function getcomponents(s::Snapshot, nodename::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[])
     d0 = getcomponents(s, with=with, without=without)
@@ -64,6 +80,11 @@ function getcomponents(s::Snapshot, nodename::String; with::Vector{Symbol}=Symbo
 end
 
 
+"""
+    getnodes(snapshot; with=Symbol[], without=Symbol[])
+
+Return the nodes in `snapshot`, optionally filtered by tags.
+"""
 getnodes(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) = _getwithtags(s, nodes, with, without)
 
 hasnode(s::Snapshot, nname::String) = haskey(nodes(s), nname)

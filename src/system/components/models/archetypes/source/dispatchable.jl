@@ -14,7 +14,8 @@ end
 
 """
     DispatchableSource(carrier::AbstractCarrier)
-Return a model DispatchableSource model for carrier `carrier`.
+
+Return a `DispatchableSource` model archetype for carrier `carrier`.
 """
 function DispatchableSource(carrier::AbstractCarrier)
     return DispatchableSource(sim(carrier), carrier)

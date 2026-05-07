@@ -32,7 +32,7 @@ _dualprice(a::AbstractVector{<:Number}, s::Sim) = Stepwise(a, s.mesh)
 
 function _dualprice(n::Node{<:GenericAffExpr})
     if isnothing(n.dualprice.constraints) && !issolvedandfeasible(sim(n).model)
-        throw(ArgumentError("Cannot evaluate dual price: model is not optimized"))
+        throw(ArgumentError("Cannot evaluate dual price: model is not optimised"))
     end
     return _dualprice(_dualprice(n.dualprice).values, sim(n))
 end
@@ -43,6 +43,7 @@ _hourlydualprice(a::Stepwise{Float64}) = Hourly(a)
 
 """
     dualprice(n::Node)
-Return the dual price associated with node `n`
+
+Return the dual price associated with node `n`.
 """
 dualprice(n::Node) = _hourlydualprice(_dualprice(n))

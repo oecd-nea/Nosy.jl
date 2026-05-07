@@ -6,12 +6,14 @@ Direct application of the balance on the port structure of the component.
 
 """
     balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
+
 Return the flow balance for component `c`.
+
 Parameters:
   * `c`: Component
-  * `sense`: `input` or `:output` or `:level`
+  * `sense`: `:input`, `:output`, or `:level`
   * `modifier`: modifier function e.g. `energy`, `mass`, `co2`
-  * `collapse`: if `true`, the flows are summed over time, otherwise the Hourly series are returned
+  * `collapse`: if `true`, the flows are summed over time; otherwise the `Hourly` series are returned. Must be `false` when `sense` is `:level`.
   * `aggregate`: if `true`, the multiple flows are summed together, otherwise one entry per flow is returned
 """
 function balance(c::Component, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
@@ -64,6 +66,7 @@ _flow(c::Component, pname::String, sense::Symbol, modifier::Function, step::Int)
 
 """
     flow(c::Component, pname::String, modifier::Function, hour::Int)
+
 Return the value of the flow of port named `pname` of component `c` at hour `hour` modified by `modifier`.
 """
 function flow(c::Component, pname::String, modifier::Function, hour::Int)
@@ -72,7 +75,8 @@ end
 
 """
     flow(c::Component, pname::String, sense::Symbol, modifier::Function, hour::Int)
-Return the value of the flow of port named `pname` of component `c` at hour `hour` modified by `modifier`.
+
+Return the value of the flow of port named `pname` in sense `sense` of component `c` at hour `hour`, modified by `modifier`.
 """
 function flow(c::Component, pname::String, sense::Symbol, modifier::Function, hour::Int)
     return _flow(c, pname, sense, modifier, step(sim(c).mesh, hour))
@@ -94,8 +98,9 @@ end
 
 """
     flow(c::Component, sense::Symbol, modifier::Function, hour::Int)
-Return the value of the the sum of the flows in sense `sense` of component `c` at hour `hour` modified by `modifier`.
-Return zero if the port is not compatible with `modifier`.
+
+Return the sum of the flows in sense `sense` of component `c` at hour `hour`, modified by `modifier`.
+Return zero if no port in that sense is compatible with `modifier`.
 """
 function flow(c::Component, sense::Symbol, modifier::Function, hour::Int)
     return _flow(c, sense, modifier, step(sim(c).mesh, hour))
@@ -103,9 +108,10 @@ end
 
 """
     table(c::Component, modifier::Function; collapse::Bool=false)
+
 Perform a balance at all the ports of the component, following a given modifier.
-If collapse, return an OrderedDict of (portname => yearly balance).
-If collapse is false, return a DataFrame of Hourly time series per port. 
+If `collapse` is `true`, return an `OrderedDict` of `portname => yearly balance`.
+If `collapse` is `false`, return a `DataFrame` of `Hourly` time series per port.
 """
 function table(c::Component{T}, modifier::Function; collapse::Bool=false) where T
     b = OrderedDict(

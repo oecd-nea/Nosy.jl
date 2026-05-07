@@ -21,16 +21,18 @@ struct UnitCommitment <: AbstractUnitCommitmentData
 end
 
 """
-    UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime::Number=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false)
-Return a UnitCommitment behavior related to port `pname`, with minimum flow ratio `minratio`.
+    UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false, startupmask::Union{Nothing,Vector{Bool}}=nothing, shutdownmask::Union{Nothing,Vector{Vector{Bool}}}=nothing)
+
+Return a `UnitCommitment` behavior related to port `pname`, with minimum flow ratio `minratio`.
 Optional parameters:
   * startup: startup duration in hours (default=0).
   * shutdown: shutdown duration in hours (default=0).
-  * uptime:: minimum uptime duration in hours (default=0).
-  * downtime: minimum downtime duration in hours (default=0).
+  * uptime: minimum uptime duration in hours (default=0).
+  * downtime: minimum downtime duration in hours, or a vector of alternative downtime durations (default=0).
   * startupratio: flow ratio at the end of the startup phase (default=minratio)
   * shutdownratio: flow ratio at the beginning of the shutdown phase (default=minratio)
   * integer: whether the unit commitment must follow an integer constraint (default=false).
+  * startupmask: Boolean vector disallowing startup at certain hours.
   * shutdownmask: Vector of Boolean Vector, disallowing shutdown at certain hours for certain shutdown types.
 """
 function UnitCommitment(pname::String, minratio::Number; startup::Number=0, shutdown::Number=0, uptime::Number=0, downtime=0, startupratio::Number=minratio, shutdownratio::Number=minratio, integer::Bool=false, startupmask::Union{Nothing,Vector{Bool}}=nothing, shutdownmask::Union{Nothing,Vector{Vector{Bool}}}=nothing)

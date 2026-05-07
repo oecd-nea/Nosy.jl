@@ -4,7 +4,7 @@ using ArgCheck: @argcheck
 Demand.
 
 Consumes an input flow according to a series.
-The series is not normalized, it is the actual consumption value.
+The series is not normalised, it is the actual consumption value.
 """
 
 struct Demand{C<:AbstractCarrier} <: AbstractModelData
@@ -15,9 +15,10 @@ end
 
 """
     Demand(carrier::AbstractCarrier, series; modifier=defaultmodifier)
-Return a model Demand model for carrier `carrier` with a non-negative series `series`.
+
+Return a `Demand` model archetype for carrier `carrier` with a non-negative series `series`.
 The parameter `series` can be either a Vector (of length equal to number of hours or steps) or a Number.
-If the parameter `modifier` is provided, it implies that the `series` provided by the user is expressed in term of modified carrier unit.
+If `modifier` is provided, `series` is interpreted in the modified carrier unit.
 """
 function Demand(carrier::AbstractCarrier, series; modifier=defaultmodifier)
     @argcheck all(series .>= 0.) "The series cannot be negative"
@@ -46,4 +47,3 @@ end
 function _apply_constraints!(::DemandModel) end
 
 modelname(::DemandModel) = "demand"
-

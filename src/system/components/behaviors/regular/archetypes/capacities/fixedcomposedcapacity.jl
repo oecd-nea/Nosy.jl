@@ -16,9 +16,10 @@ end
 
 """
     FixedComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function, val::Number; unitsize::Union{Nothing,Number})
-Return a FixedComposedCapacity behavior data, associated with one or several port names `pname`, modifier `modifier` and fixed value `val`.
+
+Return `FixedComposedCapacity` behavior data associated with one or several port names `pname`, modifier `modifier`, and fixed value `val`.
 The capacity applies to the sum of targeted flows.
-If unitsize is a number: it is the size of the unit when considering a fleet.
+If `unitsize` is a number, it is the size of one unit when considering a fleet.
 """
 function FixedComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function, val::Number; unitsize::Union{Nothing,Number}=nothing)
     _pname = pname isa String ? [pname] : copy(pname)

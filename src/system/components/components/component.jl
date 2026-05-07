@@ -11,6 +11,11 @@ struct Component{T<:VAL,M<:AbstractModel} <: AbstractComponent{T}
     s::PortStructure{T} # shallow copy of the port structure of the underlying model
 end
 
+"""
+    model(c::Component)
+
+Return the model built for component `c`.
+"""
 model(c::Component) = c.model
 
 name(c::Component) = c.name
@@ -23,7 +28,20 @@ hasoutput(c::Component, pname::String) = _hasoutput(c.s, pname, name(c))
 haslevel(c::Component, pname::String) = _haslevel(c.s, pname, name(c))
 
 
+"""
+    tag!(element, tag::Symbol)
+
+Add `tag` to a component or node.
+
+Tags are used to group model elements for reporting and filtering.
+"""
 tag!(c::Component, tag::Symbol) = tag in c.tags ? nothing : push!(c.tags, tag)
+
+"""
+    hastag(element, tag::Symbol)
+
+Return whether a component or node has `tag`.
+"""
 hastag(c::Component, tag::Symbol) = tag in c.tags
 
 # dispatch on model (e.g. ProfileSource has a different implementation)
@@ -37,7 +55,8 @@ end
 
 """
     Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Vector{Symbol}=Symbol[])
-Component constructor. Return a Component with name `name`, based on model `model` and bearing behaviors `behaviors`, tagged with `tags`.
+
+Construct a `Component` with name `name`, model archetype `model`, behaviors and joint flows from `behaviors`, and optional `tags`.
 """
 function Component(name::String, model::AbstractModelData, behaviors::AbstractVector=[]; tags::Vector{Symbol}=Symbol[])
     

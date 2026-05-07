@@ -23,7 +23,9 @@ end
 
 """
     Ramping(pname::String, sense::Symbol, val::Number; modifier::Function=defaultmodifier)
-Return a Ramping behavior.
+
+Return a `Ramping` behavior that constrains the ramp rate of port `pname`.
+`sense` must be `:up` or `:down`, and `val` is the maximum rate in the modified carrier unit per hour.
 """
 function Ramping(pname::String, sense::Symbol, val::Number; modifier::Function=defaultmodifier)
     return Ramping(pname, sense, val, modifier)

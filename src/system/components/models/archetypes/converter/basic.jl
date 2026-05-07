@@ -18,7 +18,8 @@ end
 
 """
     BasicConverter(input::AbstractCarrier, output::AbstractCarrier; ratio=1., modifier::Function=defaultmodifier)
-Return a model BasicConverter model which converts carrier `input` into `output` with a ratio `ratio`.
+
+Return a `BasicConverter` model archetype that converts carrier `input` into `output` with ratio `ratio`.
 The ratio can be a number or a time series.
 """
 function BasicConverter(input::AbstractCarrier, output::AbstractCarrier; ratio=1., modifier::Function=defaultmodifier)

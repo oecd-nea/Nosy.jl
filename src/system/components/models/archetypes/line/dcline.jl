@@ -8,9 +8,10 @@ DC transmission line:
 """
 
 """
-    DCLine(s::Sim, from::PowerCarrier, to::PowerCarrier)
-Return a DCLine model from `from` to `to`.
-DCLine does not contribute to Kirchhoff Voltage Law (KVL).
+    DCLine(from::PowerCarrier, to::PowerCarrier)
+
+Return a `DCLine` model archetype from `from` to `to`.
+`DCLine` does not contribute to Kirchhoff Voltage Law (KVL).
 """
 struct DCLine <: AbstractTransmissionLine
     sim::Sim

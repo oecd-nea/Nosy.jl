@@ -2,9 +2,10 @@ using ArgCheck: @argcheck
 using JuMP: @constraint
 
 """
-    ACLine(s::Sim, from::PowerCarrier, to::PowerCarrier, admittance::Float64)
-Return a ACLine model from `from` to `to`, with admittance `admittance`.
-ACLine does contribute to Kirchhoff Voltage Law (KVL).
+    ACLine(from::PowerCarrier, to::PowerCarrier, admittance::Number)
+
+Return an `ACLine` model archetype from `from` to `to`, with admittance `admittance`.
+`ACLine` contributes to Kirchhoff Voltage Law (KVL).
 """
 struct ACLine <: AbstractTransmissionLine
     sim::Sim

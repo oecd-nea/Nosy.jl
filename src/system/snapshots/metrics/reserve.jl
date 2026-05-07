@@ -4,6 +4,7 @@ Reserve metrics for snapshots
 
 """
     reserve(snap::Snapshot{T}, sense::Symbol, rname::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) where T
+
 Return the total reserve of components in Snapshot `snap` for the specified `sense` and reserve name `rname`.
 Optional `with` and `without` filter components by tags (same as `getcomponents(snap; with, without)`).
 """
@@ -17,6 +18,7 @@ end
 
 """
     reserve(snap::Snapshot{T}, name::String, sense::Symbol, rname::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) where T
+
 Return the reserve of the component named `name`, or the total reserve of components connected to node named `name`, within Snapshot `snap` for the specified `sense` and reserve name `rname`.
 When `name` is a node, optional `with` and `without` filter components by tags.
 """

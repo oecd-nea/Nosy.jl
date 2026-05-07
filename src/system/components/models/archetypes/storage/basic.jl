@@ -4,7 +4,7 @@ using JuMP: @constraint
 """
 Basic storage.
 
-Has a input, output, level, applies storage equality constraint.
+Has input, output, and level ports, and applies a storage equality constraint.
 """
 
 
@@ -32,26 +32,29 @@ struct BasicStorage{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,
 end
 
 """
-    BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., modifier=_defaultmodifier(carrierstyle(carrier)))
-Return a model BasicStorage model associated with carrier `carrier`.
-The model also has the input effiency `input` and output efficiency `output` (inferior to 1 for losses).
+    BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., modifier=_defaultmodifier(carrierstyle(carrier)), simplified::Bool=false)
+
+Return a `BasicStorage` model archetype using `carrier` for input, output, and level.
+The model uses input efficiency `eff_i`, output efficiency `eff_o`, and hourly self-discharge rate `self_discharge`.
 """
 function BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., modifier=_defaultmodifier(carrierstyle(carrier)), simplified::Bool=false)
     return BasicStorage(carrier, carrier, carrier, modifier, eff_i, eff_o, self_discharge, simplified)
 end
 
 """
-    BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1.)
-Return a model BasicStorage model associated with:
+    BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., simplified::Bool=false)
+
+Return a `BasicStorage` model archetype associated with:
   * `input`: carrier of input
   * `output`: carrier of output
   * `level`: carrier of level
   * `modifier`: modifier for all carriers
-  * `eff_i`: efficiency of input (inferior to 1 for losses)
-  * `eff_o`: efficiency of output (inferior to 1 for losses)
+  * `eff_i`: input efficiency
+  * `eff_o`: output efficiency
   * `self_discharge`: hourly rate of self-discharge
-The model also has the input effiency `input` and output efficiency `output`.
-NB storage is periodic: the step after the last step is the first step.
+  * `simplified`: if `true`, use step flows instead of trapezoidal integration
+
+Storage is periodic: the step after the last step is the first step.
 """
 function BasicStorage(input::AbstractCarrier, output::AbstractCarrier, level::AbstractCarrier, modifier::Function; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., simplified::Bool=false)
     return BasicStorage(input, output, level, modifier, eff_i, eff_o, self_discharge, simplified)

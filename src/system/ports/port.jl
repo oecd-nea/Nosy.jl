@@ -21,7 +21,7 @@ function Port(c::AbstractCarrier, s::AbstractVector, used::Bool=false)
 end
 
 # There is not method besides the natural constructor to construct a Port{Float64,C}.
-# During the formulation of the optimization problem, all ports should be of types Port{<:GenericAffExpr,C}, even if they only carry numbers.
+# During the formulation of the optimisation problem, all ports should be of types Port{<:GenericAffExpr,C}, even if they only carry numbers.
 
 carrier(p::AbstractPort) = p.carrier
 series(p::AbstractPort) = p.series

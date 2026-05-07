@@ -2,7 +2,7 @@
 FleetUnitCommitmentFromIni
 
 This behavior emulates a FleetUnitCommitment, with all the selector fields being exogenously defined.
-It is used when one needs to re-run an optimization with integer variables being fixed to optimal value (e.g. to evaluate duals of constraints).
+It is used when one needs to re-run an optimisation with integer variables being fixed to optimal value (e.g. to evaluate duals of constraints).
 This behavior is not exported.
 """
 

@@ -2,16 +2,20 @@ using ArgCheck
  
 """
     GenericTimeSeries{T}
-Basic implementation of the AbstractTimeSeries. Used as a base for the TimeMesh.
-Algebra properties not implemented for GenericTimeSeries.
+
+Basic implementation of `AbstractTimeSeries`. Used as a base for `TimeMesh`.
+Algebraic operations are not implemented for `GenericTimeSeries`.
 """
 struct GenericTimeSeries{T} <: AbstractTimeSeries{T}
     data::Vector{T}
 end
 
 """
-    TimeMesh{T}
-Contain the time structure of the model; is used for conversion between different time series types.
+    TimeMesh(w::Vector)
+    TimeMesh()
+
+Contain the time structure of the model and convert between time series types.
+`TimeMesh()` creates an 8760-hour mesh with one step per hour.
 """
 struct TimeMesh{T}
     weight::GenericTimeSeries{T}
@@ -25,8 +29,9 @@ end
 const RTimeMesh = TimeMesh{Rational{Int64}} # enforce parametric type of mesh in the general case to avoid parameterizing AbstractMeshedTimeSeries
 
 """
-    TimeMesh(w::Vector{Int})
-Return a TimeMesh based on the timestep weight vector `w`. All weights must be rational or integer in ]0., 1]. 
+    TimeMesh(w::Vector)
+
+Return a `TimeMesh` based on the timestep weight vector `w`. All weights must be rational or integer values in `(0, 1]`, and their sum must be an integer.
 """
 function TimeMesh(w::Vector{T}) where T
     

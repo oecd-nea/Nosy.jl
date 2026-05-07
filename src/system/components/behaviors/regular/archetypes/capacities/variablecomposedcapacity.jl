@@ -18,14 +18,16 @@ struct VariableComposedCapacity{M<:Function} <: AbstractCapacityData
 end
 
 """
-    VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; lb::Number=0., ub::Number=Inf, unitsize::Union{Nothing,Number}, integer::Bool)
-Return a VariableComposedCapacity behavior data, associated with one or several port names `pname` and modifier `modifier`.
+    VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
+
+Return `VariableComposedCapacity` behavior data associated with one or several port names `pname` and modifier `modifier`.
 The capacity applies to the sum of targeted flows.
 Optional parameters:
-* lb: lower bound
-* ub: upper bound
-* unitsize: size of the unit when considering a fleet
-* integer: if unitsize is a number, constrains the number of units to be integer
+  * `lb`: lower bound
+  * `ub`: upper bound
+  * `warmstart`: initial value for the capacity variable
+  * `unitsize`: size of one unit when considering a fleet
+  * `integer`: if `unitsize` is a number, constrain the number of units to be integer
 """
 function VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
     _pname = pname isa String ? [pname] : copy(pname)

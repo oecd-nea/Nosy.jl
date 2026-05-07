@@ -1,27 +1,31 @@
 """
     cost(s::Snapshot, cname::String)
+
 Return the cost of Component with name `cname` in Snapshot `s`.
 If the component has no cost, return zero.
-Throw an error is there is no component with name `cname` in `s`.
+Throw an error if there is no component with name `cname` in `s`.
 """
 cost(s::Snapshot, cname::String) = _applymetric(s, cname, cost)
 
 """
     cost(s::Snapshot, cname::String, type::Symbol)
+
 Return the cost of type `type` of Component with name `cname` in Snapshot `s`.
 If the component has no cost, return zero.
-Throw an error is there is no component with name `cname` in `s`.
+Throw an error if there is no component with name `cname` in `s`.
 """
 cost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, cost, type)
 
 """
     cost(s::Snapshot)
+
 Return the sum of the costs of the components of the Snapshot.
 """
 cost(s::Snapshot) = sum(cost(s, cname) for cname in keys(s.components))
 
 """
     cost(s::Snapshot, type::Symbol)
+
 Return the sum of the costs of type `type` of the components of the Snapshot.
 """
 cost(s::Snapshot, type::Symbol) = sum(cost(s, cname, type) for cname in keys(s.components))
@@ -35,29 +39,33 @@ for (metric, comment) in COST_COMPONENT_METRICS
 
         @doc """
             $($mname)(s::Snapshot, cname::String)
+
         Return the $($comment) of Component with name `cname` in Snapshot `s`.
         If the component has no $($comment), return zero.
-        Throw an error is there is no component with name `cname` in `s`.
+        Throw an error if there is no component with name `cname` in `s`.
         """
         $(mname)(s::Snapshot, cname::String) = _applymetric(s, cname, $(mname))
 
         @doc """
             $($mname)(s::Snapshot, cname::String, type::Symbol)
+
         Return the $($comment) of type `type` of Component with name `cname` in Snapshot `s`.
         If the component has no $($comment) of type `type`, return zero.
-        Throw an error is there is no component with name `cname` in `s`.
+        Throw an error if there is no component with name `cname` in `s`.
         """
         $(mname)(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, $(mname), type)
 
 
         @doc """
             $($mname)(s::Snapshot)
+
         Return the sum of $($comment) items of the components of `s`.
         """
         $(mname)(s::Snapshot) = sum($(mname)(s, cname) for cname in keys(s.components))
 
         @doc """
             $($mname)(s::Snapshot, type::Symbol)
+
         Return the sum of $($comment) items of type `type` of the components of `s`.
         """
         $(mname)(s::Snapshot, type::Symbol) = sum($(mname)(s, cname, type) for cname in keys(s.components))

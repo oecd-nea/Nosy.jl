@@ -16,6 +16,7 @@ end
 
 """
     connect!(s::Snapshot, c::Component, n::Node)
+
 Connect all compatible ports of component `c` to node `n` on snapshot `s`. 
 """
 function connect!(s::Snapshot, c::Component, n::Node)

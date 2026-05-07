@@ -12,7 +12,8 @@ struct CapacityMultiplier{V} <: AbstractRegularBehaviorData
     val::V
     @doc"""
         CapacityMultiplier(pname::String, val)
-    Return a CapacityMultiplier behavior data, associated with port name `pname` and a scalar or vectorial value `val`.
+
+    Return `CapacityMultiplier` behavior data associated with port name `pname` and a scalar or vector value `val`.
     The modifier is assumed to be the same as the capacity associated with port named `pname`.
     """
     function CapacityMultiplier(pname::String, val::V) where V

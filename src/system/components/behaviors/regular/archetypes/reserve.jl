@@ -20,7 +20,7 @@ Total r = r_online + r_fast.
 Ramping
 The change in flow from one step to the next plus the reserve deployment must respect the ramping limit on the same port and sense.
 Without UC, flow difference uses the port flow; with UC, only variable flow can move for reserve and max ramp is scaled by committed units (_state).
-Only r_online is subject to ramping; r_fast is within step delivery (fast start/down) so not limited by inter step ramp.
+Only r_online is subject to ramping; r_fast is within-step delivery (fast start/down), so it is not limited by inter-step ramping.
 
 Storage
 For sense :up only, on storage models r is also limited by energy in store—on an output port by (efficiency * level / duration), on an input port by ((capacity − level) / (efficiency * duration)).
@@ -37,6 +37,7 @@ abstract type AbstractReserveBehavior{T} <: AbstractRegularBehavior{T} end
 
 """
     ReserveUp(name::String, pname::String, sense::Symbol, duration::Number; modifier::Function=defaultmodifier)
+
 Return `ReserveUp` behavior data.
 
   * `name`: groups reserves at snapshot level (e.g., `"FCR"`, `"15min"`).
@@ -66,6 +67,7 @@ end
 
 """
     ReserveDown(name::String, pname::String, sense::Symbol, duration::Number; modifier::Function=defaultmodifier)
+
 Return `ReserveDown` behavior data.
 
   * `name`: groups reserves at snapshot level (e.g., `"FCR"`, `"15min"`).

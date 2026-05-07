@@ -13,7 +13,8 @@ struct FixedJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
 
     @doc """
         FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)
-    Return a FixedJointFlow with name `name`, of sense `sense` of carrier `carrier` associated with flow time series (or scalar) `series`.
+
+    Return a `FixedJointFlow` with name `name`, sense `sense`, carrier `carrier`, and flow time series or scalar `series`.
     """
     function FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)
         @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"

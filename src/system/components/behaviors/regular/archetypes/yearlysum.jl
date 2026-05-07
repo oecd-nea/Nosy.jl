@@ -19,7 +19,8 @@ end
 
 """
     YearlySum(pname::String, val::Number, type::Symbol; modifier::Function=defaultmodifier)
-Return a YearlySum behavior, constraining the sum of the flow associated with port `pname` and modifier `modifier` over the year.
+
+Return a `YearlySum` behavior, constraining the sum of the flow associated with port `pname` and modifier `modifier` over the year.
 If `type` is `:equal`, the sum is constrained to be equal to `val`. 
 If `type` is `:max`, the sum is constrained to be less than or equal to `val`.
 If `type` is `:min`, the sum is constrained to be greater than or equal to `val`.

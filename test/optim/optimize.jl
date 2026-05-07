@@ -34,7 +34,7 @@ using Test
         JuMP.@variable(s.model, 0 <= x[1:12] <= 1e-4)
         JuMP.@variable(s.model, 0 <= y <= 1.0)
 
-        @test_logs (:warn, "Optimization cleanup removed 12 variables by fixing them to zero because their upper bound was <= 0.001. First 10 variables fixed: x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10].") cleanup_bounds!(snap)
+        @test_logs (:warn, "Optimisation cleanup removed 12 variables by fixing them to zero because their upper bound was <= 0.001. First 10 variables fixed: x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10].") cleanup_bounds!(snap)
         @test all(JuMP.is_fixed.(x))
         @test all(JuMP.fix_value.(x) .== 0.0)
         @test !JuMP.is_fixed(y)

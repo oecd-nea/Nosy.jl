@@ -11,7 +11,8 @@ struct FixedCost{M<:Function} <: AbstractCostBehaviorData
 
     @doc """
         FixedCost(type::Symbol, pname::String, modifier::Function, val::Number)
-    Return a FixedCost behavior data, associated with port name `pname`, modifier `modifier` and fixed value `val`.
+
+    Return `FixedCost` behavior data associated with cost type `type`, port name `pname`, modifier `modifier`, and fixed cost value `val`.
     """
     function FixedCost(type::Symbol, pname::String, modifier::Function, val::Number)
         @argcheck val >= 0. "Fixed cost cannot be negative"

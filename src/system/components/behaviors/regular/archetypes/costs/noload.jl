@@ -10,7 +10,8 @@ struct NoLoadCost <: AbstractCostBehaviorData
 
     @doc """
         NoLoadCost(type::Symbol, pname::String, val::Number)
-    Return an NoLoadCost behavior data, associated with port name `pname` and hourly cost `val`.
+
+    Return `NoLoadCost` behavior data associated with cost type `type`, port name `pname`, and hourly cost `val`.
     """
     function NoLoadCost(type::Symbol, pname::String, val::Number) 
         return new(type, pname, Float64(val))

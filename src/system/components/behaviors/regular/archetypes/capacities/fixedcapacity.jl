@@ -14,8 +14,9 @@ end
 
 """
     FixedCapacity(pname::String, modifier::Function, val::Number; unitsize::Union{Nothing,Number})
-Return a FixedCapacity behavior data, associated with port name `pname`, modifier `modifier` and fixed value `val`.
-If unitsize is a number: it is the size of the unit when considering a fleet
+
+Return `FixedCapacity` behavior data associated with port name `pname`, modifier `modifier`, and fixed value `val`.
+If `unitsize` is a number, it is the size of one unit when considering a fleet.
 """
 function FixedCapacity(pname::String, modifier::Function, val::Number; unitsize::Union{Nothing,Number}=nothing)
     @argcheck val >= 0. "Capacity cannot be negative"
@@ -71,7 +72,7 @@ function __apply_constraint_general!(c::Component, b::FixedCapacityBehavior)
     end
 end
 
-# special case - ProfileSourceModel: behavior is enforced throuhg _addbehavior!
+# special case - ProfileSourceModel: behavior is enforced through _addbehavior!
 function __apply_constraints_profile!(::Component, ::FixedCapacityBehavior) end
 
 # general case: apply constraint at each timestep

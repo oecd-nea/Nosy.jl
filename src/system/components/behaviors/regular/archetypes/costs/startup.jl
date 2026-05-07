@@ -10,7 +10,8 @@ struct StartupCost <: AbstractCostBehaviorData
 
     @doc """
         StartupCost(type::Symbol, pname::String, val::Number)
-    Return an StartupCost behavior data, associated with port name `pname` and per-startup cost `val`.
+
+    Return `StartupCost` behavior data associated with cost type `type`, port name `pname`, and per-startup cost `val`.
     """
     function StartupCost(type::Symbol, pname::String, val::Number) 
         return new(type, pname, Float64(val))

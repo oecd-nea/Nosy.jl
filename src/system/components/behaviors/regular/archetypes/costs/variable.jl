@@ -14,11 +14,12 @@ struct VariableCost{M<:Function,V} <: AbstractCostBehaviorData
 
     @doc """
         VariableCost(type::Symbol, pname::String, modifier::Function, val; style::Symbol=:step)
-    Return an VariableCost behavior data, associated with port name `pname`, modifier `modifier` and cost `val`.
-    `val` must be either a Number or an AbstractVector{<:Number} with length equal to number of steps or hours.
+
+    Return `VariableCost` behavior data associated with cost type `type`, port name `pname`, modifier `modifier`, and cost `val`.
+    `val` must be either a number or an `AbstractVector{<:Number}` with length equal to the number of steps or hours.
     If `val` is a vector, then `style` determines how it must be interpreted:
-      * if style = `:step`, the cost is assumed to be a step function
-      * if style = `:linear`, the cost is assumed to vary linearly between timesteps.
+      * if `style = :step`, the cost is assumed to be a step function
+      * if `style = :linear`, the cost is assumed to vary linearly between timesteps
     If `val` is a number, `style` has no effect.
     """
     function VariableCost(type::Symbol, pname::String, modifier::Function, val; style::Symbol=:step) 

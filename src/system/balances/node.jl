@@ -3,18 +3,21 @@ Node balance.
 
 Direct application of the balance on the port structure of the node.
 
-`balance`` method is user-facing and should never return Stepwise (or Dict of Stepwise etc.).
+The `balance` method is user-facing and should never return `Stepwise`
+objects, including containers of `Stepwise` objects.
 """
 
 
 """
     balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
+
 Return the flow balance for node `n`.
+
 Parameters:
   * `n`: Node
   * `sense`: `:input` or `:output`
   * `modifier`: modifier function e.g. `energy`, `mass`, `co2`
-  * `collapse`: if `true`, the flows are summed over time, otherwise the Hourly series are returned
+  * `collapse`: if `true`, the flows are summed over time; otherwise the `Hourly` series are returned
   * `aggregate`: if `true`, the flows from multiple components are summed together, otherwise one entry per component is returned
 """
 function balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
@@ -53,6 +56,7 @@ _flow(n::Node, pname::String, sense::Symbol, modifier::Function, step::Int) = _f
 
 """
     flow(n::Node, pname::String, modifier::Function, hour::Int)
+
 Return the value of the flow of port named `pname` of node `n` at hour `hour` modified by `modifier`.
 """
 function flow(n::Node, pname::String, modifier::Function, hour::Int)
@@ -61,6 +65,7 @@ end
 
 """
     flow(n::Node, pname::String, sense::Symbol, modifier::Function, hour::Int)
+
 Return the value of the flow of port named `pname` in sense `sense` of node `n` at hour `hour` modified by `modifier`.
 """
 function flow(n::Node, pname::String, sense::Symbol, modifier::Function, hour::Int)
@@ -81,7 +86,8 @@ end
 
 """
     flow(n::Node, sense::Symbol, modifier::Function, hour::Int)
-Return the value of the the sum of the flows in sense `sense` of node `n` at hour `hour` modified by `modifier`.
+
+Return the sum of the flows in sense `sense` of node `n` at hour `hour`, modified by `modifier`.
 Return zero if the node's carrier is not compatible with `modifier`.
 """
 function flow(n::Node, sense::Symbol, modifier::Function, hour::Int)

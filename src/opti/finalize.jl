@@ -7,8 +7,9 @@ Finalization of systems.
 
 """
     finalize!(s::Snapshot)
+
 Finalize the system:
-  * add nodes losses
+  * add node losses
   * check all ports of connected components are connected
   * apply system and node constraints
   * fix variables with very low bounds

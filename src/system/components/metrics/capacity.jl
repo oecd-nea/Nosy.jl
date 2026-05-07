@@ -26,7 +26,8 @@ end
 
 
 """
-    capacity(c::Component)
+    capacity(c::Component; multiplier::Bool=false)
+
 Return the capacity of a Component `c`.
 If `multiplier` is true, return the capacity multiplied with the matching capacity multiplier (same port) if it exists.
 If the component has no capacity, return zero.
@@ -47,11 +48,12 @@ function capacity(c::Component{T}; multiplier::Bool=false) where T
 end
 
 """
-    capacity(c::Component, pname::String; multiplier::Bool=true)
+    capacity(c::Component, pname::String; multiplier::Bool=false)
+
 Return the capacity associated with port named `pname` of component `c`.
 If `multiplier` is true, return the capacity multiplied with the matching capacity multiplier (same port) if it exists.
 If the component has no port named `pname`, throw an error.
-If the component has no capacity associated with port `pname`, return Inf64.
+If the component has no capacity associated with port `pname`, return `Inf64`.
 """
 function capacity(c::Component{T}, pname::String; multiplier::Bool=false) where T
     if !hasport(c, pname)
@@ -90,6 +92,7 @@ end
 
 """
   nbunits(c::Component)
+
 Return the number of units of Component `c`, related to its capacity and unit size.
 If `c` has no capacity or no unit size, return nothing.
 """

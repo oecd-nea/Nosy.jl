@@ -9,7 +9,8 @@ using ConstructionBase: constructorof
 
 """
     extract(s::Snapshot)
-Return a Snapshot populated with values corresponding to the optimized system.
+
+Return a Snapshot populated with values corresponding to the optimised system.
 """
 function extract(s::Snapshot{<:GenericAffExpr})
     m = sim(s).model
@@ -18,7 +19,7 @@ function extract(s::Snapshot{<:GenericAffExpr})
     elseif termination_status(m) == OPTIMIZE_NOT_CALLED
         throw(AssertionError("Optimizer was not called"))
     else
-        @warn "System is not optimized. Termination status: $(termination_status(m)). Returning the problem instead of the result."
+        @warn "System is not optimised. Termination status: $(termination_status(m)). Returning the problem instead of the result."
         return s
     end
 end
