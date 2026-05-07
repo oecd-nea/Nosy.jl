@@ -9,9 +9,39 @@ using Nosy: cost, capacity, balance
 using Nosy: extract, _extract
 import Nosy
 
-using JuMP: set_silent, objective_value, AffExpr, @variable, value
+using JuMP: set_silent, objective_value, AffExpr, ConstraintRef, GenericAffExpr, GenericVariableRef, @variable, value
 using HiGHS: Optimizer
 using Test
+
+function _stale_jump_payloads(x)
+    payloads = DataType[]
+    _stale_jump_payloads!(payloads, x)
+    return payloads
+end
+
+function _stale_jump_payloads!(payloads, x)
+    STALE_JUMP_PAYLOAD = Union{GenericAffExpr,GenericVariableRef,ConstraintRef}
+    x isa STALE_JUMP_PAYLOAD && return push!(payloads, typeof(x))
+    x isa Union{Nothing,Number,String,Symbol,Function,Type} && return payloads
+    x isa Union{Sim,Nosy.AbstractCarrier,Base.RefValue} && return payloads
+
+    if x isa AbstractDict
+        for (k, v) in x
+            _stale_jump_payloads!(payloads, k)
+            _stale_jump_payloads!(payloads, v)
+        end
+    elseif x isa Union{AbstractVector,Tuple}
+        for v in x
+            _stale_jump_payloads!(payloads, v)
+        end
+    elseif isstructtype(typeof(x))
+        for f in fieldnames(typeof(x))
+            isdefined(x, f) && _stale_jump_payloads!(payloads, getfield(x, f))
+        end
+    end
+
+    return payloads
+end
 
 @testset "Snapshot extraction" begin
 
@@ -125,6 +155,7 @@ using Test
             @test isapprox(capacity(e, "disp"), 10.)
             @test isapprox(cost(e, "disp"), 20.)
             @test isapprox(cost(e, "cons"), 0.)
+            @test isempty(_stale_jump_payloads(e))
 
             # already extracted
             @test_throws ArgumentError extract(e)
@@ -195,10 +226,42 @@ using Test
         end
 
         let 
-            @test extract(snap) isa Snapshot{Float64}
-            @test isapprox(capacity(extract(snap), "disp"), 10.0)
-            @test isapprox(cost(extract(snap), "disp"), 20.0)
+            e = extract(snap)
+            @test e isa Snapshot{Float64}
+            @test isapprox(capacity(e, "disp"), 10.0)
+            @test isapprox(cost(e, "disp"), 20.0)
+            @test isempty(_stale_jump_payloads(e))
         end
+
+    end
+
+    # extraction with a directly linked variable capacity
+    let s = tsim()
+
+        set_silent(s.model) # deactivate JuMP output
+
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec)
+
+        shared_cap = @variable(s.model, base_name="shared_cap")
+        disp = Component("disp", DispatchableSource(ec), [VariableCapacity("output", energy; expression=shared_cap, lb=0.0, ub=40.0), FixedCost(:overnight, "output", energy, 2.)])
+        cons = Component("cons", Demand(ec, 10), [])
+
+        connect!(snap, cons, en)
+        connect!(snap, disp, en)
+
+        optimize!(snap, cost(snap))
+
+        @test isapprox(value(shared_cap), 10.0)
+        @test isapprox(_extract(shared_cap), 10.0)
+
+        e = extract(snap)
+        @test e isa Snapshot{Float64}
+        @test isapprox(capacity(e, "disp"), 10.0)
+        @test isapprox(cost(e, "disp"), 20.0)
+        @test isempty(_stale_jump_payloads(e))
 
     end
 

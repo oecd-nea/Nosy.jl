@@ -2,8 +2,9 @@
 Extraction of solution.
 """
 
-using JuMP: GenericAffExpr, value
+using JuMP: GenericAffExpr, GenericVariableRef, value
 using JuMP: termination_status, OPTIMIZE_NOT_CALLED
+using ConstructionBase: constructorof
 
 
 """
@@ -29,6 +30,7 @@ Special _extract methods.
 
 _extract(a::Number) = a
 _extract(a::GenericAffExpr) = value(a)
+_extract(a::GenericVariableRef) = value(a)
 _extract(a::Type{<:GenericAffExpr}) = Float64
 
 _extract(a::Stepwise{<:GenericAffExpr}) = Stepwise(value.(a.data), a.mesh)
@@ -45,17 +47,20 @@ _extract(a::AbstractCarrier) = a
 _extract(a::Base.RefValue{Bool}) = a
 _extract(a::Function) = a
 
-_extract(v::AbstractVector) = typeof(v).name.wrapper(_extract.(v))
+_extract(v::AbstractVector) = constructorof(typeof(v))(_extract.(v))
 _extract(v::AbstractVector{Float64}) = v
 
 # preserve vector eltype for abstract eltype
 _extract(v::Vector{<:AbstractJointFlow}) = convert(Vector{AbstractJointFlow{Float64}}, _extract.(v))
 _extract(v::Vector{<:AbstractRegularBehavior}) = convert(Vector{AbstractRegularBehavior{Float64}}, _extract.(v))
 
-_extract(d::AbstractDict) = typeof(d).name.wrapper(k => _extract(v) for (k,v) in d)
+_extract(d::AbstractDict) = constructorof(typeof(d))(k => _extract(v) for (k,v) in d)
 _extract(d::Dict{String,<:Component}) = Dict{String,Component{Float64}}(k => _extract(v) for (k,v) in d)
 _extract(d::Dict{String,<:Node}) = Dict{String,Node{Float64}}(k => _extract(v) for (k,v) in d)
 _extract(d::Dict{PortRef,<:Port}) = Dict{PortRef,Port{Float64}}(k => _extract(v) for (k,v) in d)
+
+_extract(a::VariableCapacity{M,<:Union{GenericAffExpr,GenericVariableRef}}) where {M} =
+    VariableCapacity{M,Nothing}(a.pname, a.modifier, a.lb, a.ub, a.warmstart, a.unitsize, a.integer, nothing)
 
 # dual price
 _extract(a::SavedDualPrice{<:GenericAffExpr}) = _dualprice(a) # defined in post
@@ -64,7 +69,11 @@ _extract(a::SavedDualPrice{<:GenericAffExpr}) = _dualprice(a) # defined in post
 General _extract methods.
 """
 
-_extract(a::AbstractElement{<:GenericAffExpr}) = typeof(a).name.wrapper((_extract(getproperty(a, p)) for p in propertynames(a))...)
+_extract_fields(a) = (_extract(getfield(a, f)) for f in fieldnames(typeof(a)))
+
+_rebuild_extracted(a, fields...) = constructorof(typeof(a))(fields...)
+
+_extract(a::AbstractElement{<:GenericAffExpr}) = _rebuild_extracted(a, _extract_fields(a)...)
 _extract(a::AbstractElement{Float64}) = a
 
 """
