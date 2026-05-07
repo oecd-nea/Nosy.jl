@@ -177,6 +177,17 @@ using Test
 
     end
 
+    let
+
+        # summation of Stepwise - Float64 version with non-uniform weights
+        v = Float64[10, 20, 30, 40, 50, 60]
+        m = TimeMesh(repeat([1//4, 1//4, 1//2], 2))
+        s = Stepwise(v, m)
+
+        @test sum(s) == 70.0
+
+    end
+
 
     let
 
@@ -189,6 +200,17 @@ using Test
 
         @test sum(s) == AffExpr(sum(1:200)/2)
         @test sum(h) == AffExpr(sum(1:2:200))
+
+    end
+
+    let
+
+        # summation of Stepwise - GenericAffExpr version with non-uniform weights
+        v = AffExpr.([10, 20, 30, 40, 50, 60])
+        m = TimeMesh(repeat([1//4, 1//4, 1//2], 2))
+        s = Stepwise(v, m)
+
+        @test sum(s) == AffExpr(70.0)
 
     end
 

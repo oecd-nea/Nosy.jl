@@ -187,16 +187,17 @@ end
 Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)
 
 
-# The sum of a Stepwise series is evaluated as the sum of stepwise elements weighted by timesteps durations.
+# The sum of a Stepwise series is evaluated as the trapezoid integral of stepwise elements following timesteps durations.
+# Because model assumes that quantities are linear between instants
 function Base.sum(s::Stepwise{<:GenericAffExpr})
     _res = zero(eltype(s))
     for i in eachindex(s)
-        add_to_expression!(_res, s[i] * weight(s.mesh, i))
+        add_to_expression!(_res, s[i] * (weight(s.mesh, i-1) + weight(s.mesh, i)) / 2)
     end
     return _res
 end
 
-Base.sum(s::Stepwise{Float64}) = sum(s.data .* s.mesh.weight)
+Base.sum(s::Stepwise{Float64}) = sum(s.data[i] * (weight(s.mesh, i-1) + weight(s.mesh, i)) / 2 for i in eachindex(s.data))
 
 # The sum of a Hourly is a regular sum
 # We use addto! just to make it faster, it doesn't change the result
