@@ -2,7 +2,7 @@ import HiGHS
 import JuMP
 import MathOptInterface as MOI
 
-using Nosy: ScaledOptimizer
+using Nosy: ScaledOptimizer, Sim, TimeMesh
 
 function _finite_nonzero_abs(values)
     return filter(x -> !iszero(x) && isfinite(x), abs.(Float64.(values)))
@@ -179,8 +179,7 @@ end
         end
 
         reference = solve_with(HiGHS.Optimizer)
-        local scaled
-        @test_logs (:warn, r"Constraint scaling scaled 1 scalar affine constraints") scaled = solve_with(ScaledOptimizer(HiGHS.Optimizer; target=1e5))
+        scaled = solve_with(ScaledOptimizer(HiGHS.Optimizer; target=1e5))
         @test scaled[1] ≈ reference[1]
         @test scaled[2] ≈ reference[2]
         @test scaled[3] ≈ reference[3]

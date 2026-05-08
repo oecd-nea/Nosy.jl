@@ -11,36 +11,19 @@ struct Sim
 end
 
 """
-    Sim(model::JuMP.AbstractModel; mesh::RTimeMesh=TimeMesh(), suffix::String="")
+    Sim(model; mesh::RTimeMesh=TimeMesh(), suffix::String="", constraint_scaling::Bool=true, kwargs...)
 
-Return a Sim based on the JuMP model `model`.
+Return a `Sim` from `model`.
+`model` must be a model or model constructor.
 
 Optional arguments:
   * `mesh`: TimeMesh for the simulation (default: 8760 hours, 1 step per hour)
   * `suffix`: suffix appended to generated variable base names
+  * `constraint_scaling`: if `true` AND ` model` is a constructor, apply the constraint scaling bridge.
+  * extra keyword arguments override simulation options
 """
 function Sim(
-    model::JuMP.AbstractModel;
-    mesh::RTimeMesh=TimeMesh(),
-    suffix::String="",
-)
-    return Sim(
-        mesh,
-        model,
-        _defaultoptions(),
-        suffix
-    )
-end
-
-"""
-    Sim(optimizer_constructor; mesh::RTimeMesh=TimeMesh(), suffix::String="", constraint_scaling::Bool=true, kwargs...)
-
-Build a `JuMP.Model` from `optimizer_constructor` and return a `Sim`.
-By default, scalar affine constraints are scaled before they reach the solver.
-Extra keyword arguments override simulation options.
-"""
-function Sim(
-    optimizer_constructor;
+    model;
     mesh::RTimeMesh=TimeMesh(),
     suffix::String="",
     constraint_scaling::Bool=true,
@@ -52,14 +35,18 @@ function Sim(
             throw(ArgumentError("Unknown simulation option $key"))
         options[key] = value
     end
-    factory = constraint_scaling ?
-        ScaledOptimizer(
-            optimizer_constructor;
-            target=options[:scalingtarget],
-            expthreshold=options[:expthreshold],
-        ) :
-        optimizer_constructor
-    return Sim(mesh, JuMP.Model(factory), options, suffix)
+
+    if !(model isa JuMP.AbstractModel)
+        model = constraint_scaling ?
+            JuMP.Model(ScaledOptimizer(
+                model;
+                target=options[:scalingtarget],
+                expthreshold=options[:expthreshold],
+            )) :
+            JuMP.Model(model)
+    end
+
+    return Sim(mesh, model, options, suffix)
 end
 
 nsteps(s::Sim) = nsteps(s.mesh)

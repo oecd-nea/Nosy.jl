@@ -444,7 +444,8 @@ function _removed_constraint_terms(
 ) where {BT<:ScaledConstraintBridge}
     return sum(
         bridge.removed_terms for bridge in model.map.bridges
-        if bridge isa ScaledConstraintBridge
+        if bridge isa ScaledConstraintBridge;
+        init=0,
     )
 end
 
@@ -454,13 +455,11 @@ function MOI.optimize!(
     MOI.Bridges.final_touch(model)
     scaled_constraints = _scaled_constraints(model)
     removed_terms = _removed_constraint_terms(model)
-    if !iszero(scaled_constraints) || !iszero(removed_terms)
+    if !iszero(removed_terms)
         target = _scaling_target(BT)
         threshold = _expthreshold(BT)
         msg = "Constraint scaling scaled $(scaled_constraints) scalar affine constraints to target $(target)."
-        if !iszero(removed_terms)
-            msg *= " Removed $(removed_terms) constraint terms below relative threshold $(threshold)."
-        end
+        msg *= " Removed $(removed_terms) constraint terms below relative threshold $(threshold)."
         @warn msg
     end
     MOI.optimize!(model.model)
