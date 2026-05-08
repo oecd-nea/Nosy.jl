@@ -168,7 +168,7 @@ using HiGHS
     # Duration is not compatible with composed capacities
     let
         vb = [
-            VariableComposedCapacity(["input", "output"], energy, lb=0., ub=200.),
+            VariableComposedCapacity(["input", "output"], energy, weights=[1., 1.], lb=0., ub=200.),
             Duration(6),
         ]
         @test_throws AssertionError makecomp(vb)

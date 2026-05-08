@@ -65,7 +65,7 @@ using Test
 
     end
 
-    let m = makeconv([FixedCost(:overnight, "input", energy, 10.), VariableComposedCapacity(["input", "output"], energy, lb=5., ub=20.)])
+    let m = makeconv([FixedCost(:overnight, "input", energy, 10.), VariableComposedCapacity(["input", "output"], energy, weights=[1., 1.], lb=5., ub=20.)])
 
         # adapting to composed capacity
         @test _fixedcost(m.behaviors[2]) == _capacity(m.behaviors[1]) * 10.
@@ -89,7 +89,7 @@ using Test
         vb = [
             FixedCost(:overnight, "input", energy, 10.),
             VariableCapacity("input", energy, lb=0., ub=20.),
-            VariableComposedCapacity(["input", "output"], energy, lb=0., ub=20.),
+            VariableComposedCapacity(["input", "output"], energy, weights=[1., 1.], lb=0., ub=20.),
         ]
         @test_throws AssertionError makeconv(vb)
     end

@@ -4,12 +4,13 @@ using ArgCheck: @argcheck
 """
 Behavior: variable composed capacity.
 
-Constrains the sum of several target flows under one capacity variable.
+Constrains the weighted sum of several target flows under one capacity variable.
 """
 
 struct VariableComposedCapacity{M<:Function} <: AbstractCapacityData
     pname::Vector{String}
     modifier::M
+    weights::Vector{Float64}
     lb::Float64
     ub::Float64
     warmstart::Union{Nothing,Float64}
@@ -18,21 +19,27 @@ struct VariableComposedCapacity{M<:Function} <: AbstractCapacityData
 end
 
 """
-    VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
+    VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; weights, lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
 
 Return `VariableComposedCapacity` behavior data associated with one or several port names `pname` and modifier `modifier`.
-The capacity applies to the sum of targeted flows.
+The capacity applies to the weighted sum of targeted flows.
 Optional parameters:
+  * `weights`: relative weights of targeted flows, in the same order as `pname`
   * `lb`: lower bound
   * `ub`: upper bound
   * `warmstart`: initial value for the capacity variable
   * `unitsize`: size of one unit when considering a fleet
   * `integer`: if `unitsize` is a number, constrain the number of units to be integer
 """
-function VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
+function VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier::Function; weights, lb::Number=0., ub::Number=Inf, warmstart::Union{Nothing,Number}=nothing, unitsize::Union{Nothing,Number}=nothing, integer::Bool=false)
     _pname = pname isa String ? [pname] : copy(pname)
+    _weights = weights isa Number ? [Float64(weights)] : Float64.(collect(weights))
     @argcheck !isempty(_pname) "pname must contain at least one port name"
     @argcheck length(unique(_pname)) == length(_pname) "pname cannot contain duplicates"
+    @argcheck length(_weights) == length(_pname) "weights must contain one value per port name"
+    @argcheck all(isfinite.(_weights)) "weights must be finite"
+    @argcheck all(_weights .>= 0.) "weights must be non-negative"
+    @argcheck any(_weights .> 0.) "weights must contain at least one positive value"
     @argcheck lb >= 0. "Capacity cannot be negative"
     @argcheck lb <= ub "Lower bound is bigger than upper bound"
     if unitsize isa Number
@@ -41,7 +48,7 @@ function VariableComposedCapacity(pname::Union{String,Vector{String}}, modifier:
     end
     @argcheck !integer || !isnothing(unitsize) "unitsize must be provided to activate an integer number of units"
     w = isnothing(warmstart) ? nothing : Float64(warmstart)
-    VariableComposedCapacity(_pname, modifier, Float64(lb), Float64(ub), w, unitsize, integer)
+    VariableComposedCapacity(_pname, modifier, _weights, Float64(lb), Float64(ub), w, unitsize, integer)
 end
 
 struct VariableComposedCapacityBehavior{T<:VAL,M<:Function} <: AbstractComposedCapacityBehavior{T}
@@ -84,6 +91,7 @@ _capacity(c::VariableComposedCapacityBehavior) = c.val
 
 _portname(c::VariableComposedCapacityBehavior) = c.data.pname
 _modifier(c::VariableComposedCapacityBehavior) = c.data.modifier
+_weights(c::VariableComposedCapacityBehavior) = c.data.weights
 
 _unitsize(c::VariableComposedCapacityBehavior) = c.data.unitsize
 

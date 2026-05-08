@@ -11,6 +11,7 @@ using Nosy: LinkedJointFlow, balance, _balance, capacity
 using Nosy: Component
 using JuMP: Model, GenericAffExpr, lower_bound, has_upper_bound
 import JuMP
+import Nosy
 using HiGHS: Optimizer
 using ArgCheck: ArgumentError
 using Test
@@ -31,16 +32,22 @@ using Test
         return c
     end
 
-    @test_throws ArgumentError VariableComposedCapacity(String[], mass) # empty target list is invalid
-    @test_throws ArgumentError VariableComposedCapacity(["input", "input"], mass) # duplicate target ports are not allowed
-    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, lb=-1.) # capacity lower bound cannot be negative
-    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, lb=2., ub=1.) # lower bound must not exceed upper bound
+    @test_throws UndefKeywordError VariableComposedCapacity(["input", "output"], mass) # weights must be provided
+    @test_throws ArgumentError VariableComposedCapacity(String[], mass, weights=Float64[]) # empty target list is invalid
+    @test_throws ArgumentError VariableComposedCapacity(["input", "input"], mass, weights=[1., 1.]) # duplicate target ports are not allowed
+    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, weights=[1.]) # one weight per target port is required
+    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, weights=[1., Inf]) # weights must be finite
+    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, weights=[1., -1.]) # weights cannot be negative
+    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, weights=[0., 0.]) # at least one weight must be positive
+    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, weights=[1., 1.], lb=-1.) # capacity lower bound cannot be negative
+    @test_throws ArgumentError VariableComposedCapacity(["input", "output"], mass, weights=[1., 1.], lb=2., ub=1.) # lower bound must not exceed upper bound
 
     let m = makecomp()
 
         c = VariableComposedCapacity(
             ["input", "output"],
             energy,
+            weights = [1., 1.],
             lb = 5,
             ub = Inf64,
         )
@@ -48,6 +55,7 @@ using Test
         b = buildbehavior(m, c)
 
         @test b.data.pname == ["input", "output"]
+        @test b.data.weights == [1., 1.]
         @test _capacity(b) isa GenericAffExpr
 
         var = getvariable(_capacity(b))
@@ -60,6 +68,7 @@ using Test
         c = VariableComposedCapacity(
             ["input", "nonexistent"],
             energy,
+            weights = [1., 1.],
             lb = 5,
             ub = Inf64,
         )
@@ -70,13 +79,14 @@ using Test
         c = VariableComposedCapacity(
             ["input", "output"],
             co2,
+            weights = [1., 1.],
             lb = 5,
             ub = Inf64,
         )
         @test_throws ArgumentError buildbehavior(m, c) # selected modifier is incompatible with targeted ports
     end
 
-    let c = makecomp([VariableComposedCapacity(["input", "output"], energy, lb=5, ub=Inf64)])
+    let c = makecomp([VariableComposedCapacity(["input", "output"], energy, weights=[1., 1.], lb=5, ub=Inf64)])
         @test nvariables(sim(c)) == 11
         @test nconstraints(sim(c)) == 21
     end
@@ -93,7 +103,7 @@ using Test
     end
 
     let
-        cap = VariableComposedCapacity(["input", "jflow"], mass, lb=0., ub=10.)
+        cap = VariableComposedCapacity(["input", "jflow"], mass, weights=[1., 1.], lb=0., ub=10.)
         cm = CapacityMultiplier("input", 0.1:0.1:1.0)
         c = makecompwjoint([cap, cm], model=Optimizer)
 
@@ -108,13 +118,22 @@ using Test
     end
 
     let
-        cap = VariableComposedCapacity(["input", "jflow"], mass, lb=0., ub=10.)
+        cap = VariableComposedCapacity(["input", "jflow"], mass, weights=[1., 2.], lb=0., ub=10.)
+        c = makecompwjoint([cap], model=Optimizer)
+
+        JuMP.set_objective(sim(c).model, JuMP.MAX_SENSE, balance(c, :input, mass, collapse=true, aggregate=true))
+        JuMP.optimize!(sim(c).model)
+        @test all(isapprox.(JuMP.value.(_balance(c, :input, mass, collapse=false, aggregate=true)), fill(10. / 3., 10)))
+    end
+
+    let
+        cap = VariableComposedCapacity(["input", "jflow"], mass, weights=[1., 1.], lb=0., ub=10.)
         cm = CapacityMultiplier("output", 0.1:0.1:1.0)
         @test_throws AssertionError makecompwjoint([cap, cm], model=Optimizer) # multiplier does not target any composed-capacity port
     end
 
     let
-        cap = VariableComposedCapacity(["input", "jflow"], mass, lb=0., ub=10.)
+        cap = VariableComposedCapacity(["input", "jflow"], mass, weights=[1., 1.], lb=0., ub=10.)
         cm1 = CapacityMultiplier("input", 0.1:0.1:1.0)
         cm2 = CapacityMultiplier("jflow", 0.1:0.1:1.0)
         @test_throws AssertionError makecompwjoint([cap, cm1, cm2], model=Optimizer) # multiple matching multipliers are intentionally unsupported
@@ -128,12 +147,12 @@ using Test
         return c
     end
 
-    let cap = VariableComposedCapacity(["output"], mass, lb=5., ub=Inf64)
+    let cap = VariableComposedCapacity(["output"], mass, weights=[1.], lb=5., ub=Inf64)
         @test_throws ArgumentError makeprofilesource([cap]) # profile source is intentionally unsupported for composed capacity
     end
 
     let
-        cap = VariableComposedCapacity(["input", "jflow"], mass, lb=0., ub=10., unitsize=1.)
+        cap = VariableComposedCapacity(["input", "jflow"], mass, weights=[1., 1.], lb=0., ub=10., unitsize=1.)
         uc = UnitCommitment("input", 0.2)
         @test_throws AssertionError makecompwjoint([cap, uc], model=Optimizer) # UC must fail early on ports covered by composed capacity
     end
@@ -148,7 +167,7 @@ using Test
         ucb = only([b for b in c0.behaviors if b isa Nosy.AbstractFleetUnitCommitmentBehavior])
         ucfromini = UnitCommitment(Nosy._extract(ucb))
 
-        cap = VariableComposedCapacity(["input", "output"], energy, lb=0., ub=10., unitsize=1.)
+        cap = VariableComposedCapacity(["input", "output"], energy, weights=[1., 1.], lb=0., ub=10., unitsize=1.)
         @test_throws AssertionError makecomp([cap, ucfromini], model=Optimizer) # FleetUnitCommitmentFromIni must fail early on ports covered by composed capacity
     end
 

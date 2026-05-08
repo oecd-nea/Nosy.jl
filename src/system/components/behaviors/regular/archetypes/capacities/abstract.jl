@@ -24,13 +24,16 @@ AbstractCapacityBehavior interface:
   * implement _modifier(b::AbstractCapacityBehavior) -> return the associated modifier
 """
 
+_weights(b::AbstractComposedCapacityBehavior) = fill(1., length(_portname(b)))
+
 # sum of targeted flows under a composed capacity behavior
 function _composedflow(c::Component, b::AbstractComposedCapacityBehavior)
     pnames = _portname(b)
     _mod = _modifier(b)
-    _f = _mod(getport(c, first(pnames)))
-    for pname in pnames[2:end]
-        _f += _mod(getport(c, pname))
+    weights = _weights(b)
+    _f = weights[1] * _mod(getport(c, first(pnames)))
+    for (pname, weight) in zip(pnames[2:end], weights[2:end])
+        _f += weight * _mod(getport(c, pname))
     end
     return _f
 end
