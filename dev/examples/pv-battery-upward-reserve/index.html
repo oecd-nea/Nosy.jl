@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>PV, Battery, And Upward Reserve · Nosy.jl</title><meta name="title" content="PV, Battery, And Upward Reserve · Nosy.jl"/><meta property="og:title" content="PV, Battery, And Upward Reserve · Nosy.jl"/><meta property="twitter:title" content="PV, Battery, And Upward Reserve · Nosy.jl"/><meta name="description" content="Documentation for Nosy.jl."/><meta property="og:description" content="Documentation for Nosy.jl."/><meta property="twitter:description" content="Documentation for Nosy.jl."/><meta property="og:url" content="https://oecd-nea.github.io/Nosy.jl/stable/examples/pv-battery-upward-reserve/"/><meta property="twitter:url" content="https://oecd-nea.github.io/Nosy.jl/stable/examples/pv-battery-upward-reserve/"/><link rel="canonical" href="https://oecd-nea.github.io/Nosy.jl/stable/examples/pv-battery-upward-reserve/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Nosy.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../getting-started/">Getting Started</a></li><li><span class="tocitem">Modelling Concepts</span><ul><li><a class="tocitem" href="../../concepts/">Overview</a></li><li><a class="tocitem" href="../../concepts/building-snapshot/">Building a Snapshot</a></li><li><a class="tocitem" href="../../concepts/optimizing/">Optimizing a Snapshot</a></li><li><a class="tocitem" href="../../concepts/querying/">Querying a Snapshot</a></li></ul></li><li><a class="tocitem" href="../../performance/">Performance</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../">Overview</a></li><li><a class="tocitem" href="../dispatchable-source-demand/">Dispatchable Source And Demand</a></li><li><a class="tocitem" href="../unit-commitment/">Unit Commitment</a></li><li><a class="tocitem" href="../co2-emissions-carbon-tax/">CO2 Emissions And Carbon Tax</a></li><li><a class="tocitem" href="../pv-battery-storage/">PV And Battery Storage</a></li><li><a class="tocitem" href="../linked-capacities/">Linked Capacities</a></li><li><a class="tocitem" href="../two-power-nodes/">Two Power Nodes</a></li><li><a class="tocitem" href="../power-hydrogen-demand/">Power And Hydrogen Demand</a></li><li><a class="tocitem" href="../combined-heat-power/">Combined Heat And Power</a></li><li><a class="tocitem" href="../operating-reserve/">Operating Reserve</a></li><li class="is-active"><a class="tocitem" href>PV, Battery, And Upward Reserve</a></li><li><a class="tocitem" href="../infeasibility-conflicts/">Infeasibility And Conflicts</a></li><li><a class="tocitem" href="../alternative-objectives/">Alternative Objectives</a></li><li><a class="tocitem" href="../bilevel-capacity-expansion-dispatch/">Single-Level Vs Bilevel Capacity Expansion And Dispatch</a></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>PV, Battery, And Upward Reserve</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>PV, Battery, And Upward Reserve</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/oecd-nea/Nosy.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/oecd-nea/Nosy.jl/blob/main/docs/src/examples/pv-battery-upward-reserve.md#L" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="PV,-Battery,-And-Upward-Reserve"><a class="docs-heading-anchor" href="#PV,-Battery,-And-Upward-Reserve">PV, Battery, And Upward Reserve</a><a id="PV,-Battery,-And-Upward-Reserve-1"></a><a class="docs-heading-anchor-permalink" href="#PV,-Battery,-And-Upward-Reserve" title="Permalink"></a></h1><p>Storage can provide upward reserve either by increasing discharge or by reducing charging. This example forces a combined upward reserve requirement of 600 MW.</p><pre><code class="language-julia hljs">using Nosy
+using HiGHS
+import JuMP: @constraint, set_silent # Avoid `using JuMP`; both JuMP and Nosy export optimize!.
+
+s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
+set_silent(model(s))
+elec_carrier = EnergyCarrier(&quot;power&quot;, s)
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi / 2) .+
+    120 .* sin.(season_angle .- pi / 2)
+
+# Synthetic data for PV
+cf_pv = [
+    x &lt; 1e-6 ? 0.0 : x for x in [
+        max(0, cos((h % 24 - 12) / 12 * pi) * (0.6 + 0.4 * sin(2pi * (h / 24) / 365)))
+        for h in 1:8760
+    ]
+]
+
+# Snapshot initialisation
+snapshot = Snapshot(s)
+
+# One electricity node
+grid = Node(&quot;grid&quot;, elec_carrier, rule=:curtailed)
+
+# Component: electricity consumption.
+consumption = Component(&quot;consumption&quot;, Demand(elec_carrier, load_profile))
+connect!(snapshot, consumption, grid)
+
+# Component: PV.
+pv = Component(
+    &quot;PV&quot;,
+    ProfileSource(elec_carrier, cf_pv),
+    [
+        VariableCapacity(&quot;output&quot;, energy),
+        FixedCost(:capex, &quot;output&quot;, energy, 50_000.0),
+    ],
+)
+connect!(snapshot, pv, grid)
+
+# Component: battery with fixed capacities and ramping.
+# ReserveUp on output with :up means more discharge.
+# ReserveUp on input with :down means less charging.
+battery = Component(
+    &quot;battery&quot;,
+    BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy; eff_i=0.85),
+    [
+        FixedCapacity(&quot;output&quot;, energy, 5_000.0),
+        FixedCapacity(&quot;input&quot;, energy, 5_000.0),
+        FixedCapacity(&quot;level&quot;, energy, 30_000.0),
+        Ramping(&quot;output&quot;, :up, 5_000.0; modifier=energy),
+        Ramping(&quot;output&quot;, :down, 5_000.0; modifier=energy),
+        Ramping(&quot;input&quot;, :up, 5_000.0; modifier=energy),
+        Ramping(&quot;input&quot;, :down, 5_000.0; modifier=energy),
+        ReserveUp(&quot;reserve_up_discharge_15min&quot;, &quot;output&quot;, :up, 0.25; modifier=energy),
+        ReserveUp(&quot;reserve_up_charge_15min&quot;, &quot;input&quot;, :down, 0.25; modifier=energy),
+    ],
+)
+connect!(snapshot, battery, grid)
+
+# Minimum combined upward reserve at node &quot;grid&quot; (600 MW per timestep).
+@constraint(
+    model(sim(snapshot)),
+    reserve(snapshot, &quot;grid&quot;, :up, &quot;reserve_up_discharge_15min&quot;).data .+
+    reserve(snapshot, &quot;grid&quot;, :up, &quot;reserve_up_charge_15min&quot;).data .&gt;= 600.0,
+)
+
+# Optimisation
+optimize!(snapshot, cost(snapshot))
+result = extract(snapshot)</code></pre><p>When the level is high, discharge upward reserve often supplies the 600 MW. When it is low, more reserve shifts to charge reduction. Only the battery provides these reserves here, so totals at the grid match the battery.</p><pre><code class="language-julia-repl hljs">julia&gt; balance(result, &quot;battery&quot;, :level, energy, collapse=false, aggregate=true)
+8760-element Nosy.Hourly{Float64}:
+  8942.300011154877
+  7536.744365437882
+  6030.707710824039
+  4330.556648912984
+  2355.886348958197
+     0.0
+     0.0
+   720.4430510088084
+   150.0
+   150.0
+     ⋮
+ 19321.523156402218
+ 23340.120236061968
+ 23599.602275640373
+ 20525.4866799432
+ 17839.600022309754
+ 15528.713673351558
+ 13554.043373396771
+ 11853.892311485715
+ 10347.855656871872
+
+julia&gt; reserve(result, &quot;battery&quot;, :up, &quot;reserve_up_discharge_15min&quot;)
+8760-element Nosy.Stepwise{Float64}:
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+   0.0
+   0.0
+ 600.0
+ 600.0
+ 600.0
+   ⋮
+ 600.0
+  55.52254037588318
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+ 600.0
+
+julia&gt; reserve(result, &quot;battery&quot;, :up, &quot;reserve_up_charge_15min&quot;)
+8760-element Nosy.Stepwise{Float64}:
+   0.0
+   0.0
+   0.0
+   0.0
+   0.0
+ 600.0
+ 600.0
+   0.0
+   0.0
+   0.0
+   ⋮
+   0.0
+ 544.4774596241168
+   0.0
+   0.0
+   0.0
+   0.0
+   0.0
+   0.0
+   0.0</code></pre><p>The battery can satisfy the same upward reserve requirement through different physical actions depending on its state of charge.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../operating-reserve/">« Operating Reserve</a><a class="docs-footer-nextpage" href="../infeasibility-conflicts/">Infeasibility And Conflicts »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 9 May 2026 11:19">Saturday 9 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
