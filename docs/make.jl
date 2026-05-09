@@ -54,7 +54,7 @@ makedocs(
 if get(ENV, "CI", "false") == "true"
     deploydocs(
         repo="github.com/oecd-nea/Nosy.jl.git",
-        devbranch="main",
+        devbranch="docs",
         push_preview=true,
     )
 end
