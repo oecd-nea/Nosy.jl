@@ -45,6 +45,26 @@ using Test
 
     end
 
+    let
+
+        s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(2//1, 2)))
+        mc = MassCarrier("m", s, energy=[1,2,3,4])
+        ec = EnergyCarrier("e", s)
+        c = Component("comp", BasicConverter(mc, ec), [
+            FixedCapacity("input", mass, 5.),
+            YearlySum("input", 20., :equal),
+        ])
+
+        set_objective(sim(c).model, MAX_SENSE, balance(c, :output, energy))
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        _c = _extract(c)
+
+        @test isapprox(balance(_c, :input, mass), 20.; atol=1e-6)
+        @test all(isapprox.(balance(_c, :input, mass, collapse=false).data, [5., 5., 5., 5.]; atol=1e-6))
+
+    end
+
     let 
 
         c = makecomp([FixedCapacity("input", mass, 5.), YearlySum("input", 20., :equal, modifier=energy)]) # defaultmodifier -> mass

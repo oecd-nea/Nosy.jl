@@ -51,6 +51,29 @@ using Test
     end
 
 
+    # ramp up applied through model with timesteps longer than one hour
+    let
+
+        s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(2//1, 4)))
+        mc = MassCarrier("m", s, energy=[1,2,3,4])
+        ec = EnergyCarrier("e", s)
+        c = Component("comp", BasicConverter(mc, ec), [
+            Ramping("output", :up, 2.),
+            FixedCapacity("output", energy, 10.),
+        ])
+
+        @constraint(sim(c).model, _balance(c, :output, energy, collapse=false)[1] == 0.)
+
+        set_objective(sim(c).model, MAX_SENSE, _balance(c, :output, energy))
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        _c = _extract(c)
+
+        @test all(isapprox.(_balance(_c, :output, energy, collapse=false), [0., 4., 8., 10.]; atol=1e-6))
+
+    end
+
+
     # ramp down applied through model
     # no unitsize
     let 

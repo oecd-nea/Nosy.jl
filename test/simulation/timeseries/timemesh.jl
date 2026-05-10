@@ -8,9 +8,11 @@ using Test
         
         # forbidden cases
 
+        @test_throws ArgumentError TimeMesh(Int[]) # empty mesh is not meaningful
+
         @test_throws ArgumentError TimeMesh([1//2, 1//1]) # sum of weights is not integer
 
-        @test_throws ArgumentError TimeMesh([3//2, 1//2]) # first timestep is longer than one hour
+        @test_throws ArgumentError TimeMesh([1//1, 0//1]) # zero-duration timestep is not allowed
 
     end
 
@@ -77,6 +79,39 @@ using Test
         @test eachhour(m) == 1:8760
         @test eachstep(m) == 1:(8760*2)    
     
+    end
+
+
+    let
+
+        # TimeMesh where all timesteps are longer than 1 hour
+        w = fill(2//1, 4)
+        m = TimeMesh(w)
+
+        @test nhours(m) == 8
+        @test nsteps(m) == 4
+        @test all(weight(m, s) == 2//1 for s in 1:4)
+        @test [hour(m, s) for s in 1:4] == [1//1, 3//1, 5//1, 7//1]
+        @test [step(m, h-1) for h in 1:8] == [1, 1, 2, 2, 3, 3, 4, 4]
+        @test eachhour(m) == 1:8
+        @test eachstep(m) == 1:4
+
+    end
+
+
+    let
+
+        # Mixed sub-hourly, hourly, and longer-than-hourly timesteps
+        w = [3//2, 1//2, 2//1]
+        m = TimeMesh(w)
+
+        @test nhours(m) == 4
+        @test nsteps(m) == 3
+        @test [hour(m, s) for s in 1:3] == [1//1, 5//2, 3//1]
+        @test [step(m, h-1) for h in 1:4] == [1, 1, 3, 3]
+        @test eachhour(m) == 1:4
+        @test eachstep(m) == 1:3
+
     end
 
 end

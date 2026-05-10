@@ -124,4 +124,28 @@ using Test
         
     end
 
+    # test storage constraint with timesteps longer than one hour
+    let s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(2//1, 4)))
+
+        ec = EnergyCarrier("m", s)
+
+        m = BasicStorage(ec, eff_i=1., eff_o=1., simplified=true)
+        icap = FixedCapacity("input", energy, 40.)
+        ocap = FixedCapacity("output", energy, 40.)
+        lcap = FixedCapacity("level", energy, 40.)
+
+        c = Component("sto", m, [icap, ocap, lcap])
+
+        @constraint(sim(c).model, c.model.s.level[PortRef("sto", "level")].series.data .== [0., 20., 20., 0.])
+
+        set_objective(sim(c).model, MIN_SENSE, _balance(c, :input, energy, collapse=true))
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        _c = _extract(c)
+
+        @test all(isapprox.(_balance(_c, :input, energy, collapse=false), [10., 0., 0., 0.]; atol=1e-6))
+        @test all(isapprox.(_balance(_c, :output, energy, collapse=false), [0., 0., 10., 0.]; atol=1e-6))
+
+    end
+
 end

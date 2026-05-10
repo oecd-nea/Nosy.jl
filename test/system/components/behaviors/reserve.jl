@@ -254,6 +254,29 @@ import JuMP
         @test all(isapprox.(JuMP.value.(b.r_fast.data), 0.0; atol=1e-6))
     end
 
+    # Unit off: long timesteps can provide fast upward reserve when startup fits inside dt
+    let
+        s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(fill(2//1, 4)))
+        mc = MassCarrier("m", s, energy=[1,2,3,4])
+        ec = EnergyCarrier("e", s)
+        c = Component("gen", BasicConverter(mc, ec), [
+            FixedCapacity("input", mass, 10.0, unitsize=5.0),
+            UnitCommitment("input", 0.5, startup=1, shutdown=1, uptime=0, downtime=0, startupratio=1.0, integer=false),
+            Ramping("input", :up, 20.0; modifier=mass),
+            ReserveUp("test", "input", :up, 1.0; modifier=mass),
+        ])
+        b = first(getbehaviors(c, ReserveBehavior))
+        @constraint(sim(c).model, _balance(c, :input, mass, collapse=false).data .== 0)
+        set_objective(sim(c).model, MAX_SENSE, sum(b.r.data))
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+        r_vals = JuMP.value.(b.r.data)
+
+        @test all(isapprox.(r_vals, 10.0; atol=1e-6))
+        @test all(isapprox.(JuMP.value.(b.r_fast.data), 10.0; atol=1e-6))
+        @test all(isapprox.(JuMP.value.(b.r_online.data), 0.0; atol=1e-6))
+    end
+
     # Unit on, not maxed: r_online = headroom from on unit. 1 unit (state=1): capacity 5, flow=3 -> headroom 2
     let
         c = makecomp([

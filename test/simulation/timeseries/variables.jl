@@ -45,4 +45,14 @@ using Test
     end
 
 
+    let s = Sim(Model(), mesh=TimeMesh(fill(2//1, 2)))
+
+        v = Stepwise(s, lb=0., ub=[4, 5, 6, 7], binary=false, integer=false, basename="v")
+
+        @test length(v) == nsteps(s)
+        @test all(upper_bound.(getvariable.(v)).data .== [4.0, 6.0])
+
+    end
+
+
 end

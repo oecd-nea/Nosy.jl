@@ -31,13 +31,15 @@ const RTimeMesh = TimeMesh{Rational{Int64}} # enforce parametric type of mesh in
 """
     TimeMesh(w::Vector)
 
-Return a `TimeMesh` based on the timestep weight vector `w`. All weights must be rational or integer values in `(0, 1]`, and their sum must be an integer.
+Return a `TimeMesh` based on the timestep weight vector `w`. All weights must be positive rational or integer values, and their sum must be an integer.
 """
 function TimeMesh(w::Vector{T}) where T
     
+    @argcheck !isempty(w) "Please use a non-empty weight series"
+
     @argcheck isinteger(sum(w)) "Please use a weight series with integer sum"
 
-    @argcheck all(w .> 0. .&& w .<= 1.) "Please only use rational or integer weights in ]0., 1]"
+    @argcheck all(w .> 0.) "Please only use positive rational or integer weights"
 
     nstep = length(w)
     nhour = Int(sum(w))
@@ -52,9 +54,14 @@ function TimeMesh(w::Vector{T}) where T
     for s in 2:nstep # iterate over step index
         h = h + w[s-1]
         hour_at_step[s] = h #floor(h)
-        if floor(hour_at_step[s]) != floor(hour_at_step[s-1])
-            step_at_hour[Int(hour_at_step[s])] = s
+    end
+
+    local s = 1
+    for h in eachindex(step_at_hour)
+        while s < nstep && hour_at_step[s+1] <= h
+            s += 1
         end
+        step_at_hour[h] = s
     end
 
     return TimeMesh(

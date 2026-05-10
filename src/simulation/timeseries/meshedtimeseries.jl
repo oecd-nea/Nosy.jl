@@ -151,13 +151,29 @@ function Hourly(s::Stepwise{T}) where T
     if isunit(s.mesh)
         return Hourly(s.data, s.mesh) # faster conversion in case mesh is trivial
     else
-        # this sense is straightforward as all (integer) hours are contained in steps
-        v = Vector{T}(undef,nhours(s))
-        for h in eachhour(s) # iterating on hour index
-            v[h] = s[step(s.mesh,h-1)] # hour value is hour index -1
-        end
+        # Step values are attached to timestep bounds. If a timestep is longer
+        # than one hour, interpolate linearly at skipped integer hours.
+        v = [_stepwise_at_hour(s, h) for h in eachhour(s)]
         return Hourly(v, s.mesh)
     end
+end
+
+function _stepwise_at_hour(s::Stepwise, h::Int)
+    st = step(s.mesh, h - 1) # hour value is hour index - 1
+    curh = hour(s.mesh, st)
+    r = (h - curh) / weight(s.mesh, st)
+    iszero(r) && return s[st]
+    return (1 - r) * s[st] + r * s[st+1]
+end
+
+# VariableRef is not closed under interpolation: an exact boundary would return
+# a VariableRef, while an interpolated value returns an AffExpr. Always using
+# the affine expression form keeps the resulting Hourly vector type-stable.
+function _stepwise_at_hour(s::Stepwise{<:VariableRef}, h::Int)
+    st = step(s.mesh, h - 1) # hour value is hour index - 1
+    curh = hour(s.mesh, st)
+    r = (h - curh) / weight(s.mesh, st)
+    return (1 - r) * s[st] + r * s[st+1]
 end
 
 """

@@ -145,6 +145,51 @@ using Test
 
     let
 
+        # testing Stepwise -> Hourly conversion with timesteps longer than one hour
+        v = [10.0, 30.0]
+        m = TimeMesh(fill(2//1, 2))
+        s = Stepwise(v, m)
+
+        h = Hourly(s)
+
+        @test nhours(h) == 4
+        @test nsteps(h) == 2
+        @test all(isapprox.(h.data, [10.0, 20.0, 30.0, 20.0]))
+        @test sum(s) == sum(h)
+
+    end
+
+
+    let
+
+        # testing Stepwise -> Hourly conversion with mixed timestep lengths
+        v = [10.0, 25.0, 30.0]
+        m = TimeMesh([3//2, 1//2, 2//1])
+        s = Stepwise(v, m)
+
+        h = Hourly(s)
+
+        @test all(isapprox.(h.data, [10.0, 20.0, 30.0, 20.0]))
+        @test sum(s) == sum(h)
+
+    end
+
+
+    let
+
+        # testing Hourly -> Stepwise conversion with timesteps longer than one hour
+        h = Hourly([10.0, 20.0, 30.0, 20.0], TimeMesh(fill(2//1, 2)))
+
+        s = Stepwise(h)
+
+        @test nsteps(s) == 2
+        @test all(isapprox.(s.data, [10.0, 30.0]))
+
+    end
+
+
+    let
+
         # illegal summation of time series based on different meshes
         v = [Float64(i) for i in 1:100]
     
@@ -211,6 +256,20 @@ using Test
         s = Stepwise(v, m)
 
         @test sum(s) == AffExpr(70.0)
+
+    end
+
+    let
+
+        # summation of Stepwise - GenericAffExpr version with long timesteps
+        v = AffExpr.([10, 30])
+        m = TimeMesh(fill(2//1, 2))
+        s = Stepwise(v, m)
+        h = Hourly(s)
+
+        @test h == Hourly(AffExpr.([10, 20, 30, 20]), m)
+        @test sum(s) == AffExpr(80.0)
+        @test sum(s) == sum(h)
 
     end
 
