@@ -1,5 +1,5 @@
 using Nosy: TimeMesh, Hourly, Stepwise
-using Nosy: nhours, nsteps, eachhour, eachstep, shift
+using Nosy: nhours, nsteps, eachhour, eachstep, shift, iscircular
 using JuMP: AffExpr
 using Test
 
@@ -12,6 +12,7 @@ using Test
         m = TimeMesh(fill(1//1, 100))
         h = Hourly(v, m)
 
+        @test iscircular(h)
         @test nhours(h) == 100
         @test nsteps(h) == 100
         @test eachhour(h) == 1:100
@@ -48,6 +49,7 @@ using Test
         m = TimeMesh(fill(1//2, 100*2))
         s = Stepwise(v, m)
 
+        @test iscircular(s)
         @test nhours(s) == 100
         @test nsteps(s) == 100*2
         @test eachhour(s) == 1:100
@@ -86,6 +88,57 @@ using Test
             @test s4 isa Stepwise{Float64}
             @test nsteps(s4) == nsteps(m)
             @test all(s4[2*h-1] == Float64(h) for h in eachhour(m))
+        end
+
+    end
+
+
+    let
+
+        # testing non-circular Hourly time series
+        v = [Float64(i) for i in 1:5]
+        m = TimeMesh(fill(1//1, 5); circular=false)
+        h = Hourly(v, m)
+
+        @test !iscircular(h)
+        @test all(h[i] == v[i] for i in 1:5)
+        @test h[0] == 0.0
+        @test h[6] == 0.0
+        @test h[0:2] == [0.0, 1.0, 2.0]
+        @test h[[0, 1, 6]] == [0.0, 1.0, 0.0]
+        @test collect(shift(h, 1)) == [2.0, 3.0, 4.0, 5.0, 5.0]
+        @test collect(shift(h, -1)) == [1.0, 1.0, 2.0, 3.0, 4.0]
+
+        let h2 = Hourly(v, m)
+            h2[0] = -1
+            h2[6] = -1
+            @test h2.data == v
+        end
+
+    end
+
+
+    let
+
+        # testing non-circular Stepwise time series
+        v = [Float64(i) for i in 1:5]
+        m = TimeMesh(fill(1//1, 5); circular=false)
+        s = Stepwise(v, m)
+
+        @test !iscircular(s)
+        @test all(s[i] == v[i] for i in 1:5)
+        @test s[0] == 0.0
+        @test s[6] == 0.0
+        @test s[0:2] == [0.0, 1.0, 2.0]
+        @test s[[0, 1, 6]] == [0.0, 1.0, 0.0]
+        @test collect(shift(s, 2)) == [3.0, 4.0, 5.0, 5.0, 5.0]
+        @test collect(shift(s, -2)) == [1.0, 1.0, 1.0, 2.0, 3.0]
+        @test sum(s) == 12.0
+
+        let s2 = Stepwise(v, m)
+            s2[0] = -1
+            s2[6] = -1
+            @test s2.data == v
         end
 
     end

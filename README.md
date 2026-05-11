@@ -119,9 +119,7 @@ Flows going in and out of components and nodes can be evaluated using the follow
 ### Note on time modeling
   * Nosy uses a `TimeMesh` letting the user deciding the duration of timesteps. The default `TimeMesh` is 8760 hours. Under the hood, Nosy is able to work with rational fractions of time, however the hourly values are returned to the user.
   * A `TimeMesh` is expected to represent a full year, whether or not it contains 8760 hours.
-  * For one given `Snapshot`, time is considered as cyclical (the hour after the last hour is the first hour). This design choice was made to improve the fidelity of technical behaviors.
-  * `balance` returns `Hourly` vectors, which is a custom circular array for which `h[n] == h[n+8760]`. Any integer index of a `Hourly` vector can be queried.
-
+  * For one given `Snapshot`, equations consider time as cyclical (the hour after the last hour is the first hour) by default. This design choice was made to improve the fidelity of technical behaviors. However, the user can enforce linear time at the TimeMesh constructor.
 
 ## Related model: POSY2
 POSY2 is a country- and regional-level power systems model developed at the NEA on top of Nosy, currently planned for open-source release. Where Nosy exposes the building blocks (models and behaviors) directly, POSY2 adds a higher-level layer targeting energy analysts who are not optimization modellers: it ships a curated library of pre-defined technology components (nuclear plants, PV, wind turbines, battery storage, electrolysers, etc.), sector coupling across electricity, hydrogen and other carriers, and a user-friendly post-processing layer for results analysis.

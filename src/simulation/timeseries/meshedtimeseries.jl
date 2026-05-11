@@ -6,6 +6,7 @@ using OrderedCollections: OrderedDict
 abstract type AbstractMeshedTimeSeries{T} <: AbstractTimeSeries{T} end
 
 parenttype(s::AbstractMeshedTimeSeries) = (typeof(s)).name.wrapper
+iscircular(s::AbstractMeshedTimeSeries) = iscircular(s.mesh)
 
 """
 AbstractMeshedTimeSeries interface (on top of AbstractTimeSeries)
@@ -128,6 +129,16 @@ end
 
 mesh(s::Hourly) = s.mesh
 
+function shift(s::AbstractMeshedTimeSeries, i::Int)
+    if iscircular(s)
+        return @view s[begin+i:end+i]
+    end
+    first = firstindex(s)
+    last = lastindex(s)
+    shifted_indices = clamp.(collect(eachindex(s)) .+ i, first, last)
+    return typeof(s).name.wrapper(parent(s)[shifted_indices], s.mesh)
+end
+
 nhours(s::AbstractMeshedTimeSeries) = nhours(s.mesh)
 nsteps(s::AbstractMeshedTimeSeries) = nsteps(s.mesh)
 
@@ -163,7 +174,8 @@ function _stepwise_at_hour(s::Stepwise, h::Int)
     curh = hour(s.mesh, st)
     r = (h - curh) / weight(s.mesh, st)
     iszero(r) && return s[st]
-    return (1 - r) * s[st] + r * s[st+1]
+    next = iscircular(s) ? st + 1 : min(st + 1, lastindex(s))
+    return (1 - r) * s[st] + r * s[next]
 end
 
 # VariableRef is not closed under interpolation: an exact boundary would return
@@ -173,7 +185,8 @@ function _stepwise_at_hour(s::Stepwise{<:VariableRef}, h::Int)
     st = step(s.mesh, h - 1) # hour value is hour index - 1
     curh = hour(s.mesh, st)
     r = (h - curh) / weight(s.mesh, st)
-    return (1 - r) * s[st] + r * s[st+1]
+    next = iscircular(s) ? st + 1 : min(st + 1, lastindex(s))
+    return (1 - r) * s[st] + r * s[next]
 end
 
 """
@@ -193,7 +206,8 @@ function Stepwise(h::Hourly{T}) where T
                 v[s] = h[Int(curh)]
             else
                 icurh = Int(floor(curh))
-                v[s] = (icurh + 1 - curh) * h[icurh] + (curh - icurh) * h[icurh+1]
+                next = iscircular(h) ? icurh + 1 : min(icurh + 1, lastindex(h))
+                v[s] = (icurh + 1 - curh) * h[icurh] + (curh - icurh) * h[next]
             end
         end
         return Stepwise(v, h.mesh)
@@ -207,13 +221,25 @@ Base.convert(::Type{Vector{T}}, s::AbstractTimeSeries{T}) where T = parent(s)
 # Because model assumes that quantities are linear between instants
 function Base.sum(s::Stepwise{<:GenericAffExpr})
     _res = zero(eltype(s))
-    for i in eachindex(s)
-        add_to_expression!(_res, s[i] * (weight(s.mesh, i-1) + weight(s.mesh, i)) / 2)
+    if iscircular(s)
+        for i in eachindex(s)
+            add_to_expression!(_res, s[i] * (weight(s.mesh, i-1) + weight(s.mesh, i)) / 2)
+        end
+    else
+        for i in firstindex(s):(lastindex(s)-1)
+            add_to_expression!(_res, (s[i] + s[i+1]) * weight(s.mesh, i) / 2)
+        end
     end
     return _res
 end
 
-Base.sum(s::Stepwise{Float64}) = sum(s.data[i] * (weight(s.mesh, i-1) + weight(s.mesh, i)) / 2 for i in eachindex(s.data))
+function Base.sum(s::Stepwise{Float64})
+    if iscircular(s)
+        return sum(s.data[i] * (weight(s.mesh, i-1) + weight(s.mesh, i)) / 2 for i in eachindex(s.data))
+    else
+        return sum((s.data[i] + s.data[i+1]) * weight(s.mesh, i) / 2 for i in firstindex(s):(lastindex(s)-1))
+    end
+end
 
 # The sum of a Hourly is a regular sum
 # We use addto! just to make it faster, it doesn't change the result

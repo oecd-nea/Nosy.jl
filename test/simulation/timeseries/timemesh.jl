@@ -1,5 +1,5 @@
 using Nosy: TimeMesh
-using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep
+using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep, iscircular
 using Test
 
 @testset "Time series mesh" begin
@@ -34,6 +34,7 @@ using Test
         @test all(step(m, h-1) == h for h in 1:8760)
         @test eachhour(m) == 1:8760
         @test eachstep(m) == 1:8760
+        @test iscircular(m)
     
     end
 
@@ -111,6 +112,21 @@ using Test
         @test [step(m, h-1) for h in 1:4] == [1, 1, 3, 3]
         @test eachhour(m) == 1:4
         @test eachstep(m) == 1:3
+
+    end
+
+
+    let
+
+        # Non-circular meshes keep the same time structure but disable wrapping.
+        m = TimeMesh(fill(1//1, 4); circular=false)
+
+        @test !iscircular(m)
+        @test nhours(m) == 4
+        @test nsteps(m) == 4
+        @test all(weight(m, s) == 1//1 for s in 1:4)
+        @test weight(m, 0) == weight(m, 1)
+        @test weight(m, 5) == weight(m, 4)
 
     end
 

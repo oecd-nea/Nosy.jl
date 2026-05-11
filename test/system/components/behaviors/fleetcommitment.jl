@@ -33,9 +33,20 @@ Some notes and observations:
         return sum(b[i] * sqrt(nextprime(1, interval=i))  for i in eachindex(b)) # Q-linearly independent weights to remove equivalent solutions, using square root of primes
     end
 
+    # circular time (default)
     function makecomp(vbehavior=[])
         s = tsim()    
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec)
+        c = Component("comp", d, vbehavior)
+        return c
+    end
+
+    # non-circular time
+    function makecomp_opentime(vbehavior=[]; weights=fill(1//1, 10))
+        s = Sim(Model(HiGHS.Optimizer), mesh=TimeMesh(weights; circular=false))
+        mc = MassCarrier("m", s, energy=ones(nsteps(s)))
         ec = EnergyCarrier("e", s)
         d = BasicConverter(mc, ec)
         c = Component("comp", d, vbehavior)
@@ -667,6 +678,77 @@ Some notes and observations:
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
     end
    
+
+    @testset "Non-circular time" begin
+
+        let
+            cap = FixedCapacity("input", mass, 10., unitsize=5.)
+            uc = UnitCommitment("input", 1., startup=0., shutdown=0., uptime=0., downtime=0., integer=true)
+
+            m = makecomp_opentime([cap, uc])
+            uc_behavior = m.behaviors[2]
+
+            @constraint(sim(m).model, uc_behavior.state[1] == 0.)
+            @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[nsteps(sim(m))] == 10.)
+
+            set_objective(sim(m).model, MIN_SENSE, sum(_balance(m, :output, energy, collapse=false)))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+            _uc = _m.behaviors[2]
+
+            @test all(_balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 0., 0., 0., 0., 0., 0., 10.])
+            @test all(_uc.state.data .== [0., 0., 0., 0., 0., 0., 0., 0., 0., 2.])
+            @test all(_uc.startup.data .== [0., 0., 0., 0., 0., 0., 0., 0., 0., 2.])
+            @test all(iszero.(_uc.shutdown.data))
+            @test all(_up(_uc) .== [0., 0., 0., 0., 0., 0., 0., 0., 0., 2.])
+        end
+
+        let
+            cap = FixedCapacity("input", mass, 10., unitsize=5.)
+            uc = UnitCommitment("input", 1., startup=2., shutdown=0., uptime=0., downtime=0., integer=true)
+
+            m = makecomp_opentime([cap, uc])
+            uc_behavior = m.behaviors[2]
+
+            @constraint(sim(m).model, uc_behavior.state[1] == 0.)
+            @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[nsteps(sim(m))] == 10.)
+
+            set_objective(sim(m).model, MIN_SENSE, sum(_balance(m, :output, energy, collapse=false)))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+            _uc = _m.behaviors[2]
+
+            @test all(_balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 0., 0., 0., 0., 0., 5., 10.])
+            @test all(_uc.state.data .== [0., 0., 0., 0., 0., 0., 0., 0., 0., 2.])
+            @test all(_uc.startup.data .== [0., 0., 0., 0., 0., 0., 0., 0., 0., 2.])
+            @test all(iszero.(_uc.shutdown.data))
+            @test all(_up(_uc) .== [0., 0., 0., 0., 0., 0., 0., 0., 2., 2.])
+        end
+
+        let
+            cap = FixedCapacity("input", mass, 10., unitsize=5.)
+            uc = UnitCommitment("input", 1., startup=0., shutdown=2., uptime=0., downtime=0., integer=true)
+
+            m = makecomp_opentime([cap, uc])
+
+            @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 10.)
+
+            set_objective(sim(m).model, MIN_SENSE, sum(_balance(m, :output, energy, collapse=false)))
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+            _m = _extract(m)
+            _uc = _m.behaviors[2]
+
+            @test all(_balance(_m, :output, energy, collapse=false) .== [10., 5., 0., 0., 0., 0., 0., 0., 0., 0.])
+            @test all(_uc.state.data .== [2., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+            @test all(_uc.shutdown.data .== [2., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+            @test all(_up(_uc) .== [2., 2., 0., 0., 0., 0., 0., 0., 0., 0.])
+        end
+
+    end
+
 
     # fleet commitment with irregular timesteps
     let
