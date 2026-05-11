@@ -3,7 +3,7 @@ using Nosy: Sim, TimeMesh
 using Nosy: FixedCapacity, UnitCommitment
 using Nosy: BasicConverter
 using Nosy: VariableCost, FixedCost, NoLoadCost, StartupCost
-using Nosy: fixedcost, variablecost, noloadcost, startupcost, cost
+using Nosy: fixedcost, variablecost, noloadcost, startupcost, cost, costs
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!, getcomponent, balance, getport
 using JuMP: Model, GenericAffExpr, AffExpr
@@ -90,6 +90,21 @@ using Test
         @test variablecost(s, "comp") == 0.
         @test cost(s, "comp") == 0.
         @test cost(s) == 0.
+
+    end
+
+
+    let s = makesnapshot([])
+
+        # cost table with no cost behaviors
+        df = costs(s)
+        @test names(df) == ["component", "total"]
+        @test df.component == ["comp", "all"]
+        @test all(iszero, df.total)
+
+        df = costs(s, addtotal=false)
+        @test names(df) == ["component"]
+        @test df.component == ["comp"]
 
     end
 

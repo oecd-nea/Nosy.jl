@@ -28,7 +28,7 @@ Return a DataFrame containing the details of all the cost items of all the compo
 If `removezero`, components with costs equal to zero will not appear.
 If `addtotal`, sums over components and cost types will also be provided.
 """
-function costs(s::Snapshot; removezero::Bool=false, addtotal::Bool=true)
+function costs(s::Snapshot{T}; removezero::Bool=false, addtotal::Bool=true) where T
     ctypes = _costtypes(s)
     df = DataFrame()
     df[!,"component"] = sort(collect(keys(components(s)))) # sort to get consistent order across different snapshot with similar components
@@ -43,7 +43,7 @@ function costs(s::Snapshot; removezero::Bool=false, addtotal::Bool=true)
 
     if addtotal
         push!(df, Dict(:component => "all", (col => cost(s, col) for col in _ctypes)...))
-        df[!,:total] = sum(df[!,col] for col in _ctypes)
+        df[!,:total] = isempty(_ctypes) ? fill(zero(T), nrow(df)) : sum(df[!,col] for col in _ctypes)
     end
 
     return df
