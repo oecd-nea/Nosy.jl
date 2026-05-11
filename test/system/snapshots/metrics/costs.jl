@@ -13,6 +13,19 @@ using Test
 
     tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
+    let s = Snapshot(tsim())
+
+        # empty snapshots have zero cost
+        @test all(iszero, [cost(s), fixedcost(s), variablecost(s), noloadcost(s), startupcost(s)])
+        @test all(iszero, [cost(s, :missing), fixedcost(s, :missing), variablecost(s, :missing), noloadcost(s, :missing), startupcost(s, :missing)])
+
+        df = costs(s)
+        @test names(df) == ["component", "total"]
+        @test df.component == ["all"]
+        @test all(iszero, df.total)
+
+    end
+
     # snapshot with one component
     function makeconv(s, vb, cname="comp")
         mc = MassCarrier("m", s, energy=[1,2,3,4,5])
@@ -105,6 +118,17 @@ using Test
         df = costs(s, addtotal=false)
         @test names(df) == ["component"]
         @test df.component == ["comp"]
+
+    end
+
+
+    let s = makesnapshot([FixedCapacity("input", mass, 0.), FixedCost(:overnight, "input", mass, 10.)])
+
+        # all-zero cost columns can be removed while preserving totals
+        df = costs(s, removezero=true)
+        @test names(df) == ["component", "total"]
+        @test df.component == ["comp", "all"]
+        @test all(iszero, df.total)
 
     end
 

@@ -21,14 +21,14 @@ cost(s::Snapshot, cname::String, type::Symbol) = _applymetric(s, cname, cost, ty
 
 Return the sum of the costs of the components of the Snapshot.
 """
-cost(s::Snapshot) = sum(cost(s, cname) for cname in keys(s.components))
+cost(s::Snapshot{T}) where T = sum((cost(s, cname) for cname in keys(s.components)), init=zero(T))
 
 """
     cost(s::Snapshot, type::Symbol)
 
 Return the sum of the costs of type `type` of the components of the Snapshot.
 """
-cost(s::Snapshot, type::Symbol) = sum(cost(s, cname, type) for cname in keys(s.components))
+cost(s::Snapshot{T}, type::Symbol) where T = sum((cost(s, cname, type) for cname in keys(s.components)), init=zero(T))
 
 
 # all the cost items behave the same way
@@ -61,14 +61,14 @@ for (metric, comment) in COST_COMPONENT_METRICS
 
         Return the sum of $($comment) items of the components of `s`.
         """
-        $(mname)(s::Snapshot) = sum($(mname)(s, cname) for cname in keys(s.components))
+        $(mname)(s::Snapshot{T}) where T = sum(($(mname)(s, cname) for cname in keys(s.components)); init=zero(T))
 
         @doc """
             $($mname)(s::Snapshot, type::Symbol)
 
         Return the sum of $($comment) items of type `type` of the components of `s`.
         """
-        $(mname)(s::Snapshot, type::Symbol) = sum($(mname)(s, cname, type) for cname in keys(s.components))
+        $(mname)(s::Snapshot{T}, type::Symbol) where T = sum(($(mname)(s, cname, type) for cname in keys(s.components)); init=zero(T))
 
     end
 

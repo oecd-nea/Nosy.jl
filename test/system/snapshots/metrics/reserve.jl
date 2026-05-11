@@ -3,7 +3,7 @@ using Nosy: EnergyCarrier, Node
 using Nosy: DispatchableSource, BasicStorage
 using Nosy: Component, Snapshot, connect!, getcomponent, tag!
 using Nosy: FixedCapacity, Ramping, ReserveUp, ReserveDown, UnitCommitment
-using Nosy: reserve, energy
+using Nosy: reserve, table, energy
 using JuMP: Model
 using Test
 
@@ -33,6 +33,9 @@ using Test
         @test reserve(s, :down, reserve_name) == reserve(getcomponent(s, "comp"), :down, reserve_name)
         @test reserve(s, "comp", :up, reserve_name) == reserve(getcomponent(s, "comp"), :up, reserve_name)
         @test reserve(s, "comp", :down, reserve_name) == reserve(getcomponent(s, "comp"), :down, reserve_name)
+
+        df = table(s, c -> reserve(c, :up, reserve_name))
+        @test df[1, "comp"] == reserve(getcomponent(s, "comp"), :up, reserve_name)
 
     end
 

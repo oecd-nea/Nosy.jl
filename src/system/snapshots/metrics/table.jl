@@ -11,14 +11,14 @@ Return a table containing the evaluation of the metric `metric` over the compone
 If `removenothing` is true, the values equal to nothing will be discarded.
 """
 function table(s::Snapshot{T}, metric::Function; removenothing::Bool=true) where T
-    d = Dict{String,Union{Nothing,T}}()
+    cols = Pair{String,Any}[]
     for (k,v) in s.components
         m = metric(v)
         if !removenothing || !isnothing(m)
-            d[k] = m
+            push!(cols, k => [m])
         end
     end
-    return DataFrame(d)
+    return DataFrame(cols)
 end
 
 """
