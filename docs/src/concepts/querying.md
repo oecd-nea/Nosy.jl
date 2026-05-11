@@ -88,7 +88,7 @@ cost(result, :fuel)
 reserve(result, "grid", :up, "reserve_up_15min")
 ```
 
-A table is a DataFrames-based summary that evaluates a metric across several
+A table is a DataFrames-based summary that evaluates a scalar metric across several
 components or cost tags. Tables are meant for quick reporting, inspection, and
 scenario dashboards.
 
@@ -96,10 +96,6 @@ Examples:
 
 ```julia
 table(result, capacity)
-table(result, reserve)
-costs(result)
-```
-
-`table(result, capacity)` returns one row with one column per component.
-`costs(result)` returns a cost breakdown by component and cost tag, including
-an `all` row for system totals.
+table(result, cost)
+table(result, x->cost(x, :capex))
+```  
