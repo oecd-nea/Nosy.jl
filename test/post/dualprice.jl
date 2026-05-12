@@ -1,3 +1,4 @@
+import Nosy
 using Nosy: energy
 using Nosy: Sim, TimeMesh, Model
 using Nosy: DispatchableSource, Demand
@@ -58,6 +59,41 @@ using Test
             @test all(isapprox.(dualprice(e), [2.5, 0.5, 0.5, 0.5, 0.5]))
 
         end
+    end
+
+    # scaled node constraints still return the economically meaningful price
+    let s = Sim(
+        Optimizer;
+        mesh=TimeMesh(fill(1//2, 10)),
+        constraint_scaling=true,
+        scalingtarget=1e5,
+    )
+
+        set_silent(s.model)
+
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec, evalprice=true)
+
+        disp = Component("disp", DispatchableSource(ec), [
+            VariableCapacity("output", energy),
+            FixedCost(:overnight, "output", energy, 2.0),
+            VariableCost(:fuel, "output", energy, 1.0),
+        ])
+        cons = Component("cons", Demand(ec, 10), [])
+
+        connect!(snap, cons, en)
+        connect!(snap, disp, en)
+
+        optimize!(snap, cost(snap))
+
+        # Five half-hour periods at 10 units need 10 units of capacity.
+        # The first period carries the 2.0 capacity cost plus 0.5 variable cost;
+        # later periods only carry the half-hour variable cost.
+        @test all(isapprox.(dualprice(en), [2.5, 0.5, 0.5, 0.5, 0.5]))
+        e = _extract(en)
+        @test all(isapprox.(dualprice(e), [2.5, 0.5, 0.5, 0.5, 0.5]))
     end
 
     # no dual price registered
