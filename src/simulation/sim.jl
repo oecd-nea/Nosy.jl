@@ -3,9 +3,9 @@ using JuMP: Model, num_constraints, num_variables, list_of_constraint_types, sol
 """
 Simulation data shared by all nodes, components, carriers, and snapshots.
 """
-struct Sim
+mutable struct Sim
     mesh::RTimeMesh
-    model::JuMP.AbstractModel # abstract type, would be unpractical to have parametric Sim
+    model::Union{Nothing,JuMP.AbstractModel} # abstract type, would be unpractical to have parametric Sim
     options::Dict{Symbol,Any}
     suffix::String # suffix for variable names
 end
@@ -59,23 +59,30 @@ eachhour(s::Sim) = eachhour(s.mesh)
 
 Return the lower model of a Bilevel problem or the model itself for a single-level problem.
 """
-lowermodel(s::Sim) = Lower(s.model)
+function _require_model(s::Sim)
+    m = s.model
+    isnothing(m) && throw(ArgumentError("Simulation has no JuMP model. It was probably imported from a lightweight snapshot export."))
+    return m
+end
+
+lowermodel(s::Sim) = Lower(_require_model(s))
 
 """
     uppermodel(s::Sim)
 
 Return the upper model of a Bilevel problem or the model itself for a single-level problem.
 """
-uppermodel(s::Sim) = Upper(s.model)
+uppermodel(s::Sim) = Upper(_require_model(s))
 
 """
     model(s::Sim)
 
 Return the JuMP model of the simulation for a single-level problem.
 """
-model(s::Sim) = _model(s.model)
+model(s::Sim) = _model(_require_model(s))
 
 exptype(s::Sim) = _exptype(s.model)
+_exptype(::Nothing) = Float64
 _exptype(::JuMP.Model) = AffExpr
 _exptype(::BilevelJuMP.BilevelModel) = BilevelJuMP.BilevelAffExpr
 
@@ -89,16 +96,16 @@ function _nconstraints(m::Model)
         return sum(num_constraints(m, F, S) for (F, S) in l)
     end
 end
-nconstraints(s::Sim) = _nconstraints(s.model)
+nconstraints(s::Sim) = _nconstraints(_require_model(s))
 
 # count the variables of a Sim
-nvariables(s::Sim) = num_variables(s.model)
+nvariables(s::Sim) = num_variables(_require_model(s))
 
 # display sim info
 function Base.show(io::IO, s::Sim)
     ns = nsteps(s)
     nh = nhours(s)
-    sn = solver_name(s.model)
+    sn = isnothing(s.model) ? "no JuMP model" : solver_name(s.model)
     print(
         io, 
         "Simulation ($nh hours, $ns timesteps, $sn)"
