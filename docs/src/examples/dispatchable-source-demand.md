@@ -115,9 +115,9 @@ julia> cost(snapshot, :capex)
 julia> table(snapshot, capacity)
 1×2 DataFrame
  Row │ consumption  gasplant
-     │ GenericAff…  GenericAff…
+     │ Float64      GenericA…
 ─────┼──────────────────────────────────────────
-   1 │ 0            gasplant_output_energy_cap_
+   1 │         0.0  gasplant_output_energy_cap_
 ```
 With `collapse=false`, [`balance`](@ref) returns the hourly output time series;
 with `collapse=true`, it returns the annual sum. The gas plant capacity is

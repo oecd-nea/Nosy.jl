@@ -12,7 +12,7 @@ If `removenothing` is true, the values equal to nothing will be discarded.
 """
 function table(s::Snapshot{T}, metric::Function; removenothing::Bool=true) where T
     cols = Pair{String,Any}[]
-    for (k,v) in s.components
+    for (k,v) in sort(s.components)
         m = metric(v)
         if !removenothing || !isnothing(m)
             push!(cols, k => [m])

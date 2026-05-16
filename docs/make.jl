@@ -48,13 +48,16 @@ makedocs(
         "API Reference" => "api.md",
     ],
     doctest=doctest_value,
+    doctestfilters=[
+        r"([+-]?\d+\.\d{6})\d*([eE][+-]?\d+)?" => s"\1***\2",
+    ],
     checkdocs=:exports,
 )
 
 if get(ENV, "CI", "false") == "true"
     deploydocs(
         repo="github.com/oecd-nea/Nosy.jl.git",
-        devbranch="docs",
+        devbranch="dev",
         push_preview=true,
     )
 end

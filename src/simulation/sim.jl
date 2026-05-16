@@ -54,17 +54,17 @@ nhours(s::Sim) = nhours(s.mesh)
 eachstep(s::Sim) = eachstep(s.mesh)
 eachhour(s::Sim) = eachhour(s.mesh)
 
-"""
-    lowermodel(s::Sim)
-
-Return the lower model of a Bilevel problem or the model itself for a single-level problem.
-"""
 function _require_model(s::Sim)
     m = s.model
     isnothing(m) && throw(ArgumentError("Simulation has no JuMP model. It was probably imported from a lightweight snapshot export."))
     return m
 end
 
+"""
+    lowermodel(s::Sim)
+
+Return the lower model of a Bilevel problem or the model itself for a single-level problem.
+"""
 lowermodel(s::Sim) = Lower(_require_model(s))
 
 """
