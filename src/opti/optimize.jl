@@ -82,10 +82,11 @@ This function modifies the underlying simulation model and does not return a `Sn
 Thresholds are read from `sim(s).options`.
 """
 function optimize!(s::Snapshot{AffExpr}, obj::Union{GenericAffExpr,Number})
-    # if snapshot is not finalized yet, finalize it
-    !is_finalized(s) && finalize!(s)
+    finalize!(s)
     set_objective!(s, obj)
     JuMP.optimize!(sim(s).model)
+    set_optimized!(s)
+    return nothing
 end
 optimize!(::Snapshot{Float64}, ::Union{GenericAffExpr,Number}) = throw(ArgumentError("Snapshot is already optimised"))
 
@@ -95,15 +96,18 @@ function optimize!(snapshots::AbstractVector{<:Snapshot{AffExpr}}, obj::Union{Ge
     sref_sim = sim(first(snapshots))
     for s in snapshots
         sim(s) === sref_sim || throw(ArgumentError("unsupported optimisation on snapshots with different simulations"))
-        !is_finalized(s) && finalize!(s)
+        finalize!(s)
     end
 
     # all snapshots share the same simulation, using the first one is enough
     sref = first(snapshots)
-    cleanup_bounds!(sref)
     set_objective!(sref, obj)
 
     JuMP.optimize!(sim(sref).model)
+    for s in snapshots
+        set_optimized!(s)
+    end
+    return nothing
 end
 
 
@@ -117,12 +121,12 @@ This function modifies the underlying simulation model and does not return a `Sn
 Thresholds are read from `sim(s).options`.
 """
 function optimize!(s::Snapshot{<:GenericAffExpr}, lowerobj::Union{GenericAffExpr,Number}, upperobj::Union{GenericAffExpr,Number})
-    # if snapshot is not finalized yet, finalize it
-    !is_finalized(s) && finalize!(s)
-    cleanup_bounds!(s)
+    finalize!(s)
     set_objective!(s, lowerobj, objectivetype=:lower)
     set_objective!(s, upperobj, objectivetype=:upper)
     JuMP.optimize!(sim(s).model)
+    set_optimized!(s)
+    return nothing
 end
 optimize!(::Snapshot{Float64}, ::Union{GenericAffExpr,Number}, ::Union{GenericAffExpr,Number}) = throw(ArgumentError("Snapshot is already optimised"))
 
@@ -132,15 +136,18 @@ function optimize!(snapshots::AbstractVector{<:Snapshot{<:GenericAffExpr}}, lowe
     sref_sim = sim(first(snapshots))
     for s in snapshots
         sim(s) === sref_sim || throw(ArgumentError("unsupported optimisation on snapshots with different simulations"))
-        !is_finalized(s) && finalize!(s)
+        finalize!(s)
     end
 
     # all snapshots share the same simulation, using the first one is enough
     sref = first(snapshots)
-    cleanup_bounds!(sref)
 
     set_objective!(sref, lowerobj, objectivetype=:lower)
     set_objective!(sref, upperobj, objectivetype=:upper)
 
     JuMP.optimize!(sim(sref).model)
+    for s in snapshots
+        set_optimized!(s)
+    end
+    return nothing
 end

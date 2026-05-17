@@ -41,10 +41,9 @@ end
 
 # slow version when port handle is not available
 function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, pname::String)
-    # check the snapshot is not finalized
-     if is_finalized(s) 
-        throw(AssertionError("Cannot connect to snapshot: the snapshot is already finalized."))
-     end
+    if snapshotstate(s) != :unfinalized
+        throw(AssertionError("Cannot connect to snapshot: the snapshot is already $(snapshotstate(s))."))
+    end
 
     _connect!(c, n, sense, pname)
     _populatesnapshot!(s, c, n)
@@ -52,9 +51,8 @@ end
 
 # fast version when port handle is available
 function _connect!(s::Snapshot, c::Component, n::Node, sense::Symbol, p::Port)
-    # check the snapshot is not finalized
-    if is_finalized(s) 
-        throw(AssertionError("Cannot connect to snapshot: the snapshot is already finalized."))
+    if snapshotstate(s) != :unfinalized
+        throw(AssertionError("Cannot connect to snapshot: the snapshot is already $(snapshotstate(s))."))
     end
 
     pname = getpname(portstructure(c), p, sense)

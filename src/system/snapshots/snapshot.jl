@@ -11,7 +11,7 @@ struct Snapshot{T} <: AbstractElement{T}
     components::Dict{String,Component{T}}
     nodes::Dict{String,Node{T}}
     options::Dict{Symbol,<:Any}
-    finalized::RefValue{Bool}
+    state::RefValue{Symbol}
 end
 
 """
@@ -33,7 +33,7 @@ function Snapshot(sim::Sim, options::AbstractDict{Symbol,<:Any}=Dict{Symbol,Any}
         Dict{String,Component{exptype(sim)}}(),
         Dict{String,Node{exptype(sim)}}(),
         opt,
-        RefValue(false)
+        RefValue(:unfinalized)
     )
 end
 
@@ -90,8 +90,32 @@ getnodes(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Sym
 hasnode(s::Snapshot, nname::String) = haskey(nodes(s), nname)
 getnode(s::Snapshot, nname::String) = hasnode(s, nname) ? nodes(s)[nname] : throw(AssertionError("No node called $nname"))
 
-is_finalized(s::Snapshot) = s.finalized[]
-set_finalized!(s::Snapshot) = setindex!(s.finalized, true)
+const SNAPSHOT_STATES = (:unfinalized, :finalized, :optimized, :extracted)
+
+snapshotstate(s::Snapshot) = s.state[]
+
+function _snapshotstate_index(state::Symbol)
+    i = findfirst(isequal(state), SNAPSHOT_STATES)
+    isnothing(i) && throw(ArgumentError("Invalid snapshot state: $state"))
+    return i
+end
+
+function set_snapshotstate!(s::Snapshot, state::Symbol)
+    current = snapshotstate(s)
+    current_index = _snapshotstate_index(current)
+    next_index = _snapshotstate_index(state)
+    if next_index < current_index
+        throw(ArgumentError("Cannot move snapshot state from $current back to $state"))
+    elseif next_index > current_index + 1
+        throw(ArgumentError("Cannot skip snapshot state from $current to $state"))
+    end
+    setindex!(s.state, state)
+    return state
+end
+
+set_finalized!(s::Snapshot) = set_snapshotstate!(s, :finalized)
+set_optimized!(s::Snapshot) = set_snapshotstate!(s, :optimized)
+set_extracted!(s::Snapshot) = set_snapshotstate!(s, :extracted)
 
 # add a node entry to the dict of nodes of a snapshot
 # adding a node already present does nothing

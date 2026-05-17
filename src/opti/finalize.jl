@@ -15,6 +15,13 @@ Finalize the system:
   * fix variables with very low bounds
 """
 function finalize!(s::Snapshot)
+    if snapshotstate(s) == :unfinalized
+        return _finalize!(s)
+    end
+    return nothing
+end
+
+function _finalize!(s::Snapshot)
     # add node losses as a function of node input
     add_nodelosses!(s)
     
@@ -29,4 +36,5 @@ function finalize!(s::Snapshot)
     cleanup_bounds!(s)
 
     set_finalized!(s)
+    return nothing
 end

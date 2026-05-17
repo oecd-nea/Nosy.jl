@@ -1,11 +1,11 @@
 using Nosy: energy
-using Nosy: Sim, TimeMesh, Model
+using Nosy: Sim, TimeMesh, Model, nconstraints
 using Nosy: DispatchableSource, Demand
 using Nosy: EnergyCarrier
-using Nosy: VariableCapacity, FixedCost
+using Nosy: VariableCapacity, FixedCost, VariableCost
 using Nosy: Component, Node, Snapshot, connect!, optimize!
 using Nosy: cost, capacity
-using Nosy: filterexpression!, cleanup_bounds!, set_objective!
+using Nosy: filterexpression!, cleanup_bounds!, set_objective!, finalize!, snapshotstate
 
 import JuMP
 using JuMP: set_silent, is_solved_and_feasible, objective_value, value
@@ -74,6 +74,8 @@ using Test
 
         optimize!(snap, cost(snap))
 
+        @test snapshotstate(snap) == :optimized
+
         # check that the JuMP model was solved
         @test is_solved_and_feasible(s.model)
 
@@ -84,6 +86,32 @@ using Test
         @test isapprox(value(capacity(disp)), 10.)
 
 
+    end
+
+    # optimizing an already-finalized snapshot reuses finalization without
+    # adding duplicate constraints
+    let s = Sim(Model(Optimizer), mesh=TimeMesh(fill(1//1, 1)))
+        set_silent(s.model)
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec, rule=:curtailed)
+        disp = Component("disp", DispatchableSource(ec), [VariableCost(:fuel, "output", energy, 1.0)])
+
+        connect!(snap, disp, en)
+        JuMP.@variable(s.model, 0 <= tiny <= 1e-4)
+
+        @test_logs (:warn, r"Optimisation cleanup removed 1 variables") finalize!(snap)
+        @test snapshotstate(snap) == :finalized
+        ncon = nconstraints(s)
+        @test JuMP.is_fixed(tiny)
+
+        optimize!(snap, cost(snap))
+
+        @test snapshotstate(snap) == :optimized
+        @test nconstraints(s) == ncon
+        @test JuMP.is_fixed(tiny)
+        @test JuMP.fix_value(tiny) == 0.0
     end
 
 

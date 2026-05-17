@@ -15,7 +15,9 @@ Return a Snapshot populated with values corresponding to the optimised system.
 function extract(s::Snapshot{<:GenericAffExpr})
     m = sim(s).model
     if issolvedandfeasible(m)
-        return _extract(s)
+        result = _extract(s)
+        set_extracted!(result)
+        return result
     elseif termination_status(m) == OPTIMIZE_NOT_CALLED
         throw(AssertionError("Optimizer was not called"))
     else
@@ -45,7 +47,7 @@ _extract(a::Symbol) = a
 
 _extract(a::Sim) = a
 _extract(a::AbstractCarrier) = a
-_extract(a::Base.RefValue{Bool}) = a
+_extract(a::Base.RefValue) = Base.RefValue(_extract(a[]))
 _extract(a::Function) = a
 
 _extract(v::AbstractVector) = constructorof(typeof(v))(_extract.(v))

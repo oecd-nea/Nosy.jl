@@ -6,7 +6,7 @@ using Nosy: EnergyCarrier
 using Nosy: VariableCapacity, FixedCost
 using Nosy: Component, Node, Snapshot, connect!, optimize!
 using Nosy: cost, capacity, balance
-using Nosy: extract, _extract
+using Nosy: extract, _extract, snapshotstate
 import Nosy
 
 using JuMP: set_silent, objective_value, AffExpr, ConstraintRef, GenericAffExpr, GenericVariableRef, @variable, value
@@ -62,7 +62,9 @@ end
         @test _extract(v) === v
 
         r = Base.RefValue(false)
-        @test _extract(r) === r
+        er = _extract(r)
+        @test er[] === r[]
+        @test er !== r
 
     end
 
@@ -152,6 +154,8 @@ end
         let e = extract(snap)
 
             @test isapprox(cost(e), 20.)
+            @test snapshotstate(snap) == :optimized
+            @test snapshotstate(e) == :extracted
             @test isapprox(capacity(e, "disp"), 10.)
             @test isapprox(cost(e, "disp"), 20.)
             @test isapprox(cost(e, "cons"), 0.)

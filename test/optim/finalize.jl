@@ -4,7 +4,7 @@ using Nosy: DispatchableSource, BasicConverter, Demand
 using Nosy: LinkedJointFlow
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!
-using Nosy: finalize!, is_finalized
+using Nosy: finalize!, snapshotstate, set_snapshotstate!
 using JuMP: Model
 using Test
 
@@ -40,19 +40,22 @@ using Test
         @test nvariables(s) == 10 + 10 # dispatchable source + converter flows
         @test nconstraints(s) == 10 + 10 # dispatchable source + converter flows lower bounds
 
-        # snapshot not yet finalized (finalize! function not run yet)
-        @test !is_finalized(snap)
+        @test snapshotstate(snap) == :unfinalized
 
         # all disp ports are now connected
         finalize!(snap)
         
-        # snapshot is finalized (finalize! function was run)
-        @test is_finalized(snap)
+        @test snapshotstate(snap) == :finalized
 
         # count variables and constraints after finalizing
         @test nvariables(s) == 10 + 10 # nothing has changed
         @test nconstraints(s) == 10 + 10 + 10 + 10 # node constraint at each timestep for each of the 2 nodes
 
+        finalize!(snap)
+
+        @test snapshotstate(snap) == :finalized
+        @test nvariables(s) == 10 + 10
+        @test nconstraints(s) == 10 + 10 + 10 + 10
 
         cons = Component("cons", Demand(ec, 10), [])
 
@@ -61,5 +64,23 @@ using Test
 
     end
 
+    let snap = Snapshot(tsim())
+
+        @test set_snapshotstate!(snap, :unfinalized) == :unfinalized
+        @test_throws ArgumentError set_snapshotstate!(snap, :optimized)
+
+        @test set_snapshotstate!(snap, :finalized) == :finalized
+        @test set_snapshotstate!(snap, :finalized) == :finalized
+        @test_throws ArgumentError set_snapshotstate!(snap, :unfinalized)
+        @test_throws ArgumentError set_snapshotstate!(snap, :extracted)
+
+        @test set_snapshotstate!(snap, :optimized) == :optimized
+        @test_throws ArgumentError set_snapshotstate!(snap, :finalized)
+
+        @test set_snapshotstate!(snap, :extracted) == :extracted
+        @test_throws ArgumentError set_snapshotstate!(snap, :optimized)
+        @test_throws ArgumentError set_snapshotstate!(snap, :unknown)
+
+    end
 
 end
