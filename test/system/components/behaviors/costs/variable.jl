@@ -3,6 +3,7 @@ using Nosy: Sim, TimeMesh
 using Nosy: BasicConverter
 using Nosy: VariableCost, VariableCostBehavior
 using Nosy: variablecost, _variablecost
+using Nosy: build, _sortbehaviordata
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, balance
 using JuMP: Model, AffExpr
@@ -71,9 +72,31 @@ using Test
     # multiple variable costs
     let c = makeconv([VariableCost(:vom, "input", mass, 1), VariableCost(:fuel, "input", energy, 1)])
 
+        @test length(c.behaviors) == 2
         @test variablecost(c) == _variablecost(c.behaviors[1]) + _variablecost(c.behaviors[2])
 
     end
+
+    # non-identical variable costs must not be deduplicated by behavior sorting
+    let c = makeconv([VariableCost(:vom, "input", mass, 1), VariableCost(:vom, "input", mass, 2)])
+
+        @test length(c.behaviors) == 2
+        @test variablecost(c) == 3 * balance(c, :input, mass, collapse=true, aggregate=true)
+
+    end
+
+    let s = tsim()
+        mc = MassCarrier("m", s)
+        ec = EnergyCarrier("e", s)
+        m = build(BasicConverter(mc, ec), "comp")
+        v = [VariableCost(:vom, "input", mass, 1), VariableCost(:vom, "input", mass, 1)]
+
+        @test length(_sortbehaviordata(v, m)) == 2
+
+    end
+
+    # identical variable costs are ambiguous and rejected at construction
+    @test_throws ArgumentError makeconv([VariableCost(:vom, "input", mass, 1), VariableCost(:vom, "input", mass, 1)])
 
     # no variable costs
     let c = makeconv([])

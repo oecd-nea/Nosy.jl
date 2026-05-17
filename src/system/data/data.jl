@@ -44,9 +44,11 @@ __containertype(d) = Base.typename(typeof(d)).wrapper
 Reserved names.
 """
 
-# reserved names cannot be used when naming new components
 const RESERVED_COMPONENT_NAMES = (
     "losses", # used when modeling node losses
     )
 
-_is_reserved_component_name(name::String) = name in RESERVED_COMPONENT_NAMES
+function _assert_unreserved_component_name(name::String)
+    name in RESERVED_COMPONENT_NAMES && throw(ArgumentError("Cannot name component $name (reserved name)"))
+    return nothing
+end

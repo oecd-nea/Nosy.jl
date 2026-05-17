@@ -47,7 +47,7 @@ using Test
         return sn
     end
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:vom, "input", energy, 2.), VariableCost(:vom, "input", energy, 2.)])
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:vom, "input", energy, 2.)])
 
         # fixed capacity + fixed cost
         @test fixedcost(s, "comp") == AffExpr(5. * 10.)

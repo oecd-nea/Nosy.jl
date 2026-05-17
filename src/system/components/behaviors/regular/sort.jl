@@ -13,17 +13,35 @@ const BEHAVIORS_PRIORITY_PROFILE = (CapacityMultiplier, AbstractCapacityData, Du
 _sort_order(::AbstractModel) = BEHAVIORS_PRIORITY
 _sort_order(::ProfileSourceModel) = BEHAVIORS_PRIORITY_PROFILE
 
-# sort the behaviors using BEHAVIORS_PRIORITY as a priority list for behavior type
-function _sortbehaviordata(v::AbstractVector, m::AbstractModel)
-    _sorted = Vector{AbstractBehaviorData}(undef,0)
-    for B in _sort_order(m)
-        for b in v
-            if b isa B
-                push!(_sorted, b)
+# Identical behavior data is most likely an accidental duplicate in user input.
+function _assert_unique_behaviordata(v::AbstractVector)
+    for (i, b) in enumerate(v)
+        for (j, other) in enumerate(v)
+            j <= i && continue
+            if isequal(b, other)
+                throw(ArgumentError("Duplicate behavior data at positions $i and $j: $(typeof(b))"))
             end
         end
     end
-    other = setdiff(v, _sorted) # behaviors which type is not included in BEHAVIORS_PRIORITY have lowest priority
-    push!(_sorted, other...)
+    return nothing
+end
+
+# sort the behaviors using BEHAVIORS_PRIORITY as a priority list for behavior type
+function _sortbehaviordata(v::AbstractVector, m::AbstractModel)
+    _sorted = Vector{AbstractBehaviorData}(undef,0)
+    matched = falses(length(v))
+    for B in _sort_order(m)
+        for (i, b) in enumerate(v)
+            if b isa B
+                matched[i] && continue
+                push!(_sorted, b)
+                matched[i] = true
+            end
+        end
+    end
+    for (i, b) in enumerate(v)
+        matched[i] && continue
+        push!(_sorted, b)
+    end
     return _sorted
 end

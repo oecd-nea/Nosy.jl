@@ -60,7 +60,10 @@ Construct a `Component` with name `name`, model archetype `model`, behaviors and
 """
 function Component(name::String, model::AbstractModelData, behaviors::AbstractVector=[]; tags::Vector{Symbol}=Symbol[])
     
-    @argcheck !_is_reserved_component_name(name) "Cannot name component $name (reserved name)"
+    _assert_unreserved_component_name(name)
+    
+    # fail fast when behavior duplicates are found
+    _assert_unique_behaviordata(behaviors)
 
     m = build(model, name)
     

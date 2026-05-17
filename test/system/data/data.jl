@@ -1,5 +1,5 @@
 using Nosy: _to_affexpr
-using Nosy: _is_equivalent_to_variable, __containertype, _is_reserved_component_name
+using Nosy: _is_equivalent_to_variable, __containertype, _assert_unreserved_component_name
 
 using JuMP: @variable, AffExpr, Model, coefficient, constant
 using Test
@@ -68,8 +68,8 @@ using Test
         @test __containertype(Dict("a" => 1)) == Dict
         @test __containertype(Nosy.OrderedDict("a" => 1)) == Nosy.OrderedDict
 
-        @test _is_reserved_component_name("losses")
-        @test !_is_reserved_component_name("load")
+        @test_throws ArgumentError _assert_unreserved_component_name("losses")
+        @test _assert_unreserved_component_name("load") === nothing
     end
 
 end
