@@ -99,5 +99,3 @@ defaultmodifier(p::AbstractPort, step::Int) = defaultmodifier(p.carrier, step) *
 # check whether port has a modifier
 # return a boolean
 hasmodifier(p::AbstractPort, modifier) = hasmodifier(carrier(p), modifier)
-
-_flow(p::AbstractPort, modifier::Function, step::Int) = modifier(p, step)

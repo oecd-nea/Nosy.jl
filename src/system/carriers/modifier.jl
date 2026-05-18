@@ -21,7 +21,7 @@ defaultmodifier(c::AbstractCarrier, step::Int) = defaultmodifier(c)[step]
 Return the energy view of a carrier or port.
 
 `energy` is a carrier modifier commonly passed to functions such as
-[`balance`](@ref), [`flow`](@ref), capacity behaviors, and cost behaviors.
+[`balance`](@ref), capacity behaviors, and cost behaviors.
 """
 energy(c::EnergyCarrier) = c.energy
 energy(c::MassCarrier) = c.energy

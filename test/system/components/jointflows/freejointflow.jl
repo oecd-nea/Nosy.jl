@@ -5,7 +5,7 @@ using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component
 using Nosy: portstructure, _input, PortRef
-using Nosy: flow, getport, hasinput, hasoutput
+using Nosy: getport, hasinput, hasoutput
 using JuMP: Model, GenericAffExpr
 using Test
 
@@ -44,8 +44,9 @@ using Test
 
         @test getport(c, "ff") == _input(portstructure(c))[PortRef("test", "ff")] 
 
-        @test all(iszero(flow(c, "ff", :input, energy, s).constant) for s in eachstep(sim(mc)))
-        @test all(length(flow(c, "ff", :input, energy, s).terms) == 1 for s in eachstep(sim(mc)))
+        ff_energy = energy(getport(c, "ff"))
+        @test all(iszero(ff_energy.data[s].constant) for s in eachstep(sim(mc)))
+        @test all(length(ff_energy.data[s].terms) == 1 for s in eachstep(sim(mc)))
 
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 20 # time series for converter model + time series for free joint flow

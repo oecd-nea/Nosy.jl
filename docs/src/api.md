@@ -85,11 +85,10 @@ FreeJointFlow
 LinkedJointFlow
 ```
 
-## Balance And Flow
+## Balance
 
 ```@docs
 balance
-flow
 ```
 
 ## Metrics And Post-Processing

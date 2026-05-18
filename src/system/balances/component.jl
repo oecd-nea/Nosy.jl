@@ -58,54 +58,6 @@ function _balance(c::Component, pname::String, sense::Symbol, modifier::Function
     end
 end
 
-
-
-# return the flow of a port at a given timestep
-_flow(c::Component, pname::String, modifier::Function, step::Int) = _flow(c.s, pname, name(c), modifier, step)
-_flow(c::Component, pname::String, sense::Symbol, modifier::Function, step::Int) = _flow(c.s, pname, name(c), sense, modifier, step)
-
-"""
-    flow(c::Component, pname::String, modifier::Function, hour::Int)
-
-Return the value of the flow of port named `pname` of component `c` at hour `hour` modified by `modifier`.
-"""
-function flow(c::Component, pname::String, modifier::Function, hour::Int)
-    return _flow(c, pname, modifier, step(sim(c).mesh, hour))
-end
-
-"""
-    flow(c::Component, pname::String, sense::Symbol, modifier::Function, hour::Int)
-
-Return the value of the flow of port named `pname` in sense `sense` of component `c` at hour `hour`, modified by `modifier`.
-"""
-function flow(c::Component, pname::String, sense::Symbol, modifier::Function, hour::Int)
-    return _flow(c, pname, sense, modifier, step(sim(c).mesh, hour))
-end
-
-# return the sum of all flows for a full sense at a given timestep
-# do not throw error if no compatible ports are found - return zero instead
-function _flow(c::Component{T}, sense::Symbol, modifier::Function, step::Int) where T
-    local val = zero(T)
-    for (_, p) in _getportsense(c.s, sense)
-        # check port and modifier compatibility
-        # if not do not evaluate flow for p
-        if hasmodifier(p.carrier, modifier)
-            val = addto!(val, _flow(p, modifier, step))
-        end
-    end
-    return val
-end
-
-"""
-    flow(c::Component, sense::Symbol, modifier::Function, hour::Int)
-
-Return the sum of the flows in sense `sense` of component `c` at hour `hour`, modified by `modifier`.
-Return zero if no port in that sense is compatible with `modifier`.
-"""
-function flow(c::Component, sense::Symbol, modifier::Function, hour::Int)
-    return _flow(c, sense, modifier, step(sim(c).mesh, hour))
-end
-
 """
     table(c::Component, modifier::Function; collapse::Bool=false)
 

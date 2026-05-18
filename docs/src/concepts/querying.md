@@ -1,8 +1,8 @@
 # Querying And Optimizing
 
-This page covers the calls used once a snapshot exists: flow and balance queries, metrics and tables, and optimization objectives.
+This page covers the calls used once a snapshot exists: balance queries, metrics and tables, and optimization objectives.
 
-## Balance And Flow
+## Balance
 
 [`balance`](@ref) queries flows over the full simulation horizon. It can be
 called on a component, a node, or a snapshot name. The `sense` argument chooses
@@ -49,20 +49,6 @@ of summing them together:
 balance(result, "PEM", :output, mass; collapse=true, aggregate=false)
 balance(result, "hydrogen", :input, mass; collapse=false, aggregate=false)
 ```
-
-[`flow`](@ref) is the point-in-time counterpart of `balance`. It returns the
-value of one port, or the sum of a full sense, at a specific hour. `flow` is
-called on a component or node object:
-
-```julia
-pem = getcomponents(result)["PEM"]
-hydrogen_node = getnodes(result)["hydrogen"]
-
-flow(pem, "output", mass, 1)
-flow(pem, "output", energy, 1)
-flow(hydrogen_node, :input, mass, 1)
-```
-
 
 ## Metrics And Tables
 

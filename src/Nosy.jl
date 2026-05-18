@@ -31,7 +31,7 @@ export dualprice
 export reserve
 export costs, table
 
-export balance, flow
+export balance
 export mass, energy, co2
 
 export finalize!, optimize!

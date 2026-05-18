@@ -182,24 +182,3 @@ function shallowcopy(ps::PortStructure)
         copy(_level(ps))
     )
 end
-
-
-"""
-Flow at a given step.
-"""
-
-# return the flow at a given step (as opposed to given hour)
-# this method is never ambiguous (both pname and cname are given - see addinput!, addoutput!, addlevel!)
-function _flow(ps::PortStructure{T}, pname::String, cname::String, modifier::Function, step::Int)::T where T
-    p = _getport(ps, pname, cname)
-    isnothing(p) && throw(AssertionError("No port named $pname"))
-    return modifier(p, step)
-end
-
-# return the flow at a given step (as opposed to given hour)
-# for this method, sense is given
-function _flow(ps::PortStructure{T}, pname::String, cname::String, sense::Symbol, modifier::Function, step::Int)::T where T
-    p = _getport(ps, pname, cname, sense)
-    isnothing(p) && throw(AssertionError("No port named $pname"))
-    return modifier(p, step)
-end
