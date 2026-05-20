@@ -1,7 +1,6 @@
 ﻿# Nosy.jl
 
-[![CI](https://github.com/oecd-nea/Nosy.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/oecd-nea/Nosy.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/oecd-nea/Nosy.jl/branch/codecov/graph/badge.svg)](https://codecov.io/gh/oecd-nea/Nosy.jl)
+[![codecov](https://codecov.io/github/oecd-nea/Nosy.jl/branch/codecov/graph/badge.svg)](https://app.codecov.io/github/oecd-nea/Nosy.jl)
 
 Nosy is a composable, component-based energy system modeling and optimization toolkit developed at the OECD Nuclear Energy Agency. It provides a workflow to describe energy networks using the LP / MILP formalism, and analyze the results. Components are built by composing a model archetype with any number of behaviors and joint flows, making it straightforward to represent a wide range of technologies without multiplying model types. It can be used directly, or as a library to develop higher-level models.
 
