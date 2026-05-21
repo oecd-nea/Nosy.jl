@@ -317,6 +317,9 @@ Public behaviors are grouped into families.
   C^{fixed} = cK.
   ```
 
+Please note: in general, a `Snapshot` represents a year. In that case, the fixed
+cost is an annualized cost, and is expressed in currency / year.
+
 - [`VariableCost`](@ref): creates no variables and no constraints. It adds an
   operating-cost expression from the targeted flow. For a scalar cost ``c``:
 

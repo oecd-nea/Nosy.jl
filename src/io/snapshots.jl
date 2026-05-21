@@ -236,7 +236,6 @@ Path exports require a `.snap` extension. If no extension is provided,
 The original snapshot keeps its model after export. Imported snapshots are meant
 for reporting and post-processing, not for further optimization.
 """
-# Serialize a sanitized snapshot.
 function exportsnapshot(io::IO, s::Snapshot{Float64})
     oldmodel = sim(s).model
     oldcomponents = _exportsnapshot_sanitize_components!(s)
@@ -280,7 +279,6 @@ exportsnapshot(::Snapshot, ::AbstractString) =
 
 Deserialize a lightweight `Snapshot{Float64}` exported with `exportsnapshot`.
 """
-# Import a serialized snapshot.
 function importsnapshot(io::IO)
     s = deserialize(io)
     s isa Snapshot{Float64} ||
