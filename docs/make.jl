@@ -6,6 +6,12 @@ DocMeta.setdocmeta!(Nosy, :DocTestSetup, :(using Nosy); recursive=true)
 doctest_setting = get(ENV, "DOCUMENTER_DOCTEST", "true")
 doctest_value = doctest_setting == "fix" ? :fix : parse(Bool, doctest_setting)
 
+branch = get(ENV, "GITHUB_REF_NAME", "dev")
+is_tag = get(ENV, "GITHUB_REF_TYPE", "branch") == "tag"
+
+docs_version = is_tag ? "stable" : branch
+edit_branch = is_tag ? nothing : branch
+
 makedocs(
     modules=[Nosy],
     sitename="Nosy.jl",
@@ -13,10 +19,10 @@ makedocs(
     repo="https://github.com/oecd-nea/Nosy.jl/blob/{commit}{path}#L{line}",
     format=Documenter.HTML(
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://oecd-nea.github.io/Nosy.jl/stable/",
+        canonical="https://oecd-nea.github.io/Nosy.jl/$(docs_version)/",
         repolink="https://github.com/oecd-nea/Nosy.jl",
         assets=String[],
-        edit_link="main",
+        edit_link=edit_branch,
     ),
     pages=[
         "Home" => "index.md",
@@ -26,6 +32,7 @@ makedocs(
             "Building a Snapshot" => "concepts/building-snapshot.md",
             "Optimizing a Snapshot" => "concepts/optimizing.md",
             "Querying a Snapshot" => "concepts/querying.md",
+            "Exporting / Importing a Snapshot" => "concepts/exporting.md"
         ],
         "Performance" => "performance.md",
         "Examples" => [
@@ -58,6 +65,13 @@ if get(ENV, "CI", "false") == "true"
     deploydocs(
         repo="github.com/oecd-nea/Nosy.jl.git",
         devbranch="dev",
+        devurl="dev",
+        versions=[
+            "main" => "main",
+            "dev" => "dev",
+            "stable" => "v^",
+            "v#.#" => "v#.#",
+        ],
         push_preview=true,
     )
 end
