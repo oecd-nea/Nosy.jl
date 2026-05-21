@@ -139,6 +139,20 @@ constraints. The input port is fixed to the provided demand series ``d_t``:
 x_t = d_t.
 ```
 
+### [`ProfileSink`](@ref)
+
+Exposes one input port named `input`. It creates no optimisation variable for
+the input flow by itself. A capacity behavior on `input` is mandatory; once it
+is added, the input is the capacity times the exogenous profile ``a_t``:
+
+```math
+x_t = a_t K.
+```
+
+This is the consumption-side counterpart of [`ProfileSource`](@ref). It is
+useful for loads that scale with a size decision or fixed peak, such as data
+center IT load, cooling auxiliaries, or industrial consumption profiles.
+
 ### [`BasicSink`](@ref)
 
 Exposes one input port named `input` and creates one flexible input flow

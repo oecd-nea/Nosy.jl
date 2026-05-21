@@ -50,6 +50,7 @@ DispatchableSource
 ProfileSource
 Demand
 BasicSink
+ProfileSink
 BasicConverter
 BasicStorage
 LazyStorage

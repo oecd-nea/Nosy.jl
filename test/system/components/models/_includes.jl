@@ -1,6 +1,7 @@
 include("basicconverter.jl")
 include("dispatchablesource.jl")
 include("profilesource.jl")
+include("profilesink.jl")
 include("basicsink.jl")
 include("demand.jl")
 include("basicstorage.jl")

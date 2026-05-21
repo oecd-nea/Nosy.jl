@@ -12,6 +12,7 @@ const BEHAVIORS_PRIORITY_PROFILE = (CapacityMultiplier, AbstractCapacityData, Du
 
 _sort_order(::AbstractModel) = BEHAVIORS_PRIORITY
 _sort_order(::ProfileSourceModel) = BEHAVIORS_PRIORITY_PROFILE
+_sort_order(::ProfileSinkModel) = BEHAVIORS_PRIORITY_PROFILE
 
 # Identical behavior data is most likely an accidental duplicate in user input.
 function _assert_unique_behaviordata(v::AbstractVector)

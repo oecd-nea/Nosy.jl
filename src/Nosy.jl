@@ -6,7 +6,7 @@ export Model, model, lowermodel, uppermodel
 export MassCarrier, EnergyCarrier, CO2Carrier, PowerCarrier
 
 export BasicConverter
-export BasicSink, Demand
+export BasicSink, Demand, ProfileSink
 export DispatchableSource, ProfileSource
 export BasicStorage, LazyStorage
 export ACLine, DCLine
