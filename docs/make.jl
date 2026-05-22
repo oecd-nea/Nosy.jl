@@ -29,6 +29,7 @@ makedocs(
         "Getting Started" => "getting-started.md",
         "Modelling Concepts" => [
             "Overview" => "concepts.md",
+            "Time" => "concepts/time.md",
             "Building a Snapshot" => "concepts/building-snapshot.md",
             "Optimizing a Snapshot" => "concepts/optimizing.md",
             "Querying a Snapshot" => "concepts/querying.md",

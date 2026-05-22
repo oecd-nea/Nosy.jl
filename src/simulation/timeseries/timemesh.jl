@@ -15,15 +15,9 @@ end
 GenericTimeSeries(v::Vector{T}) where T = GenericTimeSeries{T}(v, true)
 iscircular(s::GenericTimeSeries) = s.circular
 
-"""
-    TimeMesh(w::Vector)
-    TimeMesh()
 
-Contain the time structure of the model and convert between time series types.
-`TimeMesh()` creates an 8760-hour mesh with one step per hour.
-Time meshes are circular by default. Pass `circular=false` to make associated
-time series reject out-of-bounds indexing instead of wrapping around.
-"""
+# Contain the time structure of the model and convert between time series types.
+# TimeMesh() creates an 8760-hour mesh with one step per hour.
 struct TimeMesh{T}
     weight::GenericTimeSeries{T}
     nstep::Int64
@@ -37,9 +31,12 @@ end
 const RTimeMesh = TimeMesh{Rational{Int64}} # enforce parametric type of mesh in the general case to avoid parameterizing AbstractMeshedTimeSeries
 
 """
-    TimeMesh(w::Vector)
+    TimeMesh(w::Vector; circular::Bool=true)
 
-Return a `TimeMesh` based on the timestep weight vector `w`. All weights must be positive rational or integer values, and their sum must be an integer.
+Return a `TimeMesh` based on the timestep weight vector `w`. 
+All weights must be positive rational or integer values, and their sum must be an integer.
+Time meshes are circular by default. Pass `circular=false` to make associated
+time series reject out-of-bounds indexing instead of wrapping around.
 """
 function TimeMesh(w::Vector{T}; circular::Bool=true) where T
     
@@ -83,7 +80,13 @@ function TimeMesh(w::Vector{T}; circular::Bool=true) where T
     )
 end
 
-# default TimeMesh (8760 hours, 1 step per hour)
+"""
+    TimeMesh(; circular::Bool=true)
+
+Return a `TimeMesh` based on the a 8760 1-hour timesteps.
+Time meshes are circular by default. Pass `circular=false` to make associated
+time series reject out-of-bounds indexing instead of wrapping around.
+"""
 TimeMesh(; circular::Bool=true) = TimeMesh(fill(1//1, 8760), circular=circular)
 
 nhours(m::TimeMesh) = m.nhour

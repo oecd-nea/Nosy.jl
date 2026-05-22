@@ -1,10 +1,12 @@
 # Building A Snapshot
 
-This page covers the objects used to describe a system before solving: simulations, carriers, nodes, components, archetypes, behaviors, joint flows, snapshots, time, and tags.
+This page covers the objects used to describe a system before solving: simulations, carriers, 
+nodes, components, archetypes, behaviors, joint flows, snapshots, time, and tags.
+
 
 ## Simulation
 
-[`Sim`](@ref) stores the shared simulation context: the time mesh, JuMP model,
+[`Sim`](@ref) stores the shared simulation context: the [`TimeMesh`](@ref), JuMP model,
 solver options, and variable-name suffix. Most users create one simulation for
 one optimisation problem, then build one or more snapshots on top of it.
 
@@ -506,35 +508,6 @@ values.
 The details below use ``N`` for the number of model timesteps and
 ``\Delta_t`` for the duration of timestep ``t`` in hours. Unless stated
 otherwise, variables are continuous and non-negative.
-
-
-## Time
-
-Nosy uses the following time conventions:
-
-  * Internally, Nosy works with irregular time meshes through the custom
-    `Stepwise` wrapper. `Stepwise` series are cyclic: the index after the final
-    index wraps to the first one.
-  * User-facing time-series wrappers are `Hourly` series. They represent regular
-    hourly meshes interpolated from `Stepwise` data, and are cyclic too.
-  * `Stepwise` and `Hourly` behave like circular vectors, modulo the number of
-    steps or hours respectively. In particular, for both wrappers, `v[0] ==
-    v[end]`, `v[-1] == v[end-1]`, and so on.
-  * Quantities are interpreted as values at an instant, not over a time
-    interval. In that sense, Nosy uses a "power" formalism rather than an
-    "energy" formalism. The power formalism creates more nonzeros in the
-    optimization matrix, so affected models, such as storage, offer a `simplified`
-    keyword argument to fall back to the energy formalism locally. This is
-    generally a good approximation when the component is not central to the
-    study, such as a plant in a background node.
-  * Quantities are assumed to vary linearly between instants whenever possible.
-    This applies to all flows, is an approximation for levels because quadratic
-    components are not modeled, and does not hold for unit-commitment state and
-    switch variables.
-
-[`TimeMesh`](@ref) maps a full year of hours onto model timesteps. The default
-mesh represents 8760 hourly steps. Custom meshes allow sub-hourly and irregular
-timesteps, but each timestep weight must be no longer than one hour.
 
 
 ## Tags

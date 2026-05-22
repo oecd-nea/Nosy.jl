@@ -128,43 +128,21 @@ The masks should have one Boolean value per timestep in the simulation mesh.
 `shutdownmask` applies to one shutdown type; its length must match the number
 of downtime alternatives.
 
-## Time
+## Model archetype simplifications
 
-[`TimeMesh`](@ref) controls the temporal resolution of the model. A full hourly
-year creates 8760 timesteps:
+Some models offer a simplified version of the equations, that can help reduce the computational burden
+of the optimization.
+In particular, the [`BasicStorage`](@ref) and [`LazyStorage`](@ref) constructors have the `simplified`
+keyword argument that slightly changes the expression of the level in function of the flows (using 
+the simpler "energy" formalism instead of the "power" formalism).
 
-```julia
-s = Sim(HiGHS.Optimizer; mesh=TimeMesh())
-```
+Please validate before using `simplified=true` argument in production.
 
-For quick prototypes, you can use a shorter horizon, such as one 30-day month.
-This is only a development convenience for checking model structure, costs,
-connections, and reporting code; it is not an approximation of the full yearly
-scenario:
+## Time mesh
 
-```julia
-# A 30-day prototype horizon with hourly timesteps.
-mesh = TimeMesh(fill(1//1, 24 * 30))
-s = Sim(HiGHS.Optimizer; mesh=mesh)
-```
+The number of optimization variables is generally linear with the number of timesteps.
+Depending on the model's goal, there can be two types of time-related simplifications:
+  * reducing the duration of the `TimeMesh`: one can define a smaller temporal horizon, e.g. sub-annual duration.
+  * using a coarser `TimeMesh`, with all or some of the night steps lasting more than one hour.
 
-Irregular meshes are useful when some hours need more detail than others. The
-current `TimeMesh` API accepts timestep weights in `(0, 1]`: it can split
-eventful hours into sub-hourly steps, but it does not support timesteps longer
-than one hour.
-
-```julia
-# One day: hourly night steps, finer morning and evening ramps.
-night = fill(1//1, 8)
-morning_ramp = repeat([1//4, 3//4], 4)
-day = fill(1//1, 8)
-evening_ramp = repeat([1//4, 3//4], 4)
-
-mesh = TimeMesh(vcat(night, morning_ramp, day, evening_ramp))
-s = Sim(HiGHS.Optimizer; mesh=mesh)
-```
-
-Custom meshes should be used with care. Nosy constraints are applied on the
-mesh you provide, so changing temporal resolution is a modelling approximation:
-it can speed up the solve, but it can also hide short events, ramps, scarcity
-periods, storage cycling, and unit-commitment transitions.
+The [Time](#time) section of the documentation provides more detail on how to use a custom [`TimeMesh`](@ref).
