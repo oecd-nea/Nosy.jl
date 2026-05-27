@@ -17,6 +17,22 @@ If the component has no fixed cost, return zero.
 fixedcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, FixedCostBehavior{T}, _fixedcost, type)
 
 """
+    constantcost(c::Component)
+
+Return the constant cost of Component `c`.
+If the component has no constant cost, return zero.
+"""
+constantcost(c::Component{T}) where T = sumofmetric(c, ConstantCostBehavior{T}, _constantcost)
+
+"""
+    constantcost(c::Component, type::Symbol)
+
+Return the constant cost of type `type` of Component `c`.
+If the component has no constant cost, return zero.
+"""
+constantcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, ConstantCostBehavior{T}, _constantcost, type)
+
+"""
     variablecost(c::Component)
 
 Return the variable cost of Component `c`.
@@ -69,6 +85,7 @@ startupcost(c::Component{T}, type::Symbol) where T = sumofmetric(c, StartupCostB
 const COST_COMPONENT_METRICS = Dict(
     variablecost => "variable cost",
     fixedcost => "fixed cost",
+    constantcost => "constant cost",
     noloadcost => "no-load cost",
     startupcost => "startup cost",
 )

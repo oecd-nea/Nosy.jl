@@ -62,8 +62,9 @@ Common metrics include:
 
 - [`capacity`](@ref): installed or optimised capacity.
 - [`nbunits`](@ref): number of units when a capacity behavior uses a unit size.
-- [`cost`](@ref), [`fixedcost`](@ref), [`variablecost`](@ref),
-  [`noloadcost`](@ref), and [`startupcost`](@ref): total or tagged cost terms.
+- [`cost`](@ref), [`fixedcost`](@ref), [`constantcost`](@ref),
+  [`variablecost`](@ref), [`noloadcost`](@ref), and [`startupcost`](@ref):
+  total or tagged cost terms.
 - [`reserve`](@ref): reserve available at snapshot, node, or component level.
 
 Examples:

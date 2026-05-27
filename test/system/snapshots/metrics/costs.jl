@@ -2,8 +2,8 @@ using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
 using Nosy: FixedCapacity, UnitCommitment
 using Nosy: BasicConverter
-using Nosy: VariableCost, FixedCost, NoLoadCost, StartupCost
-using Nosy: fixedcost, variablecost, noloadcost, startupcost, cost, costs
+using Nosy: VariableCost, FixedCost, ConstantCost, NoLoadCost, StartupCost
+using Nosy: fixedcost, constantcost, variablecost, noloadcost, startupcost, cost, costs
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component, Node, Snapshot, connect!, getcomponent, balance, getport
 using JuMP: Model, GenericAffExpr, AffExpr
@@ -16,8 +16,8 @@ using Test
     let s = Snapshot(tsim())
 
         # empty snapshots have zero cost
-        @test all(iszero, [cost(s), fixedcost(s), variablecost(s), noloadcost(s), startupcost(s)])
-        @test all(iszero, [cost(s, :missing), fixedcost(s, :missing), variablecost(s, :missing), noloadcost(s, :missing), startupcost(s, :missing)])
+        @test all(iszero, [cost(s), fixedcost(s), constantcost(s), variablecost(s), noloadcost(s), startupcost(s)])
+        @test all(iszero, [cost(s, :missing), fixedcost(s, :missing), constantcost(s, :missing), variablecost(s, :missing), noloadcost(s, :missing), startupcost(s, :missing)])
 
         df = costs(s)
         @test names(df) == ["component", "total"]
@@ -47,14 +47,15 @@ using Test
         return sn
     end
 
-    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:vom, "input", energy, 2.)])
+    let s = makesnapshot([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), ConstantCost(:fixed_charge, 7.), VariableCost(:vom, "input", energy, 2.)])
 
         # fixed capacity + fixed cost
         @test fixedcost(s, "comp") == AffExpr(5. * 10.)
+        @test constantcost(s, "comp") == AffExpr(7.)
 
         @test variablecost(s, "comp") == balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
 
-        @test cost(s, "comp") == AffExpr(5. * 10.) + balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
+        @test cost(s, "comp") == AffExpr(5. * 10.) + AffExpr(7.) + balance(getcomponent(s, "comp"), :input, energy, collapse=true, aggregate=true) * 2.
 
         # Snapshot cost
         @test cost(s) == cost(s, "comp") # only component is c
@@ -66,6 +67,7 @@ using Test
         FixedCapacity("input", mass, 5., unitsize=1.), 
         UnitCommitment("input", 0.5),
         FixedCost(:overnight, "input", mass, 10.), 
+        ConstantCost(:fixed_charge, 7.),
         VariableCost(:fuel, "input", energy, 2.), 
         VariableCost(:vom, "output", energy, 3.),
         NoLoadCost(:noload, "input", 2.),
@@ -76,18 +78,22 @@ using Test
         
         @test fixedcost(s, "comp", :overnight) == AffExpr(5. * 10.)
         @test fixedcost(s, "comp", :other) == 0.
+        @test constantcost(s, "comp", :fixed_charge) == AffExpr(7.)
+        @test constantcost(s, "comp", :other) == 0.
         @test variablecost(s, "comp") == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
         @test variablecost(s, "comp", :fuel) == sum(energy(getport(c, "input"))) * 2
         @test variablecost(s, "comp", :vom) == sum(energy(getport(c, "output"))) * 3
         # noload cost tested separately, in behavior tests
         # startup cost tested separately, in behaviors tests
-        @test cost(s, "comp") == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3 + noloadcost(s, "comp") + startupcost(s, "comp")
+        @test cost(s, "comp") == AffExpr(5. * 10.) + AffExpr(7.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3 + noloadcost(s, "comp") + startupcost(s, "comp")
         @test cost(s, "comp", :overnight) == fixedcost(c, :overnight)
+        @test cost(s, "comp", :fixed_charge) == constantcost(c, :fixed_charge)
         @test cost(s, "comp", :fuel) == variablecost(c, :fuel)
         @test cost(s, "comp", :vom) == variablecost(c, :vom)
         @test cost(s, "comp", :noload) == noloadcost(c, :noload)
         @test cost(s, "comp", :startup) == startupcost(c, :startup)
         @test cost(s, :overnight) == fixedcost(c, :overnight)
+        @test cost(s, :fixed_charge) == constantcost(c, :fixed_charge)
         @test cost(s, :fuel) == variablecost(c, :fuel)
         @test cost(s, :vom) == variablecost(c, :vom)
         @test cost(s, :noload) == noloadcost(c, :noload)
@@ -100,6 +106,7 @@ using Test
 
         # no fixed costs
         @test fixedcost(s, "comp") == 0.
+        @test constantcost(s, "comp") == 0.
         @test variablecost(s, "comp") == 0.
         @test cost(s, "comp") == 0.
         @test cost(s) == 0.
@@ -137,6 +144,7 @@ using Test
 
         # no component with name `nocomp`
         @test_throws AssertionError fixedcost(s, "nocomp")
+        @test_throws AssertionError constantcost(s, "nocomp")
         @test_throws AssertionError variablecost(s, "nocomp")
         @test_throws AssertionError cost(s, "nocomp")
 
@@ -161,6 +169,7 @@ using Test
         FixedCapacity("input", mass, 5., unitsize=1), 
         UnitCommitment("input", 0.5),
         FixedCost(:overnight, "input", mass, 10.), 
+        ConstantCost(:fixed_charge, 7.),
         VariableCost(:fuel, "input", energy, 2.), 
         VariableCost(:vom, "output", energy, 3.),
         NoLoadCost(:noload, "input", 2.),
@@ -179,6 +188,13 @@ using Test
         @test fixedcost(s) == fixedcost(s, "comp1") + fixedcost(s, "comp2")
 
         @test fixedcost(s, :overnight) == fixedcost(s, "comp1", :overnight) + fixedcost(s, "comp2", :overnight)
+
+        # check constant cost is non-zero
+        @test (constantcost(s) isa GenericAffExpr) && !iszero(constantcost(s))
+
+        @test constantcost(s) == constantcost(s, "comp1") + constantcost(s, "comp2")
+
+        @test constantcost(s, :fixed_charge) == constantcost(s, "comp1", :fixed_charge) + constantcost(s, "comp2", :fixed_charge)
 
         # check no-load cost is non-zero
         @test (noloadcost(s) isa GenericAffExpr) && !iszero(noloadcost(s))
@@ -200,6 +216,8 @@ using Test
         @test cost(s) == cost(s, "comp1") + cost(s, "comp2")
 
         @test cost(s, :overnight) == cost(s, "comp1", :overnight) + cost(s, "comp2", :overnight)
+
+        @test cost(s, :fixed_charge) == cost(s, "comp1", :fixed_charge) + cost(s, "comp2", :fixed_charge)
 
         @test cost(s, :fuel) == cost(s, "comp1", :fuel) + cost(s, "comp2", :fuel)
 

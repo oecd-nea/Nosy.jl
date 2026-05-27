@@ -336,6 +336,13 @@ Public behaviors are grouped into families.
 Please note: in general, a `Snapshot` represents a year. In that case, the fixed
 cost is an annualized cost, and is expressed in currency / year.
 
+- [`ConstantCost`](@ref): creates no variables and no constraints. It adds a
+  fixed amount directly to component cost:
+
+  ```math
+  C^{constant} = c.
+  ```
+
 - [`VariableCost`](@ref): creates no variables and no constraints. It adds an
   operating-cost expression from the targeted flow. For a scalar cost ``c``:
 

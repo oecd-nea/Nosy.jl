@@ -73,6 +73,7 @@ ReserveUp
 ReserveDown
 UnitCommitment
 FixedCost
+ConstantCost
 VariableCost
 NoLoadCost
 StartupCost
@@ -99,6 +100,7 @@ capacity
 nbunits
 cost
 fixedcost
+constantcost
 variablecost
 noloadcost
 startupcost

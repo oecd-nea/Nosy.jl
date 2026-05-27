@@ -5,6 +5,7 @@ using Nosy: FixedCapacityBehavior, _capacity
 using Nosy: BasicConverter
 using Nosy: FixedCost, FixedCostBehavior
 using Nosy: fixedcost, _fixedcost
+using Nosy: sim, nvariables, nconstraints
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component
 using JuMP: Model, AffExpr
@@ -18,12 +19,22 @@ using Test
 
         # conversion to Float64
         @test b.val == 5.
+        @test b.threshold == 0.
+
+    end
+
+
+    let b = FixedCost(:overnight, "input", mass, 5; threshold=2)
+
+        # conversion to Float64
+        @test b.threshold == 2.
 
     end
 
 
     # no negative cost
     @test_throws ArgumentError FixedCost(:overnight, "input", mass, -5.)
+    @test_throws ArgumentError FixedCost(:overnight, "input", mass, 5.; threshold=-1.)
 
     tsim() = Sim(Model(), mesh=TimeMesh(fill(1//2, 10)))
 
@@ -55,6 +66,28 @@ using Test
     end
 
 
+    let m = makeconv([FixedCost(:overnight, "input", mass, 10.; threshold=2.), FixedCapacity("input", mass, 5.)])  
+
+        # adapting to fixed capacity above threshold
+        @test _fixedcost(m.behaviors[2]) == AffExpr((5. - 2.) * 10.)
+
+        # component metric
+        @test fixedcost(m) == AffExpr((5. - 2.) * 10.)
+
+    end
+
+
+    let m = makeconv([FixedCost(:overnight, "input", mass, 10.; threshold=7.), FixedCapacity("input", mass, 5.)])  
+
+        # no fixed cost when fixed capacity is under threshold
+        @test iszero(_fixedcost(m.behaviors[2]))
+
+        # component metric
+        @test iszero(fixedcost(m))
+
+    end
+
+
     let m = makeconv([FixedCost(:overnight, "input", mass, 10.), VariableCapacity("input", mass)])
 
         # adapting to variable capacity
@@ -62,6 +95,16 @@ using Test
 
         # component metric
         @test fixedcost(m) == _capacity(m.behaviors[1]) * 10.
+
+    end
+
+
+    let base = makeconv([FixedCost(:overnight, "input", mass, 10.), VariableCapacity("input", mass)]),
+        m = makeconv([FixedCost(:overnight, "input", mass, 10.; threshold=5.), VariableCapacity("input", mass)])
+
+        # variable capacity above threshold is modeled with an auxiliary chargeable capacity
+        @test nvariables(sim(m)) == nvariables(sim(base)) + 1
+        @test nconstraints(sim(m)) == nconstraints(sim(base)) + 2
 
     end
 
