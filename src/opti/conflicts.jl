@@ -24,8 +24,9 @@ end
 
 """
     conflicts(s::Sim)
+    conflicts(snapshot::Snapshot)
 
-Return the vector of constraints in conflict (IIS) of the simulation of `s`.
+Return the vector of constraints in conflict (IIS) of the simulation.
 If there are no conflicts, return nothing.
 """
 function conflicts(s::Sim)
@@ -33,3 +34,5 @@ function conflicts(s::Sim)
     isnothing(c) && @warn("No conflicts identified.")
     return c
 end
+
+conflicts(s::Snapshot) = conflicts(sim(s))
