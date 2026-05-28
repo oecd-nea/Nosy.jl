@@ -42,6 +42,7 @@ function Sim(
                 model;
                 target=options[:scalingtarget],
                 expthreshold=options[:expthreshold],
+                objectivescaling=options[:objectivescaling],
             )) :
             JuMP.Model(model)
     end

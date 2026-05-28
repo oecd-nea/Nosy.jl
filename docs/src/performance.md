@@ -55,8 +55,13 @@ each constraint row, it:
 - removes coefficients, left-hand-side constants, and right-hand-side bounds
   below `expthreshold * maxabs`, where `maxabs` is the largest finite
   coefficient in that row;
-- scales the row so that the geometric mean of the smallest and largest finite
-  nonzero absolute values is equal to `scalingtarget`.
+- moves any remaining left-hand-side constant to the right-hand side;
+- scales the row so that the largest finite nonzero coefficient has magnitude
+  `scalingtarget`.
+
+Scalar affine objectives are also multiplied before solve and objective values
+and duals are converted back to the original units when queried through JuMP.
+The objective factor is controlled by `objectivescaling`.
 
 The defaults are:
 
@@ -66,6 +71,7 @@ s = Sim(
     constraint_scaling=true,
     expthreshold=1e-9,
     scalingtarget=1.0,
+    objectivescaling=200.0,
 )
 ```
 

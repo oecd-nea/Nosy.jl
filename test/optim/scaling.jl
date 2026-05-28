@@ -8,6 +8,10 @@ function _finite_nonzero_abs(values)
     return filter(x -> !iszero(x) && isfinite(x), abs.(Float64.(values)))
 end
 
+function _scaled_coefficient_maxabs(func)
+    return maximum(_finite_nonzero_abs([term.coefficient for term in func.terms]))
+end
+
 @testset "Constraint scaling" begin
     
     let
@@ -28,12 +32,9 @@ end
 
         scaled_f = MOI.get(inner, MOI.ConstraintFunction(), c)
         scaled_set = MOI.get(inner, MOI.ConstraintSet(), c)
-        values = _finite_nonzero_abs([
-            [term.coefficient for term in scaled_f.terms]
-            scaled_f.constant
-            scaled_set.upper
-        ])
-        @test sqrt(minimum(values) * maximum(values)) ≈ 1e5
+        @test _scaled_coefficient_maxabs(scaled_f) ≈ 1e5
+        @test scaled_f.constant == 0.0
+        @test scaled_set.upper ≈ (20.0 - 3.0) * 2e4
 
         @test MOI.get(optimizer, MOI.ConstraintFunction(), c) ≈ f
         @test MOI.get(optimizer, MOI.ConstraintSet(), c).upper ≈ 20.0
@@ -50,11 +51,9 @@ end
 
         scaled_f = MOI.get(inner, MOI.ConstraintFunction(), c)
         scaled_set = MOI.get(inner, MOI.ConstraintSet(), c)
-        values = _finite_nonzero_abs([
-            [term.coefficient for term in scaled_f.terms]
-            scaled_set.upper
-        ])
-        @test sqrt(minimum(values) * maximum(values)) ≈ 1e5
+        @test _scaled_coefficient_maxabs(scaled_f) ≈ 1e5
+        @test scaled_f.constant == 0.0
+        @test scaled_set.upper ≈ (20.0 - 1e9) * 1e4
     end
 
     # Tiny coefficients are dropped before the row is scaled
@@ -80,11 +79,8 @@ end
 
         scaled_f = MOI.get(inner, MOI.ConstraintFunction(), c)
         scaled_set = MOI.get(inner, MOI.ConstraintSet(), c)
-        values = _finite_nonzero_abs([
-            [term.coefficient for term in scaled_f.terms]
-            scaled_set.upper
-        ])
-        @test sqrt(minimum(values) * maximum(values)) ≈ 1e5
+        @test _scaled_coefficient_maxabs(scaled_f) ≈ 1e5
+        @test scaled_set.upper ≈ 20.0 * 1e4
     end
 
     # Constraint expression threshold is configurable
@@ -155,13 +151,10 @@ end
 
         scaled_f = MOI.get(inner, MOI.ConstraintFunction(), c)
         scaled_set = MOI.get(inner, MOI.ConstraintSet(), c)
-        values = _finite_nonzero_abs([
-            [term.coefficient for term in scaled_f.terms]
-            scaled_f.constant
-            scaled_set.lower
-            scaled_set.upper
-        ])
-        @test sqrt(minimum(values) * maximum(values)) ≈ 1e5
+        @test _scaled_coefficient_maxabs(scaled_f) ≈ 1e5
+        @test scaled_f.constant == 0.0
+        @test scaled_set.lower ≈ -50.0 * 1e4
+        @test scaled_set.upper ≈ 200.0 * 1e4
         @test MOI.get(optimizer, MOI.ConstraintSet(), c).lower ≈ -50.0
         @test MOI.get(optimizer, MOI.ConstraintSet(), c).upper ≈ 200.0
     end
@@ -192,6 +185,7 @@ end
         @test sim.options[:boundthreshold] == 1e-3
         @test sim.options[:expthreshold] == 1e-9
         @test sim.options[:scalingtarget] == 1
+        @test sim.options[:objectivescaling] == 200.0
         @test sim.options[:objthreshold] == 1e-9
     end
 
@@ -202,8 +196,10 @@ end
             mesh=TimeMesh(fill(1 // 1, 1)),
             scalingtarget=1e4,
             expthreshold=1e-11,
+            objectivescaling=10.0,
         )
         @test sim.options[:scalingtarget] == 1e4
         @test sim.options[:expthreshold] == 1e-11
+        @test sim.options[:objectivescaling] == 10.0
     end
 end
