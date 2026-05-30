@@ -55,9 +55,9 @@ each constraint row, it:
 - removes coefficients, left-hand-side constants, and right-hand-side bounds
   below `expthreshold * maxabs`, where `maxabs` is the largest finite
   coefficient in that row;
+- combines duplicate variable terms in the same row;
 - moves any remaining left-hand-side constant to the right-hand side;
-- scales the row so that the largest finite nonzero coefficient has magnitude
-  `scalingtarget`.
+- optionally scales the row according to `scalingmode`.
 
 Scalar affine objectives are also multiplied before solve and objective values
 and duals are converted back to the original units when queried through JuMP.
@@ -71,9 +71,22 @@ s = Sim(
     constraint_scaling=true,
     expthreshold=1e-9,
     scalingtarget=1.0,
+    scalingmode=:none,
     objectivescaling=200.0,
 )
 ```
+
+The row scale can be selected with `scalingmode`. The default `:extreme` scales
+only rows whose largest coefficient is outside `[1e-2, 1e2]`. `:passthrough`
+leaves constraints unchanged while still enabling objective scaling. `:none`
+keeps the bridge active but disables row rescaling, so Nosy still canonicalizes
+rows, shifts left-hand-side constants, filters tiny terms, and scales the
+objective.
+`:maxabs` scales by the largest finite row coefficient. `:pow2` rounds the
+maxabs scale to the nearest power of two. Experimental modes are also
+available: `:rhsmax` scales by the largest coefficient or finite right-hand-side
+bound, `:geomean` scales by the geometric center of coefficient magnitudes, and
+`:l2` scales by the coefficient 2-norm.
 
 This is an MOI bridge, so it changes the representation of scalar affine
 constraints passed to the optimiser. It does not rewrite variable bounds,
