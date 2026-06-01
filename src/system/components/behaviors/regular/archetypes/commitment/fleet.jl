@@ -227,17 +227,25 @@ NB the startup and shutdown duration are not constraints, they are used to compu
 """
 
 function _apply_constraint_uc_switch!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
-    @constraint(lowermodel(sim(c)),
-        b.state.data .== (shift(b.state, -1) + b.startup - shift(b.shutdown, -1)).data
-    )
+    lm = lowermodel(sim(c))
+    next_state = shift(b.state, -1) + b.startup - shift(b.shutdown, -1)
+    for step in eachindex(b.state)
+        if !iszero(b.state[step] - next_state[step])
+            @constraint(lm, b.state[step] == next_state[step])
+        end
+    end
 end
 
 # not applied if minratio is 1 (no variable part of flow)
 function _apply_constraint_uc_variable_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     if b.data.minratio < 1
-        @constraint(lowermodel(sim(c)), 
-            (b.variable -  b.state * (b.unitsize * (1. - b.data.minratio))).data .<= 0.
-        )
+        lm = lowermodel(sim(c))
+        variable_flow_margin = b.variable - b.state * (b.unitsize * (1. - b.data.minratio))
+        for step in eachindex(variable_flow_margin)
+            if !iszero(variable_flow_margin[step])
+                @constraint(lm, variable_flow_margin[step] <= 0.)
+            end
+        end
     end
 end
 
@@ -293,25 +301,39 @@ end
 function _apply_constraints_uc_shutdownselector!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     # this constraint is only meaningful if there are multiple shutdown selectors
     if length(b.shutdownselector) > 1
-        @constraint(lowermodel(sim(c)), 
-            sum(b.shutdownselector).data .== b.shutdown.data
-        )
+        lm = lowermodel(sim(c))
+        shutdownsum = sum(b.shutdownselector)
+        for step in eachindex(b.shutdown)
+            if !iszero(shutdownsum[step] - b.shutdown[step])
+                @constraint(lm, shutdownsum[step] == b.shutdown[step])
+            end
+        end
     end
 end
 
 function _apply_constraints_uc_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
-    @constraint(lowermodel(sim(c)), 
-        b.modifier(getport(c, b.data.pname)).data .== _flow(b).data
-    )
+    lm = lowermodel(sim(c))
+    flow = b.modifier(getport(c, b.data.pname))
+    ucflow = _flow(b)
+    for step in eachindex(flow)
+        if !iszero(flow[step] - ucflow[step])
+            @constraint(lm, flow[step] == ucflow[step])
+        end
+    end
 end
 
 
 function _apply_constraint_su_sd(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     # cannot shutdown more units than committed
-    @constraint(lowermodel(sim(c)),
-        b.shutdown.data .<= b.state.data
-    )
-
+    lm = lowermodel(sim(c))
+    for step in eachindex(b.shutdown)
+        if !iszero(b.shutdown[step])
+            shutdown_margin = b.shutdown[step] - b.state[step]
+            if !iszero(shutdown_margin)
+                @constraint(lm, shutdown_margin <= 0.)
+            end
+        end
+    end
 end
 
 function _apply_constraints!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
