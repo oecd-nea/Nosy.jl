@@ -20,9 +20,44 @@ using Test
 
     tsim() = Sim(Model(Optimizer), mesh=TimeMesh(fill(1//2, 10)))
 
+    function constant_variable_cost_dualprices(weights)
+        s = Sim(Model(Optimizer), mesh=TimeMesh(weights))
+        set_silent(s.model)
+
+        snap = Snapshot(s)
+
+        ec = EnergyCarrier("e", s)
+        en = Node("energy", ec, evalprice=true)
+        disp = Component("disp", DispatchableSource(ec), [
+            VariableCost(:fuel, "output", energy, 1.0),
+        ])
+        cons = Component("cons", Demand(ec, 10), [])
+
+        connect!(snap, cons, en)
+        connect!(snap, disp, en)
+
+        optimize!(snap, cost(snap))
+
+        return dualprice(en), dualprice(_extract(en))
+    end
+
     # Empty saved constraint containers mean "no price was defined", not an
     # empty time series.
     @test isnothing(Nosy._dualprice(SavedDualPrice{AffExpr}(ConstraintRef[])).values)
+
+    # Node dual prices are reported as hourly energy prices, not raw step-dual
+    # values. A flat 1.0 variable cost should therefore return 1.0 on any mesh.
+    for weights in (
+        fill(1//2, 6),
+        fill(1//1, 3),
+        fill(2//1, 3),
+        [1//2, 1//2, 2//1],
+    )
+        expected = fill(1.0, Int(sum(weights)))
+        live_price, extracted_price = constant_variable_cost_dualprices(weights)
+        @test all(isapprox.(live_price, expected; atol=1e-7))
+        @test all(isapprox.(extracted_price, expected; atol=1e-7))
+    end
 
 
     # simple problem that can be solved analytically: deploy same capacity of source as demand
@@ -54,9 +89,9 @@ using Test
             @test e.dualprice isa DualPrice{Float64}
             @test fieldnames(typeof(e.dualprice)) == (:values,)
             @test dualprice(e) isa Hourly{Float64}
-            # first hour: overnight cost @ peak demand + variable cost
-            # next hours: demand is not peak so only variable cost
-            @test all(isapprox.(dualprice(e), [2.5, 0.5, 0.5, 0.5, 0.5]))
+            # First hour: normalized scarcity price from overnight cost plus
+            # variable cost. Next hours carry only variable cost.
+            @test all(isapprox.(dualprice(e), [5.0, 1.0, 1.0, 1.0, 1.0]))
 
         end
     end
@@ -89,11 +124,11 @@ using Test
         optimize!(snap, cost(snap))
 
         # Five half-hour periods at 10 units need 10 units of capacity.
-        # The first period carries the 2.0 capacity cost plus 0.5 variable cost;
-        # later periods only carry the half-hour variable cost.
-        @test all(isapprox.(dualprice(en), [2.5, 0.5, 0.5, 0.5, 0.5]))
+        # Prices are normalized to hourly units, so variable cost is 1.0
+        # regardless of timestep duration.
+        @test all(isapprox.(dualprice(en), [5.0, 1.0, 1.0, 1.0, 1.0]))
         e = _extract(en)
-        @test all(isapprox.(dualprice(e), [2.5, 0.5, 0.5, 0.5, 0.5]))
+        @test all(isapprox.(dualprice(e), [5.0, 1.0, 1.0, 1.0, 1.0]))
     end
 
     # no dual price registered

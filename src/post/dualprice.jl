@@ -28,7 +28,27 @@ end
 _dualprice(a::DualPrice{Float64}) = a.values
 
 _dualprice(::Nothing, ::Sim) = nothing
-_dualprice(a::AbstractVector{<:Number}, s::Sim) = Stepwise(a, s.mesh)
+function _dualprice(a::AbstractVector{<:Number}, s::Sim)
+    raw = Stepwise(a, s.mesh)
+    weights = Stepwise([_dualprice_weight(s.mesh, i) for i in eachstep(s)], s.mesh)
+    return raw ./ weights
+end
+
+function _dualprice_weight(m::TimeMesh, i::Int)
+    if iscircular(m)
+        return Float64((weight(m, i - 1) + weight(m, i)) / 2)
+    elseif nsteps(m) == 1
+        # Open one-point meshes have no interval in sum(::Stepwise). Keep a
+        # positive normalization factor so dual-price evaluation remains finite.
+        return Float64(weight(m, i))
+    elseif i == 1
+        return Float64(weight(m, i) / 2)
+    elseif i == nsteps(m)
+        return Float64(weight(m, i - 1) / 2)
+    else
+        return Float64((weight(m, i - 1) + weight(m, i)) / 2)
+    end
+end
 
 function _dualprice(n::Node{<:GenericAffExpr})
     if isnothing(n.dualprice.constraints) && !issolvedandfeasible(sim(n).model)
