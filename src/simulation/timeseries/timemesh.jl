@@ -95,6 +95,28 @@ nsteps(m::TimeMesh) = m.nstep
 weight(m::TimeMesh) = m.weight
 weight(m::TimeMesh, step::Int) = m.weight[iscircular(m) ? step : clamp(step, firstindex(m.weight), lastindex(m.weight))]
 
+# Validate that a custom mesh can belong to the same simulation as `ref`.
+# `label` only identifies the caller in the error message.
+function _checkmesh(m::TimeMesh, ref::TimeMesh, label::String)
+    @argcheck nhours(m) == nhours(ref) "$label mesh must have the same horizon as the simulation mesh"
+    @argcheck iscircular(m) == iscircular(ref) "$label mesh must have the same circularity as the simulation mesh"
+    return m
+end
+
+function integrationweight(m::TimeMesh, i::Int)
+    if iscircular(m)
+        return Float64((weight(m, i - 1) + weight(m, i)) / 2)
+    elseif nsteps(m) == 1
+        return Float64(weight(m, i))
+    elseif i == 1
+        return Float64(weight(m, i) / 2)
+    elseif i == nsteps(m)
+        return Float64(weight(m, i - 1) / 2)
+    else
+        return Float64((weight(m, i - 1) + weight(m, i)) / 2)
+    end
+end
+
 # Important note: 
 # hour index denotes the number of the current hour, as vector index, starting at 1
 # hour value denotes the actual value of the current hour, starting at 0
@@ -113,7 +135,7 @@ iscircular(m::TimeMesh) = m.circular
 
 function ==(t1::TimeMesh, t2::TimeMesh)
     (t1 === t2) && return true # this is the same time mesh (normal case, only 1 sim)
-    return t1.circular == t2.circular && all(t1.weight .== t2.weight) # very inefficient, but rare (cross-sim)
+    return t1.circular == t2.circular && nsteps(t1) == nsteps(t2) && parent(weight(t1)) == parent(weight(t2))
 end
 
 # display mesh info

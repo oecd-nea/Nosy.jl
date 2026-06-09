@@ -76,9 +76,9 @@ using Test
 
         ec = EnergyCarrier("ec", s)
 
-        p1 = Port(ec, Float64.(1:10))
-        p2 = Port(ec, Float64.(11:20))
-        p3 = Port(ec, Float64.(21:30))
+        p1 = Port(ec, Stepwise(Float64.(1:10), s.mesh))
+        p2 = Port(ec, Stepwise(Float64.(11:20), s.mesh))
+        p3 = Port(ec, Stepwise(Float64.(21:30), s.mesh))
 
         n = Node("n", p1.carrier, rule=:default, losses=0.3) # 30% losses
 

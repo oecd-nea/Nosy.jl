@@ -11,7 +11,7 @@ Return the reserve of Component `c` for the specified `sense` and `rname`.
 function reserve(c::Component{T}, sense::Symbol, rname::String) where T
     @argcheck (sense == :up || sense == :down) "reserve: sense must be :up or :down"
     
-    result = Stepwise(differentzerovector(T, nsteps(sim(c).mesh)), sim(c).mesh)
+    result = Stepwise(differentzerovector(T, nsteps(mesh(c))), mesh(c))
     
     for b in getbehaviors(c, ReserveBehavior)
         b.rsense != sense && continue

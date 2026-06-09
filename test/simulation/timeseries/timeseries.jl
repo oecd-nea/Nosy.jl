@@ -1,5 +1,5 @@
-using Nosy: TimeMesh, Hourly, Stepwise
-using Nosy: nhours, nsteps, eachhour, eachstep, shift, iscircular
+using Nosy: TimeMesh, Hourly, Stepwise, remesh
+using Nosy: nhours, nsteps, eachhour, eachstep, shift, iscircular, mesh
 using JuMP: AffExpr
 using Test
 
@@ -237,6 +237,47 @@ using Test
 
         @test nsteps(s) == 2
         @test all(isapprox.(s.data, [10.0, 30.0]))
+
+    end
+
+
+    let
+
+        # testing direct Stepwise remeshing without an Hourly intermediate
+        source = TimeMesh([1//2, 1//2, 3//1])
+        target = TimeMesh([1//2, 7//2])
+        s = Stepwise([10.0, 100.0, 30.0], source)
+
+        t = remesh(s, target)
+
+        @test mesh(t) == target
+        @test t.data == [13.75, 46.25]
+        @test sum(t) == sum(s)
+
+        fine = TimeMesh(fill(1//1, 4))
+        coarse = TimeMesh(fill(2//1, 2))
+        u = Stepwise([10.0, 30.0], coarse)
+
+        @test_throws ArgumentError remesh(u, fine)
+
+        unrelated = TimeMesh([3//2, 5//2])
+        @test_throws ArgumentError remesh(s, unrelated)
+        @test_throws ArgumentError remesh(Stepwise(1.0, unrelated), fine)
+        @test_throws ArgumentError remesh(Stepwise(1.0, fine), TimeMesh(fill(2//1, 2); circular=false))
+
+    end
+
+    let
+
+        # non-circular remeshing uses n-1 intervals; the last point is only a boundary
+        source = TimeMesh(fill(1//1, 5); circular=false)
+        target = TimeMesh([2//1, 2//1, 1//1]; circular=false)
+        s = Stepwise([0.0, 0.0, 0.0, 0.0, 10.0], source)
+
+        a = remesh(s, target)
+
+        @test a.data == [0.0, 2.5, 0.0]
+        @test sum(a) == sum(s)
 
     end
 

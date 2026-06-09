@@ -77,11 +77,11 @@ function _apply_constraints_ramping_uc!(c::Component, b::RampingBehavior, uc::Fl
     diff = (shift(var,1) - var) .* b.data.modifier(car) ./ uc.modifier(car) # conversion of diff to ramping carrier
     if b.data.sense == :up
         @constraint(lowermodel(sim(c)), 
-            diff.data <= uc.state .* weight(sim(c).mesh) * b.data.val
+            diff.data <= uc.state .* weight(mesh(c)) * b.data.val
         )
     elseif b.data.sense == :down
         @constraint(lowermodel(sim(c)),
-            diff.data >= - shift(uc.state,1) .* weight(sim(c).mesh) * b.data.val
+            diff.data >= - shift(uc.state,1) .* weight(mesh(c)) * b.data.val
         )
     else
         throw(AssertionError("this portion of code should never be reached"))
@@ -91,7 +91,7 @@ end
 # apply the ramping constraint to the model, considering unit size
 function _apply_constraints_ramping_unitsize!(c::Component, b::RampingBehavior)
     diff = shift(b.data.modifier(getport(c, b.data.pname)),1) - b.data.modifier(getport(c, b.data.pname))
-    maxramp = nbunits(c) .* weight(sim(c).mesh) * b.data.val
+    maxramp = nbunits(c) .* weight(mesh(c)) * b.data.val
     if b.data.sense == :up
         @constraint(lowermodel(sim(c)), 
             diff.data <= maxramp
@@ -108,11 +108,11 @@ function _apply_constraints_ramping_model!(c::Component, b::RampingBehavior)
     f = b.data.modifier(getport(c, b.data.pname))
     if b.data.sense == :up
         @constraint(lowermodel(sim(c)), 
-            (shift(f,1) - f).data <= weight(sim(c).mesh) * b.data.val
+            (shift(f,1) - f).data <= weight(mesh(c)) * b.data.val
         )
     elseif b.data.sense == :down
         @constraint(lowermodel(sim(c)), 
-            (shift(f,1) - f).data >= - weight(sim(c).mesh) * b.data.val
+            (shift(f,1) - f).data >= - weight(mesh(c)) * b.data.val
         )
     end
 end

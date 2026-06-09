@@ -32,35 +32,41 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     name::String
     carrier::C
     s::PortStructure{T}
+    mesh::RTimeMesh
     losses::Float64
     rule::Symbol # :curtailed or :default
     evalprice::Bool
     dualprice::AbstractDualPrice{T}
     tags::Vector{Symbol}
 
-    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::AbstractDualPrice{T}, tags::Vector{Symbol}) where T
+    function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, mesh::TimeMesh, losses::Number, rule::Symbol, evalprice::Bool, dualprice::AbstractDualPrice{T}, tags::Vector{Symbol}) where T
         @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
         @argcheck 0 <= losses <= 1 "Losses must be be between 0 and 1"
-        new{T,typeof(carrier)}(name, carrier, s, losses, rule, evalprice, dualprice, tags)
+        new{T,typeof(carrier)}(name, carrier, s, _checkmesh(mesh, sim(carrier).mesh, "Node"), losses, rule, evalprice, dualprice, tags)
     end 
 end
+
+Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, losses::Number, rule::Symbol, evalprice::Bool, dualprice::AbstractDualPrice{T}, tags::Vector{Symbol}) where T =
+    Node(name, carrier, s, sim(carrier).mesh, losses, rule, evalprice, dualprice, tags)
 
 const NODE_RULES = [:default, :curtailed]
 
 """
-    Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
+    Node(name::String, c::AbstractCarrier; mesh=sim(c).mesh, losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
 
 Construct a `Node` with name `name` associated with carrier `c`. A node has a unique carrier.
+The `mesh` argument defines the time mesh on which the node balance is applied.
 The `rule` defines the node behavior (`:default` or `:curtailed`).
 The `losses` value is the ratio, between 0 and 1, of input flow that is lost.
 Set `evalprice=true` to store node-balance constraints for dual-price extraction.
 The `tags` argument initialises the node tags.
 """
-function Node(name::String, c::AbstractCarrier; losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
+function Node(name::String, c::AbstractCarrier; mesh::RTimeMesh=sim(c).mesh, losses::Number=0., rule::Symbol=:default, evalprice::Bool=false, tags::Vector{Symbol}=Symbol[])
     return Node(
         name,
         c,
         PortStructure{exptype(sim(c))}(sim(c)),
+        mesh,
         losses,
         rule,
         evalprice,
@@ -72,6 +78,7 @@ end
 name(n::Node) = n.name
 
 carrier(n::Node) = n.carrier
+mesh(n::Node) = n.mesh
 
 rule(n::Node) = n.rule
 iscurtailed(n::Node) = rule(n) == :curtailed
@@ -128,7 +135,7 @@ end
 function addlosses!(n::Node)
     if _haslosses(n)
         # losses = (node losses ratio) * (sum of input of node)
-        _in = balance(n, :input, _defaultmodifier(n.carrier), aggregate=true, collapse=false)
+        _in = _aggregate_node_balance(n, :input, _defaultmodifier(n.carrier))
         addoutput!(n, "losses", name(n), Port(n.carrier, _in * n.losses, true))
     end
 end

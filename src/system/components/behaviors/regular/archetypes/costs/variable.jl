@@ -66,10 +66,10 @@ function buildbehavior(c::Component, b::VariableCost{M,Float64}) where M
 end
 
 function buildbehavior(c::Component, b::VariableCost{M,Vector{Float64}}) where M
-    if !(length(b.val) == nsteps(sim(c)) || length(b.val) == nhours(sim(c))) 
-        throw(ArgumentError("The length of variable cost vector must be equal to $(nsteps(sim(c))) or $(nhours(sim(c)))"))
+    if !(length(b.val) == nsteps(mesh(c)) || length(b.val) == nhours(mesh(c)))
+        throw(ArgumentError("The length of variable cost vector must be equal to $(nsteps(mesh(c))) or $(nhours(mesh(c)))"))
     end
-    _cost = Stepwise(b.val, sim(c).mesh)
+    _cost = Stepwise(b.val, mesh(c))
     _flow = _balance_one(c.s, b.pname, name(c), b.modifier)
 
     # here we assume, as for the rest of the model, that the flow (~power) is linear between steps

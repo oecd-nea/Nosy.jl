@@ -49,7 +49,7 @@ using Test
 
         m = build(d, "demand")
 
-        @test all(isapprox.(energy(_getport(m.s, "input", "demand")), AffExpr.(series)))
+        @test all(energy(_getport(m.s, "input", "demand")) .== AffExpr.(series))
 
         @test carrier(_getport(m.s, "input", "demand")) == mc
 

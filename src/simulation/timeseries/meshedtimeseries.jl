@@ -253,6 +253,67 @@ end
 
 Base.sum(s::Hourly{Float64}) = sum(s.data)
 
+# Cross-mesh operations are only defined from a source mesh to an equal or
+# coarser target mesh with the same horizon and aligned boundaries.
+_mesh_ends(m::TimeMesh) = cumsum(parent(weight(m)))
+_stepstart(ends, i::Int) = i == 1 ? zero(eltype(ends)) : ends[i - 1]
+_intervals(m::TimeMesh) = 1:(iscircular(m) ? nsteps(m) : nsteps(m) - 1)
+
+function _containsmesh(source::TimeMesh, target::TimeMesh)
+    source == target && return true
+    nhours(source) == nhours(target) || return false
+    iscircular(source) == iscircular(target) || return false
+
+    source_ends = _mesh_ends(source)
+    target_ends = _mesh_ends(target)
+    i = firstindex(source_ends)
+    for b in target_ends
+        while i <= lastindex(source_ends) && source_ends[i] < b
+            i += 1
+        end
+        (i <= lastindex(source_ends) && source_ends[i] == b) || return false
+    end
+    return true
+end
+
+function _checkremesh(source::TimeMesh, target::TimeMesh)
+    @argcheck _containsmesh(source, target) "Target mesh must have the same horizon, matching circularity, and aligned boundaries with source mesh"
+    return nothing
+end
+
+"""
+    remesh(s::Stepwise, mesh::TimeMesh)
+
+Remesh a continuous `Stepwise` series onto a compatible coarser mesh while
+preserving its integral.
+"""
+function remesh(s::Stepwise{T}, target::TimeMesh) where T
+    source = mesh(s)
+    source == target && return s
+    _checkremesh(source, target)
+    v = differentzerovector(T, nsteps(target))
+    target_ends = _mesh_ends(target)
+    source_ends = _mesh_ends(source)
+
+    ti = first(_intervals(target))
+    for si in _intervals(source)
+        sstart = _stepstart(source_ends, si)
+        while sstart >= target_ends[ti]
+            ti += 1
+        end
+        v[ti] = addto!(v[ti], (s[si] + s[si + 1]) * weight(source, si) / (2 * integrationweight(target, ti)))
+    end
+    return Stepwise(v, target)
+end
+
+function _sum_to_mesh(series, target::TimeMesh, ::Type{T}) where T
+    total = Stepwise(differentzerovector(T, nsteps(target)), target)
+    for s in series
+        total.data .= addto!.(total.data, remesh(s, target).data)
+    end
+    return total
+end
+
 
 # Broadcasting interface
 # https://docs.julialang.org/en/v1/manual/interfaces/

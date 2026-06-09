@@ -77,6 +77,7 @@ function _connect!(n::Node, sense::Symbol, p::Port, cname::String, pname::String
         if carrier(p) != carrier(n) 
             throw(AssertionError("Carriers of component and node must be the same"))
         end
+        _check_node_mesh_compatible_with_port(n, p, cname, pname)
 
         # add component port to node
         if sense == :input
@@ -88,6 +89,13 @@ function _connect!(n::Node, sense::Symbol, p::Port, cname::String, pname::String
         end
         set_used!(p)
     end
+end
+
+function _check_node_mesh_compatible_with_port(n::Node, p::Port, cname::String, pname::String)
+    if !_containsmesh(mesh(p), mesh(n))
+        throw(ArgumentError("Cannot connect port $pname of $cname to node $(name(n)): node mesh must be the same or coarser than the port mesh"))
+    end
+    return nothing
 end
 
 """

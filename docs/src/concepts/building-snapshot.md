@@ -89,6 +89,11 @@ constraints enforce the local flow rule. A default node balances input and
 output. A curtailed node allows production to exceed consumption, which is often
 useful for electricity systems with renewable curtailment.
 
+Nodes default to the simulation mesh, but can be given a different balance mesh
+with `Node("name", carrier; mesh=mesh)`. Connected component flows are then
+projected to the node mesh before applying the balance constraint. See
+[Component And Node Meshes](time.md#component-and-node-meshes).
+
 Examples of nodes:
   * an electricity bidding zone
   * a country
@@ -100,6 +105,12 @@ Examples of nodes:
 
 [`Component`](@ref)s are active system elements. A component is built from one
 model archetype and any number of behaviors and joint flows.
+
+Components default to the simulation mesh. Component archetypes accept
+`mesh=...` and build their ports, variables, profiles, costs, and
+component-internal constraints on that mesh. Transmission lines also build
+their flow variables on their component mesh; KVL constraints project AC line
+flows onto a compatible cycle mesh when needed.
 
 
 ## Model Archetype
