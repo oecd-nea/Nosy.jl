@@ -29,7 +29,7 @@ The `mesh` argument defines the component mesh used by both input and output por
 function BasicConverter(input::AbstractCarrier, output::AbstractCarrier; ratio=1., modifier::Function=defaultmodifier, mesh::RTimeMesh=sim(input).mesh)
     s = sim(input)
     @argcheck sim(input) === sim(output) "Input and output carriers must belong to the same Sim"
-    mesh = _checkmesh(mesh, s.mesh, "Converter")
+    @argcheck _compatiblemesh(s.mesh, mesh) "Converter mesh must be compatible with the simulation mesh"
 
     if modifier != defaultmodifier
         @argcheck hasmodifier(input, modifier) "$(input.name) not compatible with $modifier"

@@ -28,7 +28,8 @@ struct BasicStorage{CI<:AbstractCarrier,CO<:AbstractCarrier,CL<:AbstractCarrier,
         @argcheck hasmodifier(output, modifier) "output carrier is not compatible with given modifier"
         @argcheck hasmodifier(level, modifier) "level carrier is not compatible with given modifier"
         @argcheck input.sim == output.sim == level.sim "input, output and level carriers must have the same simulation"
-        return new{CI,CO,CL,M}(input.sim, _checkmesh(mesh, input.sim.mesh, "Storage"), input, output, level, modifier, Float64(eff_i), Float64(eff_o), Float64(self_discharge), simplified)
+        @argcheck _compatiblemesh(input.sim.mesh, mesh) "Storage mesh must be compatible with the simulation mesh"
+        return new{CI,CO,CL,M}(input.sim, mesh, input, output, level, modifier, Float64(eff_i), Float64(eff_o), Float64(self_discharge), simplified)
     end
 end
 

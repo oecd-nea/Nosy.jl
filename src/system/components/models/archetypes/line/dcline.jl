@@ -20,7 +20,8 @@ struct DCLine <: AbstractTransmissionLine
     to::PowerCarrier
     function DCLine(from::PowerCarrier, to::PowerCarrier; mesh::RTimeMesh=sim(from).mesh)
         @argcheck sim(from) === sim(to) "Carriers must belong to the same Sim"
-        new(sim(from), _checkmesh(mesh, sim(from).mesh, "Line"), from, to)
+        @argcheck _compatiblemesh(sim(from).mesh, mesh) "Line mesh must be compatible with the simulation mesh"
+        new(sim(from), mesh, from, to)
     end
 end
 

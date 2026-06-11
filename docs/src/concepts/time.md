@@ -83,6 +83,12 @@ The component variables, profiles, costs, storage equations, ramping, reserves,
 unit-commitment constraints, and transmission-line flow variables are then
 expressed on that component mesh.
 
+Custom component and node meshes must be compatible with the simulation mesh:
+they must cover the same horizon, have the same circularity, and have nested
+boundaries. They can be finer or coarser than the simulation mesh when those
+conditions hold. Direction matters only when a time series is projected from
+one mesh to another.
+
 Nodes can also use a different balance mesh:
 
 ```julia

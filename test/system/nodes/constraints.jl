@@ -100,11 +100,7 @@ using Test
         mc = MassCarrier("m", s)
         badmesh = TimeMesh([3//2, 5//2])
 
-        n = Node("n", mc, mesh=badmesh)
-        src = Component("src", DispatchableSource(mc))
-        sn = Snapshot(s)
-
-        @test_throws ArgumentError connect!(sn, src, n)
+        @test_throws ArgumentError Node("n", mc, mesh=badmesh)
 
     end
 

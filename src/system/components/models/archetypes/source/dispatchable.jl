@@ -1,4 +1,5 @@
 using JuMP: @variable
+using ArgCheck: @argcheck
 
 """
 Dispatchable source.
@@ -22,7 +23,8 @@ Return a `DispatchableSource` model archetype for carrier `carrier`.
 """
 function DispatchableSource(carrier::AbstractCarrier; mesh::RTimeMesh=sim(carrier).mesh)
     s = sim(carrier)
-    return DispatchableSource(s, _checkmesh(mesh, s.mesh, "Source"), carrier)
+    @argcheck _compatiblemesh(s.mesh, mesh) "Source mesh must be compatible with the simulation mesh"
+    return DispatchableSource(s, mesh, carrier)
 end
 
 struct DispatchableSourceModel{C<:AbstractCarrier,T<:VAL} <: AbstractModel{T}

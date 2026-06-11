@@ -20,7 +20,7 @@ arguments:
 function Stepwise(s::Sim, mesh::RTimeMesh=s.mesh; lb=0., ub=Inf64, binary::Bool=false, integer::Bool=false, basename::String="", mask::Union{Nothing,AbstractVector{Bool}}=nothing)
 
     @argcheck (!binary || !integer) "Variable cannot be both binary and integer"
-    mesh = _checkmesh(mesh, s.mesh, "Variable")
+    @argcheck _compatiblemesh(s.mesh, mesh) "Variable mesh must be compatible with the simulation mesh"
 
     # checking types of bounds
     _checkcompatible(lb, mesh)

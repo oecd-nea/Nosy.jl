@@ -93,7 +93,7 @@ end
 
 function _check_node_mesh_compatible_with_port(n::Node, p::Port, cname::String, pname::String)
     if !_containsmesh(mesh(p), mesh(n))
-        throw(ArgumentError("Cannot connect port $pname of $cname to node $(name(n)): node mesh must be the same or coarser than the port mesh"))
+        throw(ArgumentError("Cannot connect port $pname of $cname to node $(name(n)): node mesh must be the same as or coarser than the connected component port mesh, with aligned boundaries"))
     end
     return nothing
 end

@@ -33,6 +33,7 @@ using Test
         ff = FixedJointFlow("ff", mc, :input, Float64.(1:10))
 
         @test ff isa FixedJointFlow
+        @test ff.series.mesh == sim(mc).mesh
 
         c = Component("test", m, [ff])
 

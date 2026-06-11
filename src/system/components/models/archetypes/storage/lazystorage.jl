@@ -30,7 +30,7 @@ Storage is periodic: the step after the last step is the first step.
 """
 function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, self_discharge=0., simplified::Bool=false, mesh::RTimeMesh=sim(level).mesh)
     s = sim(level)
-    mesh = _checkmesh(mesh, s.mesh, "Storage")
+    @argcheck _compatiblemesh(s.mesh, mesh) "Storage mesh must be compatible with the simulation mesh"
 
     if modifier != defaultmodifier
         @argcheck hasmodifier(level, modifier) "$(name(level)) not compatible with $modifier"

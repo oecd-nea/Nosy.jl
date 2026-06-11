@@ -27,7 +27,7 @@ The `mesh` argument defines the component mesh used by the demand port.
 function Demand(carrier::AbstractCarrier, series; modifier=defaultmodifier, mesh::RTimeMesh=sim(carrier).mesh)
     @argcheck all(series .>= 0.) "The series cannot be negative"
     s = sim(carrier)
-    mesh = _checkmesh(mesh, s.mesh, "Demand")
+    @argcheck _compatiblemesh(s.mesh, mesh) "Demand mesh must be compatible with the simulation mesh"
 
     user_modifier = remesh(modifier(carrier), mesh)
     carrier_modifier = remesh(defaultmodifier(carrier), mesh)

@@ -38,7 +38,7 @@ function ProfileSource(carrier::AbstractCarrier, profile; cutoff::Number=Inf64, 
         @warn "Some profiles have values superior to 1 and there is no cutoff" 
     end
     s = sim(carrier)
-    mesh = _checkmesh(mesh, s.mesh, "Source")
+    @argcheck _compatiblemesh(s.mesh, mesh) "Source mesh must be compatible with the simulation mesh"
     _profile = min.(cutoff, profile)
     return ProfileSource(s, mesh, carrier, Stepwise(_profile, mesh), Float64(cutoff))
 end

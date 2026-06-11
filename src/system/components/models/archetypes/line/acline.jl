@@ -16,7 +16,8 @@ struct ACLine <: AbstractTransmissionLine
     function ACLine(from::PowerCarrier, to::PowerCarrier, admittance::Number; mesh::RTimeMesh=sim(from).mesh)
         @argcheck admittance > 0 "admittance must be positive"
         @argcheck sim(from) === sim(to) "Carriers must belong to the same Sim"
-        new(sim(from), _checkmesh(mesh, sim(from).mesh, "Line"), from, to, Float64(admittance))
+        @argcheck _compatiblemesh(sim(from).mesh, mesh) "Line mesh must be compatible with the simulation mesh"
+        new(sim(from), mesh, from, to, Float64(admittance))
     end
 end
 

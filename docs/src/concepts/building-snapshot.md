@@ -91,7 +91,8 @@ useful for electricity systems with renewable curtailment.
 
 Nodes default to the simulation mesh, but can be given a different balance mesh
 with `Node("name", carrier; mesh=mesh)`. Connected component flows are then
-projected to the node mesh before applying the balance constraint. See
+projected to the node mesh before applying the balance constraint. A node mesh
+must be the same as or coarser than every connected component port mesh. See
 [Component And Node Meshes](time.md#component-and-node-meshes).
 
 Examples of nodes:
@@ -486,7 +487,9 @@ Joint-flow types are:
 - [`FixedJointFlow`](@ref): creates a new port with the requested name and
   sense, but creates no variables and no constraints. It adds an exogenous input
   or output profile to a component. Use it for fixed auxiliary consumption,
-  fixed emissions, or any additional flow known before optimisation.
+  fixed emissions, or any additional flow known before optimisation. The fixed
+  profile uses the carrier simulation mesh and is projected to the component
+  mesh.
 - [`FreeJointFlow`](@ref): creates a new port with the requested name and sense,
   backed by ``N`` non-negative variables as an extra component flow. Use it when
   the additional flow is a decision variable but is not already represented by

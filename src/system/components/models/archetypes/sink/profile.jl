@@ -36,7 +36,7 @@ function ProfileSink(carrier::AbstractCarrier, profile; cutoff::Number=Inf64, me
         @warn "Some profiles have values superior to 1 and there is no cutoff"
     end
     s = sim(carrier)
-    mesh = _checkmesh(mesh, s.mesh, "Sink")
+    @argcheck _compatiblemesh(s.mesh, mesh) "Sink mesh must be compatible with the simulation mesh"
     _profile = min.(cutoff, profile)
     return ProfileSink(s, mesh, carrier, Stepwise(_profile, mesh), Float64(cutoff))
 end

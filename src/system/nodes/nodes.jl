@@ -42,7 +42,8 @@ struct Node{T<:VAL,C<:AbstractCarrier} <: AbstractElement{T}
     function Node(name::String, carrier::AbstractCarrier, s::PortStructure{T}, mesh::TimeMesh, losses::Number, rule::Symbol, evalprice::Bool, dualprice::AbstractDualPrice{T}, tags::Vector{Symbol}) where T
         @argcheck rule in NODE_RULES "Only valid node rules are: $NODE_RULES"
         @argcheck 0 <= losses <= 1 "Losses must be be between 0 and 1"
-        new{T,typeof(carrier)}(name, carrier, s, _checkmesh(mesh, sim(carrier).mesh, "Node"), losses, rule, evalprice, dualprice, tags)
+        @argcheck _compatiblemesh(sim(carrier).mesh, mesh) "Node mesh must be compatible with the simulation mesh"
+        new{T,typeof(carrier)}(name, carrier, s, mesh, losses, rule, evalprice, dualprice, tags)
     end 
 end
 
@@ -56,6 +57,7 @@ const NODE_RULES = [:default, :curtailed]
 
 Construct a `Node` with name `name` associated with carrier `c`. A node has a unique carrier.
 The `mesh` argument defines the time mesh on which the node balance is applied.
+Connected component ports must use the same or a finer mesh than the node.
 The `rule` defines the node behavior (`:default` or `:curtailed`).
 The `losses` value is the ratio, between 0 and 1, of input flow that is lost.
 Set `evalprice=true` to store node-balance constraints for dual-price extraction.

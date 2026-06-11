@@ -276,10 +276,10 @@ function _containsmesh(source::TimeMesh, target::TimeMesh)
     return true
 end
 
-function _checkremesh(source::TimeMesh, target::TimeMesh)
-    @argcheck _containsmesh(source, target) "Target mesh must have the same horizon, matching circularity, and aligned boundaries with source mesh"
-    return nothing
-end
+# Non-directional mesh compatibility: the meshes share horizon/circularity and
+# one mesh's boundaries are nested in the other's. 
+# Use `_containsmesh(source, target)` when projection direction matters.
+_compatiblemesh(m1::TimeMesh, m2::TimeMesh) = _containsmesh(m1, m2) || _containsmesh(m2, m1)
 
 """
     remesh(s::Stepwise, mesh::TimeMesh)
@@ -290,7 +290,7 @@ preserving its integral.
 function remesh(s::Stepwise{T}, target::TimeMesh) where T
     source = mesh(s)
     source == target && return s
-    _checkremesh(source, target)
+    @argcheck _containsmesh(source, target) "Target mesh must have the same horizon, matching circularity, and aligned boundaries with source mesh"
     v = differentzerovector(T, nsteps(target))
     target_ends = _mesh_ends(target)
     source_ends = _mesh_ends(source)

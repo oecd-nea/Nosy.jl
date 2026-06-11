@@ -95,14 +95,6 @@ nsteps(m::TimeMesh) = m.nstep
 weight(m::TimeMesh) = m.weight
 weight(m::TimeMesh, step::Int) = m.weight[iscircular(m) ? step : clamp(step, firstindex(m.weight), lastindex(m.weight))]
 
-# Validate that a custom mesh can belong to the same simulation as `ref`.
-# `label` only identifies the caller in the error message.
-function _checkmesh(m::TimeMesh, ref::TimeMesh, label::String)
-    @argcheck nhours(m) == nhours(ref) "$label mesh must have the same horizon as the simulation mesh"
-    @argcheck iscircular(m) == iscircular(ref) "$label mesh must have the same circularity as the simulation mesh"
-    return m
-end
-
 function integrationweight(m::TimeMesh, i::Int)
     if iscircular(m)
         return Float64((weight(m, i - 1) + weight(m, i)) / 2)

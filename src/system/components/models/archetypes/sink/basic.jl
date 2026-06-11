@@ -1,4 +1,5 @@
 using JuMP: @variable
+using ArgCheck: @argcheck
 
 """
 Basic sink.
@@ -22,7 +23,8 @@ Return a `BasicSink` model archetype for carrier `carrier`.
 """
 function BasicSink(carrier::AbstractCarrier; mesh::RTimeMesh=sim(carrier).mesh)
     s = sim(carrier)
-    return BasicSink(s, _checkmesh(mesh, s.mesh, "Sink"), carrier)
+    @argcheck _compatiblemesh(s.mesh, mesh) "Sink mesh must be compatible with the simulation mesh"
+    return BasicSink(s, mesh, carrier)
 end
 
 struct BasicSinkModel{C<:AbstractCarrier,T<:VAL} <: AbstractModel{T}
