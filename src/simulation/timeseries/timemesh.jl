@@ -15,6 +15,10 @@ end
 GenericTimeSeries(v::Vector{T}) where T = GenericTimeSeries{T}(v, true)
 iscircular(s::GenericTimeSeries) = s.circular
 
+Base.copy(s::GenericTimeSeries) = GenericTimeSeries(copy(parent(s)), iscircular(s))
+Base.similar(s::GenericTimeSeries) = GenericTimeSeries(similar(parent(s)), iscircular(s))
+Base.zero(s::GenericTimeSeries{T}) where T = GenericTimeSeries(differentzerovector(T, length(s)), iscircular(s))
+
 
 # Contain the time structure of the model and convert between time series types.
 # TimeMesh() creates an 8760-hour mesh with one step per hour.

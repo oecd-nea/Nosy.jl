@@ -17,6 +17,23 @@ using Test
         @test nsteps(h) == 100
         @test eachhour(h) == 1:100
         @test eachstep(h) == 1:100
+        @test_throws MethodError resize!(h, 3)
+
+        hc = copy(h)
+        @test hc isa Hourly{Float64}
+        @test mesh(hc) == m
+        @test parent(hc) == parent(h)
+        @test parent(hc) !== parent(h)
+
+        hs = similar(h)
+        @test hs isa Hourly{Float64}
+        @test mesh(hs) == m
+        @test length(hs) == length(h)
+
+        hz = zero(h)
+        @test hz isa Hourly{Float64}
+        @test mesh(hz) == m
+        @test parent(hz) == zeros(length(h))
 
         #modulo
         @test all(h[i] == v[i] for i in 1:100)
@@ -54,6 +71,23 @@ using Test
         @test nsteps(s) == 100*2
         @test eachhour(s) == 1:100
         @test eachstep(s) == 1:(100*2)
+        @test_throws MethodError resize!(s, 3)
+
+        sc = copy(s)
+        @test sc isa Stepwise{Float64}
+        @test mesh(sc) == m
+        @test parent(sc) == parent(s)
+        @test parent(sc) !== parent(s)
+
+        ss = similar(s)
+        @test ss isa Stepwise{Float64}
+        @test mesh(ss) == m
+        @test length(ss) == length(s)
+
+        sz = zero(s)
+        @test sz isa Stepwise{Float64}
+        @test mesh(sz) == m
+        @test parent(sz) == zeros(length(s))
 
         #modulo
         @test all(s[i] == v[i] for i in 1:100*2)

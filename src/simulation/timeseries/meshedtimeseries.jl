@@ -12,9 +12,9 @@ iscircular(s::AbstractMeshedTimeSeries) = iscircular(s.mesh)
 AbstractMeshedTimeSeries interface (on top of AbstractTimeSeries)
 """
 
-Base.copy(s::AbstractTimeSeries) = typeof(s)(copy(parent(s)), s.mesh)
-Base.similar(s::AbstractTimeSeries) = typeof(s).name.wrapper(similar(parent(s)), s.mesh)
-Base.zero(s::AbstractTimeSeries{T}) where T = fill!(similar(s), zero(T))
+Base.copy(s::AbstractMeshedTimeSeries) = parenttype(s)(copy(parent(s)), s.mesh)
+Base.similar(s::AbstractMeshedTimeSeries) = parenttype(s)(similar(parent(s)), s.mesh)
+Base.zero(s::AbstractMeshedTimeSeries{T}) where T = parenttype(s)(differentzerovector(T, length(s)), s.mesh)
 
 """
 AbstractMeshedTimeSeries algebra.

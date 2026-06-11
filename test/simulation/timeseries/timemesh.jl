@@ -1,4 +1,4 @@
-using Nosy: TimeMesh
+using Nosy: GenericTimeSeries, TimeMesh
 using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep, iscircular
 using Test
 
@@ -13,6 +13,32 @@ using Test
         @test_throws ArgumentError TimeMesh([1//2, 1//1]) # sum of weights is not integer
 
         @test_throws ArgumentError TimeMesh([1//1, 0//1]) # zero-duration timestep is not allowed
+
+    end
+
+
+    let
+
+        # GenericTimeSeries is not mesh-backed, so Base helpers must preserve
+        # only its own storage and circularity.
+        s = GenericTimeSeries([1, 2, 3], false)
+
+        c = copy(s)
+        @test c isa GenericTimeSeries{Int}
+        @test c !== s
+        @test parent(c) == parent(s)
+        @test parent(c) !== parent(s)
+        @test !iscircular(c)
+
+        z = zero(s)
+        @test z isa GenericTimeSeries{Int}
+        @test parent(z) == [0, 0, 0]
+        @test !iscircular(z)
+
+        t = similar(s)
+        @test t isa GenericTimeSeries{Int}
+        @test length(t) == length(s)
+        @test !iscircular(t)
 
     end
 
