@@ -46,7 +46,7 @@ function TimeMesh(w::Vector{T}; circular::Bool=true) where T
     
     @argcheck !isempty(w) "Please use a non-empty weight series"
 
-    @argcheck all(x -> x isa Integer || x isa Rational, w) "Please only use rational or integer weights"
+    @argcheck all(x -> !(x isa Bool) && (x isa Integer || x isa Rational), w) "Please only use rational or integer weights"
 
     _w = Rational{Int64}.(w)
 
@@ -56,6 +56,8 @@ function TimeMesh(w::Vector{T}; circular::Bool=true) where T
 
     nstep = length(_w)
     nhour = Int(sum(_w))
+
+    @argcheck circular || nstep > 1 "Non-circular time meshes must contain at least two steps"
 
     hour_at_step = Vector{Rational{Int64}}(undef, nstep)
     step_at_hour = Vector{Int64}(undef, nhour)

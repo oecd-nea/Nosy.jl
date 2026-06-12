@@ -17,6 +17,10 @@ using Test
 
         @test_throws ArgumentError TimeMesh([1.0]) # weights must be exact integers or rationals
 
+        @test_throws ArgumentError TimeMesh([true, true]) # booleans are not timestep durations
+
+        @test_throws ArgumentError TimeMesh([1//1]; circular=false) # open horizons need at least one interval
+
     end
 
 
