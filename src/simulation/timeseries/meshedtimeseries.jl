@@ -256,8 +256,6 @@ Base.sum(s::Hourly{Float64}) = sum(s.data)
 # Cross-mesh operations are only defined from a source mesh to an equal or
 # coarser target mesh with the same horizon and aligned boundaries.
 _mesh_ends(m::TimeMesh) = cumsum(parent(weight(m)))
-_stepstart(ends, i::Int) = i == 1 ? zero(eltype(ends)) : ends[i - 1]
-_intervals(m::TimeMesh) = 1:(iscircular(m) ? nsteps(m) : nsteps(m) - 1)
 
 function _containsmesh(source::TimeMesh, target::TimeMesh)
     source == target && return true
@@ -284,24 +282,27 @@ _compatiblemesh(m1::TimeMesh, m2::TimeMesh) = _containsmesh(m1, m2) || _contains
 """
     remesh(s::Stepwise, mesh::TimeMesh)
 
-Remesh a continuous `Stepwise` series onto a compatible coarser mesh while
-preserving its integral.
+Remesh a `Stepwise` series onto a compatible coarser mesh by sampling the
+source values at the target mesh boundaries.
 """
 function remesh(s::Stepwise{T}, target::TimeMesh) where T
     source = mesh(s)
     source == target && return s
     @argcheck _containsmesh(source, target) "Target mesh must have the same horizon, matching circularity, and aligned boundaries with source mesh"
-    v = differentzerovector(T, nsteps(target))
-    target_ends = _mesh_ends(target)
-    source_ends = _mesh_ends(source)
 
-    ti = first(_intervals(target))
-    for si in _intervals(source)
-        sstart = _stepstart(source_ends, si)
-        while sstart >= target_ends[ti]
-            ti += 1
+    source_ends = _mesh_ends(source)
+    target_ends = _mesh_ends(target)
+    v = Vector{T}(undef, nsteps(target))
+
+    for i in eachindex(v)
+        boundary = i == firstindex(v) ? zero(eltype(target_ends)) : target_ends[i - 1]
+        if iszero(boundary)
+            v[i] = s[firstindex(s)]
+            continue
         end
-        v[ti] = addto!(v[ti], (s[si] + s[si + 1]) * weight(source, si) / (2 * integrationweight(target, ti)))
+        si = searchsortedfirst(source_ends, boundary)
+        @argcheck si <= lastindex(source_ends) && source_ends[si] == boundary "Target mesh must have aligned boundaries with source mesh"
+        v[i] = s[si == lastindex(source_ends) ? firstindex(source_ends) : si + 1]
     end
     return Stepwise(v, target)
 end

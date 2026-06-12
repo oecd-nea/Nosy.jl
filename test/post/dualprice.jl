@@ -160,6 +160,7 @@ using Test
 
         @test all(isapprox.(balance(result, "hydrogen", :input, mass, collapse=false, aggregate=true), fill(10.0, 4)))
         @test all(isapprox.(balance(result, "hydrogen", :output, mass, collapse=false, aggregate=true), fill(10.0, 4)))
+        @test all(isapprox.(dualprice(h2node), fill(1.0, 4); atol=1e-7))
         @test all(isapprox.(dualprice(result.nodes["hydrogen"]), fill(1.0, 4); atol=1e-7))
     end
 

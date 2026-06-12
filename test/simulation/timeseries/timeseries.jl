@@ -285,8 +285,7 @@ using Test
         t = remesh(s, target)
 
         @test mesh(t) == target
-        @test t.data == [13.75, 46.25]
-        @test sum(t) == sum(s)
+        @test t.data == [10.0, 100.0]
 
         fine = TimeMesh(fill(1//1, 4))
         coarse = TimeMesh(fill(2//1, 2))
@@ -303,6 +302,24 @@ using Test
 
     let
 
+        # remeshing samples aligned target boundaries and preserves constants
+        source = TimeMesh(fill(1//1, 24))
+        target = TimeMesh(vcat(fill(4//1, 2), fill(2//1, 6), [4//1]))
+
+        flow = remesh(Stepwise(1.0, source), target)
+
+        @test all(isapprox.(flow.data, ones(nsteps(target))))
+        @test sum(flow) ≈ 24.0
+
+        values = remesh(Stepwise(Float64.(1:24), source), target)
+
+        @test values.data == [1.0, 5.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0, 21.0]
+        @test_throws ArgumentError remesh(values, source)
+
+    end
+
+    let
+
         # non-circular remeshing uses n-1 intervals; the last point is only a boundary
         source = TimeMesh(fill(1//1, 5); circular=false)
         target = TimeMesh([2//1, 2//1, 1//1]; circular=false)
@@ -310,8 +327,7 @@ using Test
 
         a = remesh(s, target)
 
-        @test a.data == [0.0, 2.5, 0.0]
-        @test sum(a) == sum(s)
+        @test a.data == [0.0, 0.0, 10.0]
 
     end
 

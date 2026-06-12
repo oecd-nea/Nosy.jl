@@ -29,6 +29,7 @@ _dualprice(a::DualPrice{Float64}) = a.values
 
 _dualprice(::Nothing, ::Sim) = nothing
 _dualprice(::Nothing, ::TimeMesh) = nothing
+_dualprice(::Nothing, ::Node) = nothing
 _dualprice(a::AbstractVector{<:Number}, s::Sim) = _dualprice(a, s.mesh)
 function _dualprice(a::AbstractVector{<:Number}, m::TimeMesh)
     raw = Stepwise(a, m)
@@ -36,13 +37,19 @@ function _dualprice(a::AbstractVector{<:Number}, m::TimeMesh)
     return raw ./ weights
 end
 
+function _dualprice(a::AbstractVector{<:Number}, n::Node)
+    raw = Stepwise(a, mesh(n))
+    all(p -> mesh(p) == mesh(n), externalports(n.s)) && return _dualprice(a, mesh(n))
+    return raw
+end
+
 function _dualprice(n::Node{<:GenericAffExpr})
     if isnothing(n.dualprice.constraints) && !issolvedandfeasible(sim(n).model)
         throw(ArgumentError("Cannot evaluate dual price: model is not optimised"))
     end
-    return _dualprice(_dualprice(n.dualprice).values, mesh(n))
+    return _dualprice(_dualprice(n.dualprice).values, n)
 end
-_dualprice(n::Node{Float64}) = _dualprice(n.dualprice.values, mesh(n))
+_dualprice(n::Node{Float64}) = _dualprice(n.dualprice.values, n)
 
 _hourlydualprice(::Nothing) = nothing
 _hourlydualprice(a::Stepwise{Float64}) = Hourly(a)
