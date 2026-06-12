@@ -76,9 +76,11 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
         l = length(v)
         @argcheck l == nsteps(m) || l == nhours(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nsteps(m)) or $(nhours(m)))"
         _data = _toVal(v)
-        if length(v) == nsteps(m)
+        if l == nsteps(m) && l == nhours(m) && !isunit(m) && !all(==(first(_data)), _data)
+            throw(ArgumentError("Ambiguous time series length"))
+        elseif l == nsteps(m)
             return new{eltype(_data)}(_data,m)
-        elseif length(v) == nhours(m)
+        else
             return Stepwise(Hourly(_data, m))
         end
     end

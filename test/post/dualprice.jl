@@ -51,7 +51,7 @@ using Test
         fill(1//2, 6),
         fill(1//1, 3),
         fill(2//1, 3),
-        [1//2, 1//2, 2//1],
+        [1//2, 1//2, 1//1],
     )
         expected = fill(1.0, Int(sum(weights)))
         live_price, extracted_price = constant_variable_cost_dualprices(weights)
