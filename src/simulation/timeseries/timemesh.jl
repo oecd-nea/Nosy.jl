@@ -28,7 +28,7 @@ struct TimeMesh{T}
     nhour::Int64
     hour_at_step::GenericTimeSeries{T} # vector of size nstep, hour index as a function of step index
     step_at_hour::GenericTimeSeries{Int64} # vector of size nhour, step index as a function of hour index
-    isunit::Bool
+    isunit::Bool # true when every timestep weight is one hour (fast path for step conversion)
     circular::Bool
 end
 
