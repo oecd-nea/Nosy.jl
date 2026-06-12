@@ -46,22 +46,26 @@ function TimeMesh(w::Vector{T}; circular::Bool=true) where T
     
     @argcheck !isempty(w) "Please use a non-empty weight series"
 
-    @argcheck isinteger(sum(w)) "Please use a weight series with integer sum"
+    @argcheck all(x -> x isa Integer || x isa Rational, w) "Please only use rational or integer weights"
 
-    @argcheck all(w .> 0.) "Please only use positive rational or integer weights"
+    _w = Rational{Int64}.(w)
 
-    nstep = length(w)
-    nhour = Int(sum(w))
+    @argcheck isinteger(sum(_w)) "Please use a weight series with integer sum"
 
-    hour_at_step = Vector{T}(undef, nstep)
+    @argcheck all(_w .> 0//1) "Please only use positive rational or integer weights"
+
+    nstep = length(_w)
+    nhour = Int(sum(_w))
+
+    hour_at_step = Vector{Rational{Int64}}(undef, nstep)
     step_at_hour = Vector{Int64}(undef, nhour)
 
-    hour_at_step[1] = T(1)
+    hour_at_step[1] = 1//1
     step_at_hour[1] = 1
 
-    local h = T(1) # current hour
+    local h = 1//1 # current hour
     for s in 2:nstep # iterate over step index
-        h = h + w[s-1]
+        h = h + _w[s-1]
         hour_at_step[s] = h #floor(h)
     end
 
@@ -74,12 +78,12 @@ function TimeMesh(w::Vector{T}; circular::Bool=true) where T
     end
 
     return TimeMesh(
-        GenericTimeSeries(w, circular), 
+        GenericTimeSeries(_w, circular), 
         nstep, 
         nhour, 
         GenericTimeSeries(hour_at_step, circular), 
         GenericTimeSeries(step_at_hour, circular),
-        all(w .== 1//1),
+        all(_w .== 1//1),
         circular
     )
 end
