@@ -38,9 +38,7 @@ function _dualprice(a::AbstractVector{<:Number}, m::TimeMesh)
 end
 
 function _dualprice(a::AbstractVector{<:Number}, n::Node)
-    raw = Stepwise(a, mesh(n))
-    all(p -> mesh(p) == mesh(n), externalports(n.s)) && return _dualprice(a, mesh(n))
-    return raw
+    return _dualprice(a, mesh(n))
 end
 
 function _dualprice(n::Node{<:GenericAffExpr})

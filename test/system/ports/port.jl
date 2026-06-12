@@ -91,7 +91,7 @@ using Test
         p = Port(m, v)
         modifier = remesh(energy(m), coarse)
 
-        @test modifier.data == [1.0, 5.0]
+        @test modifier.data == [3.0, 5.0]
         @test all(energy(p)[i] == modifier[i] * v[i] for i in 1:2)
 
     end

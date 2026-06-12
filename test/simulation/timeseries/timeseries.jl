@@ -285,13 +285,18 @@ using Test
         t = remesh(s, target)
 
         @test mesh(t) == target
-        @test t.data == [10.0, 100.0]
+        @test t.data ≈ [55.0, 185 / 7]
+
+        e = remesh(s, target; method=:exact)
+
+        @test e.data == [10.0, 100.0]
 
         fine = TimeMesh(fill(1//1, 4))
         coarse = TimeMesh(fill(2//1, 2))
         u = Stepwise([10.0, 30.0], coarse)
 
         @test_throws ArgumentError remesh(u, fine)
+        @test_throws ArgumentError remesh(s, target; method=:unknown)
 
         unrelated = TimeMesh([3//2, 5//2])
         @test_throws ArgumentError remesh(s, unrelated)
@@ -302,7 +307,7 @@ using Test
 
     let
 
-        # remeshing samples aligned target boundaries and preserves constants
+        # average remeshing preserves constants and averages source intervals
         source = TimeMesh(fill(1//1, 24))
         target = TimeMesh(vcat(fill(4//1, 2), fill(2//1, 6), [4//1]))
 
@@ -313,7 +318,9 @@ using Test
 
         values = remesh(Stepwise(Float64.(1:24), source), target)
 
-        @test values.data == [1.0, 5.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0, 21.0]
+        @test values.data == [3.0, 7.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 20.0]
+        @test remesh(Stepwise(Float64.(1:24), source), target; method=:exact).data ==
+            [1.0, 5.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0, 21.0]
         @test_throws ArgumentError remesh(values, source)
 
     end
@@ -327,7 +334,7 @@ using Test
 
         a = remesh(s, target)
 
-        @test a.data == [0.0, 0.0, 10.0]
+        @test a.data == [0.0, 2.5, 10.0]
 
     end
 
