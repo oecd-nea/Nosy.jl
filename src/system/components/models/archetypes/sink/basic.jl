@@ -1,4 +1,5 @@
 using JuMP: @variable
+using ArgCheck: @argcheck
 
 """
 Basic sink.
@@ -9,16 +10,21 @@ Flexibly consumes an input flow. Mirrors `DispatchableSource`.
 
 struct BasicSink{C<:AbstractCarrier} <: AbstractModelData
     sim::Sim
+    mesh::RTimeMesh
     carrier::C
 end
+
+mesh(m::BasicSink) = m.mesh
 
 """
     BasicSink(carrier::AbstractCarrier)
 
 Return a `BasicSink` model archetype for carrier `carrier`.
 """
-function BasicSink(carrier::AbstractCarrier)
-    return BasicSink(sim(carrier), carrier)
+function BasicSink(carrier::AbstractCarrier; mesh::RTimeMesh=sim(carrier).mesh)
+    s = sim(carrier)
+    @argcheck _compatiblemesh(s.mesh, mesh) "Sink mesh must be compatible with the simulation mesh"
+    return BasicSink(s, mesh, carrier)
 end
 
 struct BasicSinkModel{C<:AbstractCarrier,T<:VAL} <: AbstractModel{T}
@@ -28,7 +34,7 @@ end
 
 # return a BasicSinkModel using BasicSink data
 function build(m::BasicSink, mname::String)
-    vin = Stepwise(m.sim, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(_defaultmodifier(carrierstyle(m.carrier))) * "_in")
+    vin = Stepwise(m.sim, m.mesh, lb=0., ub=Inf64, binary=false, integer=false, basename=mname * "_" * modifiername(_defaultmodifier(carrierstyle(m.carrier))) * "_in")
 
     ps = PortStructure{exptype(m.sim)}(m.sim)
     addinput!(ps, "input", mname, Port(m.carrier, vin))

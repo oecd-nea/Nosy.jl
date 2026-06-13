@@ -15,9 +15,10 @@ struct FixedJointFlow{C<:AbstractCarrier} <: AbstractJointFlowData
         FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)
 
     Return a `FixedJointFlow` with name `name`, sense `sense`, carrier `carrier`, and flow time series or scalar `series`.
+    The series uses the carrier simulation mesh and is projected to the component mesh when the component is built.
     """
     function FixedJointFlow(name::String, carrier::AbstractCarrier, sense::Symbol, series; mustconnect::Bool=true)
-        @argcheck sense == :input ||sense == :output "sense must be equal to :input or :output"
+        @argcheck sense == :input || sense == :output "sense must be equal to :input or :output"
         new{typeof(carrier)}(name, carrier, sense, Stepwise(series, sim(carrier).mesh), mustconnect)
     end  
 end
@@ -31,7 +32,7 @@ end
 
 # return a FixedJointFlowBehavior
 function buildjointflow(c::Component, j::FixedJointFlow)
-    f = Stepwise(exptype(sim(c)).(j.series), sim(c).mesh)
+    f = Stepwise(exptype(sim(c)).(remesh(j.series, mesh(c))), mesh(c))
     return FixedJointFlowModel(j, f)
 end
 

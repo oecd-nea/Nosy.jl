@@ -12,7 +12,7 @@ may take a non-negligible time. If you do not need the variable names, you
 can use the function `set_string_names_on_creation` from the package JuMP.
 
 ```julia
-JuMP.set_string_names_on_creation(model(sim(snapshot)), false) 
+JuMP.set_string_names_on_creation(model(sim(snapshot)), false)
 ```
 
 The levers below mostly target solver time by reducing model size, dropping
@@ -130,19 +130,20 @@ of downtime alternatives.
 
 ## Model archetype simplifications
 
-Some models offer a simplified version of the equations, that can help reduce the computational burden
-of the optimization.
-In particular, the [`BasicStorage`](@ref) and [`LazyStorage`](@ref) constructors have the `simplified`
-keyword argument that slightly changes the expression of the level in function of the flows (using 
-the simpler "energy" formalism instead of the "power" formalism).
+Some models offer a simplified version of the equations, which can help reduce
+the computational burden of the optimization. In particular, the
+[`BasicStorage`](@ref) and [`LazyStorage`](@ref) constructors have the
+`simplified` keyword argument, which slightly changes the expression of the
+level as a function of the flows by using the simpler "energy" formalism
+instead of the "power" formalism.
 
-Please validate before using `simplified=true` argument in production.
+Please validate before using the `simplified=true` argument in production.
 
 ## Time mesh
 
 The number of optimization variables is generally linear with the number of timesteps.
 Depending on the model's goal, there can be two types of time-related simplifications:
-  * reducing the duration of the `TimeMesh`: one can define a smaller temporal horizon, e.g. sub-annual duration.
+  * reducing the duration of the `TimeMesh`: you can define a smaller temporal horizon, e.g. sub-annual duration.
   * using a coarser `TimeMesh`, with all or some of the night steps lasting more than one hour.
 
-The [Time](#time) section of the documentation provides more detail on how to use a custom [`TimeMesh`](@ref).
+The [Time](concepts/time.md) section of the documentation provides more detail on how to use a custom [`TimeMesh`](@ref).

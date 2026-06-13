@@ -10,10 +10,13 @@ Generate an output flow according to a profile.
 
 struct ProfileSource{C<:AbstractCarrier} <: AbstractModelData
     sim::Sim
+    mesh::RTimeMesh
     carrier::C
     profile::Stepwise{Float64}
     cutoff::Float64
 end
+
+mesh(m::ProfileSource) = m.mesh
 
 """
     ProfileSource(carrier::AbstractCarrier, profile)
@@ -28,15 +31,16 @@ The values of `profile` above `cutoff` will be set to `cutoff`.
 Adding a capacity behavior is mandatory.
 The profile is not renormalised.
 """
-function ProfileSource(carrier::AbstractCarrier, profile; cutoff::Number=Inf64)
+function ProfileSource(carrier::AbstractCarrier, profile; cutoff::Number=Inf64, mesh::RTimeMesh=sim(carrier).mesh)
     @argcheck all(profile .>= 0.) "The profile cannot be negative"
     @argcheck cutoff >= 0. "The cutoff cannot be negative"
     if isinf(cutoff) && !all(profile .<= 1.) 
         @warn "Some profiles have values superior to 1 and there is no cutoff" 
     end
     s = sim(carrier)
+    @argcheck _compatiblemesh(s.mesh, mesh) "Source mesh must be compatible with the simulation mesh"
     _profile = min.(cutoff, profile)
-    return ProfileSource(s, carrier, Stepwise(_profile, s.mesh), Float64(cutoff))
+    return ProfileSource(s, mesh, carrier, Stepwise(_profile, mesh), Float64(cutoff))
 end
 
 struct ProfileSourceModel{C<:AbstractCarrier,T<:VAL} <: AbstractModel{T}
@@ -50,7 +54,7 @@ _profile(m::ProfileSourceModel) = m.data.profile
 function build(m::ProfileSource, cname::String)
     vout = fill(-Inf, length(m.profile))
     ps = PortStructure{exptype(m.sim)}(m.sim)
-    addoutput!(ps, "output", cname, Port(m.carrier, vout))
+    addoutput!(ps, "output", cname, Port(m.carrier, Stepwise(vout, m.mesh)))
     return ProfileSourceModel(m, ps)
 end
 

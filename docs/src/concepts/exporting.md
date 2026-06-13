@@ -3,8 +3,8 @@
 ## Exporting
 
 You can save a `Snapshot` to disk using the [`exportsnapshot`](@ref) function.
-Please note that this function will make a copy of the `snapshot`, 
-but also remove all connection between the JuMP `Model` and the copied `Snapshot`,
+Please note that this function will serialize the `snapshot`, 
+but also remove the JuMP `Model` from the `Snapshot`, 
 which is necessary to create a lightweight file.
 
 

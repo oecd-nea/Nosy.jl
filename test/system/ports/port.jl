@@ -1,8 +1,9 @@
 using Nosy: MassCarrier, EnergyCarrier, CO2Carrier
-using Nosy: Stepwise, Hourly
+using Nosy: Stepwise
 using Nosy: defaultmodifier, mass, energy, co2
 using Nosy: Sim, TimeMesh
 using Nosy: Port, is_used, set_used!, hasmodifier
+using Nosy: remesh
 using JuMP: Model, AffExpr
 using Test
 
@@ -49,45 +50,6 @@ using Test
 
     let s = tsim()
 
-        m = MassCarrier("m", s)
-        
-        # unit range & Stepwise length
-        v = 1:10
-        p = Port(m, v)
-
-        @test all(p.series[i] == Float64(v[i]) for i in 1:10)
-
-    end
-
-
-    let s = tsim()
-
-        m = MassCarrier("m", s)
-        
-        # Hourly
-        v = Hourly([Float64(i) for i in 1:5], s.mesh)
-        p = Port(m, v)
-
-        @test all(p.series[i] == Stepwise(v, s.mesh)[i] for i in 1:10)
-
-    end
-
-
-    let s = tsim()
-
-        m = MassCarrier("m", s)
-        
-        # unit range and Hourly length
-        v = 1:5
-        p = Port(m, v)
-
-        @test all(p.series[i] == Stepwise(v, s.mesh)[i] for i in 1:10)
-
-    end
-
-
-    let s = tsim()
-
         # mass carrier
         m = MassCarrier("m", s)
         
@@ -116,6 +78,21 @@ using Test
         @test_throws AssertionError co2(p)
 
         @test defaultmodifier(p) == mass(p)
+
+    end
+
+
+    let s = Sim(Model(), mesh=TimeMesh(fill(1//2, 4)))
+
+        # carrier modifiers are continuous and projected to the port mesh
+        coarse = TimeMesh(fill(1//1, 2))
+        m = MassCarrier("m", s, energy=[1.0, 3.0, 5.0, 7.0])
+        v = Stepwise([10.0, 20.0], coarse)
+        p = Port(m, v)
+        modifier = remesh(energy(m), coarse)
+
+        @test modifier.data == [3.0, 5.0]
+        @test all(energy(p)[i] == modifier[i] * v[i] for i in 1:2)
 
     end
 
@@ -196,6 +173,15 @@ using Test
         @test all(co2(p)[i] == 2. * v[i] for i in 1:10)
 
         @test defaultmodifier(p) == mass(p)
+
+    end
+
+
+    let s = tsim()
+
+        m = MassCarrier("m", s)
+
+        @test_throws MethodError Port(m, Float64.(1:10))
 
     end
 

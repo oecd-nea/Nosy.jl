@@ -1,3 +1,4 @@
+include("interface.jl")
 include("basicconverter.jl")
 include("dispatchablesource.jl")
 include("profilesource.jl")

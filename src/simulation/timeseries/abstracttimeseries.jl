@@ -26,7 +26,6 @@ Base.size(h::AbstractTimeSeries) = size(parent(h))
 Base.iterate(h::AbstractTimeSeries) = iterate(parent(h))
 Base.iterate(h::AbstractTimeSeries, state) = iterate(parent(h), state)
 Base.eltype(h::AbstractTimeSeries) = eltype(parent(h))
-Base.resize!(h::AbstractTimeSeries, i::Integer) = resize!(parent(h), i)
 Base.in(x, h::AbstractTimeSeries) = in(x, parent(h))
 
 # this snippet was initially taken from:

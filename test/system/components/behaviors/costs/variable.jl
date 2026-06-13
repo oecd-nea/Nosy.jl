@@ -28,7 +28,7 @@ using Test
     end
 
     function makefixeddemand(flow, cost; style=:step, circular=true)
-        s = Sim(Model(), mesh=TimeMesh([1//2, 1//1, 3//2]; circular=circular))
+        s = Sim(Model(), mesh=TimeMesh([1//2, 1//1, 1//2]; circular=circular))
         ec = EnergyCarrier("e", s)
         return Component("load", Demand(ec, flow), [
             VariableCost(:vom, "input", energy, cost; style=style),
@@ -126,7 +126,7 @@ using Test
     # scalar variable cost - non-circular mesh only integrates intervals with both endpoints
     let flow = [1.0, 2.0, 4.0],
         cost = 10.0,
-        weights = [1//2, 1//1, 3//2],
+        weights = [1//2, 1//1, 1//2],
         c = makefixeddemand(flow, cost; circular=false)
 
         @test isapprox(_variablecost(c.behaviors[1]).constant, expected_scalar_cost(flow, cost, weights; circular=false))
@@ -136,7 +136,7 @@ using Test
     # vectorial variable cost - non-uniform mesh step integration
     let flow = [1.0, 1.0, 1.0],
         cost = [10.0, 20.0, 50.0],
-        weights = [1//2, 1//1, 3//2],
+        weights = [1//2, 1//1, 1//2],
         c = makefixeddemand(flow, cost; style=:step)
 
         @test isapprox(_variablecost(c.behaviors[1]).constant, expected_step_cost(flow, cost, weights))
@@ -146,7 +146,7 @@ using Test
     # vectorial variable cost - non-circular mesh step integration only uses known intervals
     let flow = [1.0, 1.0, 1.0],
         cost = [10.0, 20.0, 50.0],
-        weights = [1//2, 1//1, 3//2],
+        weights = [1//2, 1//1, 1//2],
         c = makefixeddemand(flow, cost; style=:step, circular=false)
 
         @test isapprox(_variablecost(c.behaviors[1]).constant, expected_step_cost(flow, cost, weights; circular=false))
@@ -156,7 +156,7 @@ using Test
     # vectorial variable cost - non-uniform mesh linear integration
     let flow = [1.0, 2.0, 4.0],
         cost = [10.0, 20.0, 50.0],
-        weights = [1//2, 1//1, 3//2],
+        weights = [1//2, 1//1, 1//2],
         c = makefixeddemand(flow, cost; style=:linear)
 
         @test isapprox(_variablecost(c.behaviors[1]).constant, expected_linear_cost(flow, cost, weights))
@@ -166,7 +166,7 @@ using Test
     # vectorial variable cost - non-circular mesh linear integration only uses known intervals
     let flow = [1.0, 2.0, 4.0],
         cost = [10.0, 20.0, 50.0],
-        weights = [1//2, 1//1, 3//2],
+        weights = [1//2, 1//1, 1//2],
         c = makefixeddemand(flow, cost; style=:linear, circular=false)
 
         @test isapprox(_variablecost(c.behaviors[1]).constant, expected_linear_cost(flow, cost, weights; circular=false))
