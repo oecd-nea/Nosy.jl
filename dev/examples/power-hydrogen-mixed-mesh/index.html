@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Multiple Time Meshes and Mesh Projection · Nosy.jl</title><meta name="title" content="Multiple Time Meshes and Mesh Projection · Nosy.jl"/><meta property="og:title" content="Multiple Time Meshes and Mesh Projection · Nosy.jl"/><meta property="twitter:title" content="Multiple Time Meshes and Mesh Projection · Nosy.jl"/><meta name="description" content="Documentation for Nosy.jl."/><meta property="og:description" content="Documentation for Nosy.jl."/><meta property="twitter:description" content="Documentation for Nosy.jl."/><meta property="og:url" content="https://oecd-nea.github.io/Nosy.jl/dev/examples/power-hydrogen-mixed-mesh/"/><meta property="twitter:url" content="https://oecd-nea.github.io/Nosy.jl/dev/examples/power-hydrogen-mixed-mesh/"/><link rel="canonical" href="https://oecd-nea.github.io/Nosy.jl/dev/examples/power-hydrogen-mixed-mesh/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Nosy.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../getting-started/">Getting Started</a></li><li><span class="tocitem">Modelling Concepts</span><ul><li><a class="tocitem" href="../../concepts/">Overview</a></li><li><a class="tocitem" href="../../concepts/time/">Time</a></li><li><a class="tocitem" href="../../concepts/building-snapshot/">Building a Snapshot</a></li><li><a class="tocitem" href="../../concepts/optimizing/">Optimizing a Snapshot</a></li><li><a class="tocitem" href="../../concepts/querying/">Querying a Snapshot</a></li><li><a class="tocitem" href="../../concepts/exporting/">Exporting / Importing a Snapshot</a></li></ul></li><li><a class="tocitem" href="../../performance/">Performance</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../">Overview</a></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">Building components and systems</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../dispatchable-source-demand/">Dispatchable Source and Demand</a></li><li><a class="tocitem" href="../co2-emissions-carbon-tax/">CO2 Emissions and Carbon Tax</a></li><li><a class="tocitem" href="../pv-battery-storage/">PV and Battery Storage</a></li><li><a class="tocitem" href="../two-power-nodes/">Two Power Nodes</a></li><li><a class="tocitem" href="../power-hydrogen-demand/">Power and Hydrogen Demand</a></li><li><a class="tocitem" href="../combined-heat-power/">Combined Heat and Power</a></li><li><a class="tocitem" href="../unit-commitment/">Unit Commitment</a></li><li><a class="tocitem" href="../operating-reserve/">Operating Reserve</a></li><li><a class="tocitem" href="../pv-battery-upward-reserve/">PV, Battery, and Upward Reserve</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox" checked/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Advanced modelling capabilities</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../alternative-objectives/">Alternative Objectives</a></li><li><a class="tocitem" href="../linked-capacities/">Linked Capacities</a></li><li><a class="tocitem" href="../infeasibility-conflicts/">Infeasibility and Conflicts</a></li><li><a class="tocitem" href="../heterogeneous-mesh/">Heterogeneous Time Meshes</a></li><li class="is-active"><a class="tocitem" href>Multiple Time Meshes and Mesh Projection</a></li><li><a class="tocitem" href="../bilevel-capacity-expansion-dispatch/">Single-Level Vs Bilevel Capacity Expansion and Dispatch</a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li><a class="is-disabled">Advanced modelling capabilities</a></li><li class="is-active"><a href>Multiple Time Meshes and Mesh Projection</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Multiple Time Meshes and Mesh Projection</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/oecd-nea/Nosy.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/oecd-nea/Nosy.jl/blob/dev/docs/src/examples/power-hydrogen-mixed-mesh.md#L" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="PV,-Battery,-And-Hydrogen-With-A-Coarse-Hydrogen-Mesh"><a class="docs-heading-anchor" href="#PV,-Battery,-And-Hydrogen-With-A-Coarse-Hydrogen-Mesh">PV, Battery, And Hydrogen With A Coarse Hydrogen Mesh</a><a id="PV,-Battery,-And-Hydrogen-With-A-Coarse-Hydrogen-Mesh-1"></a><a class="docs-heading-anchor-permalink" href="#PV,-Battery,-And-Hydrogen-With-A-Coarse-Hydrogen-Mesh" title="Permalink"></a></h1><p>Multi-mesh models are useful when one part of a system needs fine temporal detail while another part can be represented more coarsely.</p><p>The system has PV, battery storage, an electrolyser, hydrogen storage, and hydrogen consumption, plus an electricity node and a hydrogen node.</p><p>The PV profile is fully synthetic and simplified, but it has both daily and seasonal variation. The battery can handle the day-night pattern, but the seasonal PV shortage has to be covered by hydrogen stored over much longer periods.</p><p>The code below builds the same system twice:</p><ul><li><code>hourly</code>: all components and nodes use the 8760-step hourly mesh as a reference case;</li><li><code>mixed</code>: only the hydrogen node, hydrogen consumption, and hydrogen storage use a 2190-step 4-hour mesh.</li></ul><p>The electrolyser is modelled on the fine time mesh, including hydrogen production, but its hydrogen production is projected onto the coarser hydrogen node mesh when performing the node balance. This keeps the fast electricity-side structure while using fewer variables on the hydrogen side.</p><pre><code class="language-julia hljs">using Nosy
+using HiGHS
+import JuMP
+import JuMP: set_silent
+
+function build_power_hydrogen_case(h2_mesh)
+    power_mesh = TimeMesh(fill(1//1, 8760))
+    s = Sim(Model(HiGHS.Optimizer); mesh=power_mesh)
+    set_silent(model(s))
+
+    power = EnergyCarrier(&quot;electricity&quot;, s)
+    hydrogen = MassCarrier(&quot;hydrogen&quot;, s; energy=1.0)
+
+    normal_day = [
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.03,
+        0.15, 0.35, 0.58, 0.78, 0.92, 1.0,
+        0.96, 0.86, 0.68, 0.45, 0.22, 0.06,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]
+    seasonal = [
+        0.35 + 0.65 * (0.5 + 0.5 * sin(2pi * (day - 80) / 365))
+        for day in 1:365
+    ]
+    pv_profile = repeat(normal_day, 365) .* repeat(seasonal, inner=24)
+
+    snapshot = Snapshot(s)
+
+    electricity = Node(&quot;electricity&quot;, power, rule=:curtailed)
+    h2 = Node(&quot;hydrogen&quot;, hydrogen; mesh=h2_mesh)
+
+    pv = Component(
+        &quot;PV&quot;,
+        ProfileSource(power, pv_profile; mesh=power_mesh),
+        [
+            VariableCapacity(&quot;output&quot;, energy),
+            FixedCost(:capex, &quot;output&quot;, energy, 200_000.),
+        ],
+    )
+    connect!(snapshot, pv, electricity)
+
+    battery = Component(
+        &quot;battery&quot;,
+        BasicStorage(power, power, power, energy; eff_i=0.92, eff_o=0.92, mesh=power_mesh),
+        [
+            VariableCapacity(&quot;input&quot;, energy),
+            FixedCost(:capex, &quot;input&quot;, energy, 100_000.),
+            Duration(4),
+        ],
+    )
+    connect!(snapshot, battery, electricity)
+
+    electrolyser = Component(
+        &quot;electrolyser&quot;,
+        BasicConverter(power, hydrogen; ratio=0.70, modifier=energy, mesh=power_mesh),
+        [
+            VariableCapacity(&quot;input&quot;, energy),
+            FixedCost(:capex, &quot;input&quot;, energy, 200_000.),
+        ],
+    )
+    connect!(snapshot, electrolyser, electricity)
+    connect!(snapshot, electrolyser, h2)
+
+    h2_consumption = Component(
+        &quot;H2 consumption&quot;,
+        Demand(hydrogen, 1500.; modifier=mass, mesh=h2_mesh),
+    )
+    connect!(snapshot, h2_consumption, h2)
+
+    h2_storage = Component(
+        &quot;H2 storage&quot;,
+        BasicStorage(hydrogen, hydrogen, hydrogen, mass; mesh=h2_mesh),
+        [
+            VariableCapacity(&quot;level&quot;, mass),
+            FixedCost(:capex, &quot;level&quot;, mass, 1.0),
+        ],
+    )
+    connect!(snapshot, h2_storage, h2)
+
+    optimize!(snapshot, cost(snapshot))
+    result = extract(snapshot)
+
+    return (
+        snapshot=snapshot,
+        result=result,
+        variables=JuMP.num_variables(model(s)),
+        constraints=JuMP.num_constraints(model(s); count_variable_in_set_constraints=false),
+    )
+end
+
+hourly_mesh = TimeMesh(fill(1//1, 8760))
+h2_4h_mesh = TimeMesh(fill(4//1, 2190))
+
+hourly = build_power_hydrogen_case(hourly_mesh)
+mixed = build_power_hydrogen_case(h2_4h_mesh)</code></pre><p>The mixed model removes the hourly hydrogen storage and hydrogen node balance variables and constraints. In this case the reduction is substantial:</p><pre><code class="language-julia-repl hljs">julia&gt; hourly.variables, mixed.variables
+(61324, 41614)
+
+julia&gt; 100 * (1 - mixed.variables / hourly.variables)
+32.14076055051856
+
+julia&gt; hourly.constraints, mixed.constraints
+(78840, 59130)</code></pre><p>On the test workstation, the hourly reference case solves in about 25 seconds, while the mixed case solves in about 17 seconds. Performance improvement may vary depending on hardware.</p><p>The seasonal PV profile makes hydrogen storage a long-term balancing resource: the optimal level capacity is more than 1000 hours of flat hydrogen consumption. The main investment decisions are still almost unchanged between the two meshes. PV, battery, and electrolyser capacities are the same to the displayed precision; only the explicit hydrogen storage level changes slightly because it is represented on 4-hour intervals:</p><pre><code class="language-julia-repl hljs">julia&gt; table(hourly.result, capacity)
+1×5 DataFrame
+ Row │ H2 consumption  H2 storage  PV       battery  electrolyser
+     │ Float64         Float64     Float64  Float64  Float64
+─────┼────────────────────────────────────────────────────────────
+   1 │            0.0   1.70282e6  11672.1  3275.35       5728.89
+
+julia&gt; table(mixed.result, capacity)
+1×5 DataFrame
+ Row │ H2 consumption  H2 storage  PV       battery  electrolyser
+     │ Float64         Float64     Float64  Float64  Float64
+─────┼────────────────────────────────────────────────────────────
+   1 │            0.0   1.69848e6  11672.1  3275.35       5728.89</code></pre><p>The objective change is small compared with the reduction in model size:</p><pre><code class="language-julia-repl hljs">julia&gt; cost(hourly.result), cost(mixed.result)
+(3.8094387154090996e9, 3.809434373214961e9)
+
+julia&gt; 100 * (cost(mixed.result) / cost(hourly.result) - 1)
+-0.00011398514224714162</code></pre><p>A multi-mesh model is a good fit when different parts of the system are associated with different time scales. The electricity side has sub-daily structure that matters, but the hydrogen storage problem is mostly driven by seasonal inventory movements. The coarser hydrogen node effectively adds a small virtual buffer inside each 4-hour balance interval: hydrogen production and consumption only need to match over the interval, not at each individual hour. In this case that approximation is small compared with the seasonal hydrogen storage requirement, and the hydrogen side has little short-term variation of its own.</p><p>The same approximation would not be appropriate on the electricity side here. PV production and battery operation have strong intra-day variation, so moving the electricity node, PV, battery, or electrolyser electricity input to a coarse 4-hour mesh would hide the daily scarcity and surplus pattern and could give wrong investment results.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../heterogeneous-mesh/">« Heterogeneous Time Meshes</a><a class="docs-footer-nextpage" href="../bilevel-capacity-expansion-dispatch/">Single-Level Vs Bilevel Capacity Expansion and Dispatch »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 13 June 2026 20:58">Saturday 13 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
