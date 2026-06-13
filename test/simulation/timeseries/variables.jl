@@ -54,5 +54,14 @@ using Test
 
     end
 
+    let s = Sim(Model(), mesh=TimeMesh(fill(2//1, 2)))
+
+        fine = TimeMesh(fill(1//1, 4))
+        v = Stepwise(s, fine, lb=0., ub=Inf64, basename="v")
+
+        @test v.mesh == fine
+        @test length(v) == nsteps(fine)
+
+    end
 
 end

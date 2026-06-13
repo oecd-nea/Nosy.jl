@@ -73,7 +73,7 @@ julia> result = extract(snapshot)
 Some solvers allow computing an IIS (irreducible infeasible subsystem) associated with the problem. When available, the IIS can be obtained so as to determine which constraints are conflicting. One very important remark is that the IIS is not unique, there may be multiple IIS associated with one problem, and repairing one IIS does not necessarily make the problem feasible.
 
 ```julia
-julia> conflicts(result.sim)
+julia> conflicts(result)
 2-element Vector{JuMP.ConstraintRef}:
  gasplant_energy_out[4386] ≥ 3508.2277959647663
  gasplant_energy_out[4386] - gasplant_output_energy_cap_ ≤ 0

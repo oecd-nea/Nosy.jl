@@ -50,6 +50,12 @@ function _addbehavior!(c::Component, b::FixedCapacityBehavior, m::ProfileSourceM
     push!(c.behaviors, b)
 end
 
+function _addbehavior!(c::Component, b::FixedCapacityBehavior, m::ProfileSinkModel)
+    @argcheck b.data.modifier == _defaultmodifier(carrierstyle(carrier(getport(c, _portname(b))))) "no modifier conversion allowed between component and capacity"
+    c.model.s.input[PortRef(name(c), "input")].series .= _to_affexpr.(_capacity(b) * _profile(m), sim(c).model)
+    push!(c.behaviors, b)
+end
+
 
 """
 Apply capacity constraints.
@@ -72,13 +78,16 @@ function __apply_constraint_general!(c::Component, b::FixedCapacityBehavior)
     end
 end
 
-# special case - ProfileSourceModel: behavior is enforced through _addbehavior!
+# special case - profile models: behavior is enforced through _addbehavior!
 function __apply_constraints_profile!(::Component, ::FixedCapacityBehavior) end
 
 # general case: apply constraint at each timestep
-# dispatch to either general case or model = profile source case
+# dispatch to either general case or model = profile case
 function __apply_constraints!(c::Component, b::FixedCapacityBehavior)
-    if model(c) isa ProfileSourceModel && _portname(b) == "output"
+    if (
+        (model(c) isa ProfileSourceModel && _portname(b) == "output") ||
+        (model(c) isa ProfileSinkModel && _portname(b) == "input")
+    )
         __apply_constraints_profile!(c, b)
     else
         __apply_constraint_general!(c, b)

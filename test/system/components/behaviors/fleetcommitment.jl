@@ -117,12 +117,26 @@ Some notes and observations:
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
         uc = UnitCommitment("input", 0.5, startup=0, shutdown=0, uptime=0, downtime=0, integer=false)
-        
+
         m = makecomp([cap, uc])
         
         # check correct dispatch into FleetUnitCommitmentBehavior
         @test m.behaviors[2] isa FleetUnitCommitmentBehavior
 
+    end
+
+    # masked-out startup and shutdown events should not create redundant UC rows
+    let
+        cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        mask = fill(false, 10)
+        uc = UnitCommitment("input", 1., startup=0, shutdown=0, uptime=0, downtime=0, integer=true,
+            startupmask=mask, shutdownmask=[mask]
+        )
+
+        m = makecomp([cap, uc])
+
+        @test nvariables(sim(m)) == 11
+        @test nconstraints(sim(m)) == 33
     end
 
     #=

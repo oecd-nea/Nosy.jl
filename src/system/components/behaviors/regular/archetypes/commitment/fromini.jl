@@ -86,6 +86,7 @@ end
 
 function FleetUnitCommitmentFromIniBehavior(c::Component, b::FleetUnitCommitmentFromIni, cap::AbstractCapacityBehavior)
     s = sim(c)
+    m = mesh(c)
     
     umax = _nbunitsmax(cap) # max number of units
     
@@ -97,9 +98,9 @@ function FleetUnitCommitmentFromIniBehavior(c::Component, b::FleetUnitCommitment
 
     # if there is no variable part for the output, we don't generate a variable for it
     if iszero(vmax)
-        variable = Stepwise(zeros(exptype(s), nsteps(s)), s.mesh) # warning: all elements link to same GenericAffExpr. This is on purpose, to reduce allocation.
+        variable = Stepwise(zeros(exptype(s), nsteps(m)), m) # warning: all elements link to same GenericAffExpr. This is on purpose, to reduce allocation.
     else
-        variable = Stepwise(s, lb=0, ub=vmax, basename=name(c) * "_var")
+        variable = Stepwise(s, m, lb=0, ub=vmax, basename=name(c) * "_var")
     end
     
     return FleetUnitCommitmentFromIniBehavior(b, cap.data.modifier, _unitsize(cap), b.series_startup, b.series_shutdown, b.series_shutdown_selector, b.series_state, variable)

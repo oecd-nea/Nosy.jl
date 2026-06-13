@@ -1,5 +1,5 @@
-using Nosy: TimeMesh, Hourly, Stepwise
-using Nosy: nhours, nsteps, eachhour, eachstep, shift, iscircular
+using Nosy: TimeMesh, Hourly, Stepwise, remesh
+using Nosy: nhours, nsteps, eachhour, eachstep, shift, iscircular, mesh
 using JuMP: AffExpr
 using Test
 
@@ -17,6 +17,23 @@ using Test
         @test nsteps(h) == 100
         @test eachhour(h) == 1:100
         @test eachstep(h) == 1:100
+        @test_throws MethodError resize!(h, 3)
+
+        hc = copy(h)
+        @test hc isa Hourly{Float64}
+        @test mesh(hc) == m
+        @test parent(hc) == parent(h)
+        @test parent(hc) !== parent(h)
+
+        hs = similar(h)
+        @test hs isa Hourly{Float64}
+        @test mesh(hs) == m
+        @test length(hs) == length(h)
+
+        hz = zero(h)
+        @test hz isa Hourly{Float64}
+        @test mesh(hz) == m
+        @test parent(hz) == zeros(length(h))
 
         #modulo
         @test all(h[i] == v[i] for i in 1:100)
@@ -54,6 +71,23 @@ using Test
         @test nsteps(s) == 100*2
         @test eachhour(s) == 1:100
         @test eachstep(s) == 1:(100*2)
+        @test_throws MethodError resize!(s, 3)
+
+        sc = copy(s)
+        @test sc isa Stepwise{Float64}
+        @test mesh(sc) == m
+        @test parent(sc) == parent(s)
+        @test parent(sc) !== parent(s)
+
+        ss = similar(s)
+        @test ss isa Stepwise{Float64}
+        @test mesh(ss) == m
+        @test length(ss) == length(s)
+
+        sz = zero(s)
+        @test sz isa Stepwise{Float64}
+        @test mesh(sz) == m
+        @test parent(sz) == zeros(length(s))
 
         #modulo
         @test all(s[i] == v[i] for i in 1:100*2)
@@ -237,6 +271,70 @@ using Test
 
         @test nsteps(s) == 2
         @test all(isapprox.(s.data, [10.0, 30.0]))
+
+    end
+
+
+    let
+
+        # testing direct Stepwise remeshing without an Hourly intermediate
+        source = TimeMesh([1//2, 1//2, 3//1])
+        target = TimeMesh([1//2, 7//2])
+        s = Stepwise([10.0, 100.0, 30.0], source)
+
+        t = remesh(s, target)
+
+        @test mesh(t) == target
+        @test t.data ≈ [55.0, 185 / 7]
+
+        e = remesh(s, target; method=:exact)
+
+        @test e.data == [10.0, 100.0]
+
+        fine = TimeMesh(fill(1//1, 4))
+        coarse = TimeMesh(fill(2//1, 2))
+        u = Stepwise([10.0, 30.0], coarse)
+
+        @test_throws ArgumentError remesh(u, fine)
+        @test_throws ArgumentError remesh(s, target; method=:unknown)
+
+        unrelated = TimeMesh([3//2, 5//2])
+        @test_throws ArgumentError remesh(s, unrelated)
+        @test_throws ArgumentError remesh(Stepwise(1.0, unrelated), fine)
+        @test_throws ArgumentError remesh(Stepwise(1.0, fine), TimeMesh(fill(2//1, 2); circular=false))
+
+    end
+
+    let
+
+        # average remeshing preserves constants and averages source intervals
+        source = TimeMesh(fill(1//1, 24))
+        target = TimeMesh(vcat(fill(4//1, 2), fill(2//1, 6), [4//1]))
+
+        flow = remesh(Stepwise(1.0, source), target)
+
+        @test all(isapprox.(flow.data, ones(nsteps(target))))
+        @test sum(flow) ≈ 24.0
+
+        values = remesh(Stepwise(Float64.(1:24), source), target)
+
+        @test values.data == [3.0, 7.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 20.0]
+        @test remesh(Stepwise(Float64.(1:24), source), target; method=:exact).data ==
+            [1.0, 5.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0, 21.0]
+        @test_throws ArgumentError remesh(values, source)
+
+    end
+
+    let
+
+        # non-circular remeshing uses n-1 intervals; the last point is only a boundary
+        source = TimeMesh(fill(1//1, 5); circular=false)
+        target = TimeMesh([2//1, 2//1, 1//1]; circular=false)
+        s = Stepwise([0.0, 0.0, 0.0, 0.0, 10.0], source)
+
+        a = remesh(s, target)
+
+        @test a.data == [0.0, 2.5, 10.0]
 
     end
 

@@ -102,6 +102,7 @@ end
 
 
 sim(c::AbstractCarrier) = c.sim
+mesh(c::AbstractCarrier) = sim(c).mesh
 name(c::AbstractCarrier) = c.name
 
 Base.isequal(::AbstractCarrier, ::AbstractCarrier) = false

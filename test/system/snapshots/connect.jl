@@ -189,6 +189,37 @@ using Test
         
     end
 
+    # node mesh must not be finer than connected port mesh
+    let s = Sim(Model(), mesh=TimeMesh(fill(1//1, 4)))
+
+        mc = MassCarrier("m", s)
+        coarse = TimeMesh(fill(2//1, 2))
+
+        n = Node("n", mc)
+        c = Component("comp", DispatchableSource(mc; mesh=coarse))
+        sn = Snapshot(s)
+
+        @test_throws ArgumentError connect!(sn, c, n)
+        @test !is_used(getport(c, "output"))
+
+    end
+
+    # component mesh may be finer than the simulation mesh when boundaries are aligned
+    let s = Sim(Model(), mesh=TimeMesh(fill(2//1, 2)))
+
+        ec = EnergyCarrier("e", s)
+        fine = TimeMesh(fill(1//1, 4))
+
+        n = Node("n", ec)
+        c = Component("comp", DispatchableSource(ec; mesh=fine))
+        sn = Snapshot(s)
+
+        connect!(sn, c, n)
+
+        @test is_used(getport(c, "output"))
+
+    end
+
 
         # snapshot with one node and 2 components, no joint flows
         let s = tsim()

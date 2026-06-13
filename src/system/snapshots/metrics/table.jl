@@ -10,9 +10,9 @@ using DataFrames
 Return a table containing the evaluation of the metric `metric` over the components of Snapshot `s`.
 If `removenothing` is true, the values equal to nothing will be discarded.
 """
-function table(s::Snapshot{T}, metric::Function; removenothing::Bool=true) where T
+function table(s::Snapshot, metric::Function; removenothing::Bool=true)
     cols = Pair{String,Any}[]
-    for (k,v) in sort(s.components)
+    for (k,v) in sort(collect(s.components), by=first)
         m = metric(v)
         if !removenothing || !isnothing(m)
             push!(cols, k => [m])

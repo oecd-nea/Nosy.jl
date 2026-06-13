@@ -1,5 +1,6 @@
 using JuMP: @constraint
 using Graphs: SimpleGraph, cycle_basis, add_edge!
+using ArgCheck: @argcheck
 
 
 """
@@ -20,7 +21,8 @@ function add_kvl_constraints!(s::Snapshot)
 
     for c in cycles
         # initialize expression for this cycle: sum(flow_ij / B_ij) over all edges in cycle
-        exp = Nosy.differentzerovector(JuMP.AffExpr, Nosy.nsteps(s.sim))
+        kvl_mesh = _cycle_kvl_mesh(s, c, nodelist, node_map)
+        exp = Nosy.differentzerovector(JuMP.AffExpr, Nosy.nsteps(kvl_mesh))
         for i in eachindex(c)
             vi = c[i]
             # wrap around: last vertex connects back to first to close the cycle
@@ -37,7 +39,7 @@ function add_kvl_constraints!(s::Snapshot)
             # KVL: sum(flow_ij / B_ij) = 0
             # flow_ij is net flow (forward - reverse) for bidirectional lines
             # divide by admittance B_ij to get voltage drop: V = flow / B
-            add_to_expression!.(exp, _transmissionbalance(s, from, to, node_map) / Bij)
+            add_to_expression!.(exp, (_transmissionbalance(s, from, to, node_map; target=kvl_mesh, ac_only=true) / Bij).data)
         end
         # enforce KVL constraint: sum of voltage drops around cycle must be zero
         @constraint(s.sim.model, exp .== 0.0)
@@ -114,56 +116,96 @@ function gencycles(mat::Matrix{Float64})
     return cycle_basis(g)  
 end
 
+function _cycle_kvl_mesh(s::Snapshot, cycle, nodelist, node_map)
+    meshes = RTimeMesh[]
+
+    for i in eachindex(cycle)
+        vi = cycle[i]
+        vj = (i < length(cycle)) ? cycle[i+1] : cycle[1]
+        for (_, line) in _transmissionlines(s, nodelist[vi], nodelist[vj], node_map; ac_only=true)
+            push!(meshes, mesh(line))
+        end
+    end
+
+    @assert !isempty(meshes)
+
+    target = first(meshes)
+    for m in meshes
+        if nsteps(m) < nsteps(target)
+            target = m
+        end
+    end
+
+    for m in meshes
+        @argcheck _containsmesh(m, target) "KVL cycle line meshes must have aligned boundaries"
+    end
+
+    return target
+end
+
+function _transmissionlines(s::Snapshot, from::String, to::String, node_map::Union{Dict{String, Tuple{String, String}}, Nothing}=nothing; ac_only::Bool=false)
+    lines = Tuple{String,Union{ACLineModel,DCLineModel}}[]
+
+    for (cname, comp) in components(s)
+        m = model(comp)
+        if m isa ACLineModel || (!ac_only && m isa DCLineModel)
+            _transmissionline_matches(s, cname, m, from, to, node_map) || continue
+            push!(lines, (cname, m))
+        end
+    end
+
+    return lines
+end
 
 # return net power flow between two nodes (from->to)
 # net flow = forward flow - reverse flow (bidirectional lines)
 # multiple lines can connect the same two nodes, so we sum their net flows
-function _transmissionbalance(s::Snapshot, from::String, to::String, node_map::Union{Dict{String, Tuple{String, String}}, Nothing}=nothing)
+function _transmissionbalance(s::Snapshot, from::String, to::String, node_map::Union{Dict{String, Tuple{String, String}}, Nothing}=nothing; target::Union{Nothing,TimeMesh}=nothing, ac_only::Bool=false)
     net = nothing
 
-    for (cname, comp) in components(s)
-        m = model(comp)
-        if m isa ACLineModel || m isa DCLineModel
+    for (cname, m) in _transmissionlines(s, from, to, node_map; ac_only=ac_only)
+        p_from_out = _getport(m.s, "from_out", cname, :output)
+        p_to_out = _getport(m.s, "to_out", cname, :output)
 
-            # use cached node_map if available for efficiency
-            if isnothing(node_map) || !haskey(node_map, cname)
-                nnames = _find_connected_nodes(s, cname, m)
-                if length(nnames) != 2 || !(from in nnames && to in nnames)
-                    continue
-                end
-            else
-                cached_from, cached_to = node_map[cname]
-                # check both directions (lines are bidirectional)
-                if (from, to) != (cached_from, cached_to) && (from, to) != (cached_to, cached_from)
-                    continue
-                end
-            end
-            
-            p_from_out = _getport(m.s, "from_out", cname, :output) 
-            p_to_out = _getport(m.s, "to_out", cname, :output)
+        mod_from_out = _defaultmodifier(carrierstyle(carrier(p_from_out)))
+        mod_to_out = _defaultmodifier(carrierstyle(carrier(p_to_out)))
 
-            mod_from_out = _defaultmodifier(carrierstyle(carrier(p_from_out)))
-            mod_to_out = _defaultmodifier(carrierstyle(carrier(p_to_out)))
+        f_ft = mod_from_out(p_from_out)
+        f_tf = mod_to_out(p_to_out)
 
-            f_ft = mod_from_out(p_from_out).data
-            f_tf = mod_to_out(p_to_out).data
+        from_n = nodes(s)[from]
 
-            from_n = nodes(s)[from]
-            
-            # determine line orientation to compute net flow correctly
-            # lines are bidirectional, so we need to know which side each node is on
-            from_side = _hasinput(portstructure(from_n), "from_out", cname)
-            
-            if from_side
-                # from node on "from" side: net = f_ft - f_tf
-                net = isnothing(net) ? (f_ft .- f_tf) : (net .+ (f_ft .- f_tf))
-            else
-                # from node on "to" side: net = f_tf - f_ft
-                net = isnothing(net) ? (f_tf .- f_ft) : (net .+ (f_tf .- f_ft))
-            end
+        # determine line orientation to compute net flow correctly
+        # lines are bidirectional, so we need to know which side each node is on
+        from_side = _hasinput(portstructure(from_n), "from_out", cname)
+
+        if from_side
+            # from node on "from" side: net = f_ft - f_tf
+            flow = f_ft .- f_tf
+        else
+            # from node on "to" side: net = f_tf - f_ft
+            flow = f_tf .- f_ft
         end
+
+        if !isnothing(target) && mesh(flow) != target
+            flow = remesh(flow, target)
+        end
+
+        net = isnothing(net) ? flow : (net .+ flow)
     end
     
     isnothing(net) && throw(AssertionError("No transmission line between $from and $to"))
     return net
+end
+
+function _transmissionline_matches(s::Snapshot, cname::String, m::Union{ACLineModel,DCLineModel}, from::String, to::String, node_map::Union{Dict{String, Tuple{String, String}}, Nothing})
+    # use cached node_map if available for efficiency
+    if isnothing(node_map) || !haskey(node_map, cname)
+        nnames = _find_connected_nodes(s, cname, m)
+        return length(nnames) == 2 && from in nnames && to in nnames
+    else
+        cached_from, cached_to = node_map[cname]
+        # check both directions (lines are bidirectional)
+        return (from, to) == (cached_from, cached_to) || (from, to) == (cached_to, cached_from)
+    end
 end

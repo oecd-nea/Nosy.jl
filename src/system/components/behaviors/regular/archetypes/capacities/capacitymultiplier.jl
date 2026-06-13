@@ -37,7 +37,7 @@ function buildbehavior(c::Component, b::CapacityMultiplier)
     if (model(c) isa ProfileSourceModel) 
         throw(AssertionError("Profile source model is not compatible with capacity multiplier"))
     end
-    s = Stepwise(b.val, sim(c).mesh)
+    s = Stepwise(b.val, mesh(c))
     return CapacityMultiplierBehavior(b, s, exptype(sim(c)))
 end
 

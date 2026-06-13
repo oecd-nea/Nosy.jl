@@ -1,6 +1,7 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh
 using Nosy: BasicConverter
+using Nosy: Demand
 using Nosy: VariableCost, VariableCostBehavior
 using Nosy: variablecost, _variablecost
 using Nosy: build, _sortbehaviordata
@@ -24,6 +25,60 @@ using Test
         )   
         c = Component("comp", d, vb)
         return c
+    end
+
+    function makefixeddemand(flow, cost; style=:step, circular=true)
+        s = Sim(Model(), mesh=TimeMesh([1//2, 1//1, 1//2]; circular=circular))
+        ec = EnergyCarrier("e", s)
+        return Component("load", Demand(ec, flow), [
+            VariableCost(:vom, "input", energy, cost; style=style),
+        ])
+    end
+
+    function nextindex(t, weights; circular=true)
+        if t < length(weights)
+            return t + 1
+        end
+        return circular ? 1 : t
+    end
+
+    function intervalindices(weights; circular=true)
+        if circular
+            return eachindex(weights)
+        end
+        return firstindex(weights):(lastindex(weights)-1)
+    end
+
+    function expected_step_cost(flow, cost, weights; circular=true)
+        total = 0.0
+        for t in intervalindices(weights; circular=circular)
+            next = nextindex(t, weights; circular=circular)
+            total += Float64(weights[t]) * cost[t] * (flow[t] + flow[next]) / 2
+        end
+        return total
+    end
+
+    function expected_scalar_cost(flow, cost, weights; circular=true)
+        total = 0.0
+        for t in intervalindices(weights; circular=circular)
+            next = nextindex(t, weights; circular=circular)
+            total += Float64(weights[t]) * cost * (flow[t] + flow[next]) / 2
+        end
+        return total
+    end
+
+    function expected_linear_cost(flow, cost, weights; circular=true)
+        total = 0.0
+        for t in intervalindices(weights; circular=circular)
+            next = nextindex(t, weights; circular=circular)
+            interval_average =
+                flow[t] * cost[t] / 3 +
+                flow[t] * cost[next] / 6 +
+                flow[next] * cost[t] / 6 +
+                flow[next] * cost[next] / 3
+            total += Float64(weights[t]) * interval_average
+        end
+        return total
     end
 
     # scalar variable cost
@@ -68,6 +123,55 @@ using Test
     # vectorial variable cost - wrong format
     @test_throws ArgumentError makeconv([VariableCost(:vom, "input", mass, fill(10,7))])
 
+    # scalar variable cost - non-circular mesh only integrates intervals with both endpoints
+    let flow = [1.0, 2.0, 4.0],
+        cost = 10.0,
+        weights = [1//2, 1//1, 1//2],
+        c = makefixeddemand(flow, cost; circular=false)
+
+        @test isapprox(_variablecost(c.behaviors[1]).constant, expected_scalar_cost(flow, cost, weights; circular=false))
+
+    end
+
+    # vectorial variable cost - non-uniform mesh step integration
+    let flow = [1.0, 1.0, 1.0],
+        cost = [10.0, 20.0, 50.0],
+        weights = [1//2, 1//1, 1//2],
+        c = makefixeddemand(flow, cost; style=:step)
+
+        @test isapprox(_variablecost(c.behaviors[1]).constant, expected_step_cost(flow, cost, weights))
+
+    end
+
+    # vectorial variable cost - non-circular mesh step integration only uses known intervals
+    let flow = [1.0, 1.0, 1.0],
+        cost = [10.0, 20.0, 50.0],
+        weights = [1//2, 1//1, 1//2],
+        c = makefixeddemand(flow, cost; style=:step, circular=false)
+
+        @test isapprox(_variablecost(c.behaviors[1]).constant, expected_step_cost(flow, cost, weights; circular=false))
+
+    end
+
+    # vectorial variable cost - non-uniform mesh linear integration
+    let flow = [1.0, 2.0, 4.0],
+        cost = [10.0, 20.0, 50.0],
+        weights = [1//2, 1//1, 1//2],
+        c = makefixeddemand(flow, cost; style=:linear)
+
+        @test isapprox(_variablecost(c.behaviors[1]).constant, expected_linear_cost(flow, cost, weights))
+
+    end
+
+    # vectorial variable cost - non-circular mesh linear integration only uses known intervals
+    let flow = [1.0, 2.0, 4.0],
+        cost = [10.0, 20.0, 50.0],
+        weights = [1//2, 1//1, 1//2],
+        c = makefixeddemand(flow, cost; style=:linear, circular=false)
+
+        @test isapprox(_variablecost(c.behaviors[1]).constant, expected_linear_cost(flow, cost, weights; circular=false))
+
+    end
 
     # multiple variable costs
     let c = makeconv([VariableCost(:vom, "input", mass, 1), VariableCost(:fuel, "input", energy, 1)])

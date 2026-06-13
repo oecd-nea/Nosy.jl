@@ -1,14 +1,15 @@
 # Linked Capacities
 
-Here the PV output capacity and battery input capacity share one JuMP variable.
-The battery capacity is fixed to 50% of the PV capacity by construction.
+Here the battery input capacity is defined as an affine expression of the PV
+output capacity. The battery capacity is fixed to 50% of the PV capacity by
+construction, without creating a second battery capacity variable.
 
 
 
 ```jldoctest linked_capacities; output = false
 using Nosy
 using HiGHS
-import JuMP: @constraint, set_silent
+import JuMP: set_silent
 
 s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
 set_silent(model(s))
@@ -47,14 +48,12 @@ battery = Component(
     "battery",
     BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy; eff_i=0.85),
     [
-        VariableCapacity("input", energy),
+        VariableCapacity("input", energy; expression=0.5 * capacity(pv)),
         FixedCost(:capex, "input", energy, 50_000.0),
         Duration(6),
     ],
 )
 connect!(snapshot, battery, grid)
-
-@constraint(model(s), capacity(snapshot, "battery") == 0.5 * capacity(snapshot, "PV"))
 
 optimize!(snapshot, cost(snapshot))
 result = extract(snapshot)
@@ -75,7 +74,7 @@ julia> table(result, capacity)
 ─────┼───────────────────────────────
    1 │ 46987.5  23493.7          0.0
 
-julia> round(capacity(result, "battery") / capacity(result, "PV"); digits=1)
+julia> capacity(result, "battery") / capacity(result, "PV")
 0.5
 ```
 This pattern is useful in stochastic or multi-snapshot studies where several

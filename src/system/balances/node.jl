@@ -26,6 +26,10 @@ function balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true
 end
 
 function _balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=true, aggregate::Bool=true)
+    if aggregate && !collapse
+        return _aggregate_node_balance(n, sense, modifier)
+    end
+
     if sense == :input
         b = _balance(n.s, _input, modifier, collapse, aggregate)
     else # if sense == :output
@@ -35,6 +39,20 @@ function _balance(n::Node, sense::Symbol, modifier::Function; collapse::Bool=tru
 
     # multiple PortRef in keys of b may be associated with same cname - aggregate by cname
     return __mergebalancebycname(b)
+end
+
+function _node_balance_entries(n::Node, sense::Symbol, modifier::Function)
+    if sense == :input
+        return __balance_expand(n.s, _input, modifier)
+    elseif sense == :output
+        return __balance_expand(n.s, _output, modifier)
+    else
+        throw(ArgumentError("sense must be either :input or :output"))
+    end
+end
+
+function _aggregate_node_balance(n::Node{T}, sense::Symbol, modifier::Function) where T
+    return _sum_to_mesh(values(_node_balance_entries(n, sense, modifier)), mesh(n), T)
 end
 
 function __mergebalancebycname(b::AbstractDict{PortRef,<:Any})

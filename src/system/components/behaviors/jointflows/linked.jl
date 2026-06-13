@@ -41,7 +41,10 @@ end
 # return a LinkedJointFlowBehavior
 function buildjointflow(c::Component, j::LinkedJointFlow)
     vs0 = [j.modifier(getport(c, bf)) for bf in j.baseflows] # vector of modified base flows
-    sj = Stepwise(j.f(vs0) .* defaultmodifier(j.carrier) ./ j.modifier(j.carrier), first(vs0).mesh)
+    m = first(vs0).mesh
+    default_modifier = remesh(defaultmodifier(j.carrier), m)
+    joint_modifier = remesh(j.modifier(j.carrier), m)
+    sj = Stepwise(j.f(vs0) .* default_modifier ./ joint_modifier, m)
     return LinkedJointFlowModel(j, sj)
 end
 

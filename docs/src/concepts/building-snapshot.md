@@ -1,10 +1,12 @@
 # Building A Snapshot
 
-This page covers the objects used to describe a system before solving: simulations, carriers, nodes, components, archetypes, behaviors, joint flows, snapshots, time, and tags.
+This page covers the objects used to describe a system before solving: simulations, carriers, 
+nodes, components, archetypes, behaviors, joint flows, snapshots, time, and tags.
+
 
 ## Simulation
 
-[`Sim`](@ref) stores the shared simulation context: the time mesh, JuMP model,
+[`Sim`](@ref) stores the shared simulation context: the [`TimeMesh`](@ref), JuMP model,
 solver options, and variable-name suffix. Most users create one simulation for
 one optimisation problem, then build one or more snapshots on top of it.
 
@@ -76,8 +78,8 @@ archetype.
 The ports of components are connected to nodes with [`connect!`](@ref). A node
 then collects compatible component ports and applies the local balance rule.
 
-All ports do not must be connected. In particular, `level`s and ports created
-by joint flows with the option `mustconnect=false` will not be connected.
+Not all ports must be connected. In particular, `level`s and ports created by
+joint flows with the option `mustconnect=false` do not need to be connected.
 
 
 ## Nodes
@@ -86,6 +88,12 @@ by joint flows with the option `mustconnect=false` will not be connected.
 constraints enforce the local flow rule. A default node balances input and
 output. A curtailed node allows production to exceed consumption, which is often
 useful for electricity systems with renewable curtailment.
+
+Nodes default to the simulation mesh, but can be given a different balance mesh
+with `Node("name", carrier; mesh=mesh)`. Connected component flows are then
+projected to the node mesh before applying the balance constraint. A node mesh
+must be the same as or coarser than every connected component port mesh. See
+[Component And Node Meshes](time.md#component-and-node-meshes).
 
 Examples of nodes:
   * an electricity bidding zone
@@ -98,6 +106,12 @@ Examples of nodes:
 
 [`Component`](@ref)s are active system elements. A component is built from one
 model archetype and any number of behaviors and joint flows.
+
+Components default to the simulation mesh. Component archetypes accept
+`mesh=...` and build their ports, variables, profiles, costs, and
+component-internal constraints on that mesh. Transmission lines also build
+their flow variables on their component mesh; KVL constraints project AC line
+flows onto a compatible cycle mesh when needed.
 
 
 ## Model Archetype
@@ -138,6 +152,20 @@ constraints. The input port is fixed to the provided demand series ``d_t``:
 ```math
 x_t = d_t.
 ```
+
+### [`ProfileSink`](@ref)
+
+Exposes one input port named `input`. It creates no optimisation variable for
+the input flow by itself. A capacity behavior on `input` is mandatory; once it
+is added, the input is the capacity times the exogenous profile ``a_t``:
+
+```math
+x_t = a_t K.
+```
+
+This is the consumption-side counterpart of [`ProfileSource`](@ref). It is
+useful for loads that scale with a size decision or fixed peak, such as data
+center IT load, cooling auxiliaries, or industrial consumption profiles.
 
 ### [`BasicSink`](@ref)
 
@@ -320,6 +348,13 @@ Public behaviors are grouped into families.
 Please note: in general, a `Snapshot` represents a year. In that case, the fixed
 cost is an annualized cost, and is expressed in currency / year.
 
+- [`ConstantCost`](@ref): creates no variables and no constraints. It adds a
+  fixed amount directly to component cost:
+
+  ```math
+  C^{constant} = c.
+  ```
+
 - [`VariableCost`](@ref): creates no variables and no constraints. It adds an
   operating-cost expression from the targeted flow. For a scalar cost ``c``:
 
@@ -426,7 +461,7 @@ cost is an annualized cost, and is expressed in currency / year.
 
 - [`YearlySum`](@ref): creates no variables and adds one constraint on the
   annual sum of a port flow, calculated as trapezoidal integral assuming 
-  [linear trends between instants](#time).
+  [linear trends between instants](time.md).
 
   ```math
   \sum_t \frac{\Delta_{t-1} + \Delta_t}{2} f_t \le B, \qquad
@@ -452,7 +487,9 @@ Joint-flow types are:
 - [`FixedJointFlow`](@ref): creates a new port with the requested name and
   sense, but creates no variables and no constraints. It adds an exogenous input
   or output profile to a component. Use it for fixed auxiliary consumption,
-  fixed emissions, or any additional flow known before optimisation.
+  fixed emissions, or any additional flow known before optimisation. The fixed
+  profile uses the carrier simulation mesh and is projected to the component
+  mesh.
 - [`FreeJointFlow`](@ref): creates a new port with the requested name and sense,
   backed by ``N`` non-negative variables as an extra component flow. Use it when
   the additional flow is a decision variable but is not already represented by
@@ -492,35 +529,6 @@ values.
 The details below use ``N`` for the number of model timesteps and
 ``\Delta_t`` for the duration of timestep ``t`` in hours. Unless stated
 otherwise, variables are continuous and non-negative.
-
-
-## Time
-
-Nosy uses the following time conventions:
-
-  * Internally, Nosy works with irregular time meshes through the custom
-    `Stepwise` wrapper. `Stepwise` series are cyclic: the index after the final
-    index wraps to the first one.
-  * User-facing time-series wrappers are `Hourly` series. They represent regular
-    hourly meshes interpolated from `Stepwise` data, and are cyclic too.
-  * `Stepwise` and `Hourly` behave like circular vectors, modulo the number of
-    steps or hours respectively. In particular, for both wrappers, `v[0] ==
-    v[end]`, `v[-1] == v[end-1]`, and so on.
-  * Quantities are interpreted as values at an instant, not over a time
-    interval. In that sense, Nosy uses a "power" formalism rather than an
-    "energy" formalism. The power formalism creates more nonzeros in the
-    optimization matrix, so affected models, such as storage, offer a `simplified`
-    keyword argument to fall back to the energy formalism locally. This is
-    generally a good approximation when the component is not central to the
-    study, such as a plant in a background node.
-  * Quantities are assumed to vary linearly between instants whenever possible.
-    This applies to all flows, is an approximation for levels because quadratic
-    components are not modeled, and does not hold for unit-commitment state and
-    switch variables.
-
-[`TimeMesh`](@ref) maps a full year of hours onto model timesteps. The default
-mesh represents 8760 hourly steps. Custom meshes allow sub-hourly and irregular
-timesteps, but each timestep weight must be no longer than one hour.
 
 
 ## Tags

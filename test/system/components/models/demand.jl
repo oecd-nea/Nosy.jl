@@ -49,7 +49,7 @@ using Test
 
         m = build(d, "demand")
 
-        @test all(isapprox.(energy(_getport(m.s, "input", "demand")), AffExpr.(series)))
+        @test all(energy(_getport(m.s, "input", "demand")) .== AffExpr.(series))
 
         @test carrier(_getport(m.s, "input", "demand")) == mc
 
@@ -82,6 +82,24 @@ using Test
         m = build(d, "demand")
 
         @test all(mass(_getport(m.s, "input", "demand")) .== Stepwise(series, s.mesh))
+
+    end
+
+    # scalar profile on a mixed coarse mesh keeps the requested aggregate
+    let series = 3.15
+
+        fine = TimeMesh(fill(1//1, 24))
+        coarse = TimeMesh(vcat(fill(4//1, 2), fill(2//1, 6), [4//1]))
+        s = Sim(Model(), mesh=fine)
+        mc = MassCarrier("m", s, energy=1.0)
+
+        d = Demand(mc, series; modifier=mass, mesh=coarse)
+        m = build(d, "demand")
+        flow = mass(_getport(m.s, "input", "demand"))
+
+        @test all(d.series.data .== series)
+        @test sum(d.series) ≈ series * 24
+        @test all(flow .== Stepwise(series, coarse))
 
     end
 

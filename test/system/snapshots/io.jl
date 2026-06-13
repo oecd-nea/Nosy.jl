@@ -131,7 +131,7 @@ end
             price = dualprice(getnode(loaded, "energy"))
 
             @test price !== nothing
-            @test all(isapprox.(price, [2.5, 0.5, 0.5, 0.5, 0.5]))
+            @test all(isapprox.(price, [5.0, 1.0, 1.0, 1.0, 1.0]))
         finally
             isfile(path) && rm(path)
         end

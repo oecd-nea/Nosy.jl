@@ -6,9 +6,9 @@ from the snapshot.
 This example first minimises total cost, then maximises gas
 capacity while keeping total cost within 1% of the optimum. 
 This technique, sometimes referred to as Modelling to Generate Alternatives (MGA),
-is used to discover near-optimal alternatives. If the alternative objective's value
-if very different from its value as an optimization variable, it indicates a choice,
-otherwise if they are similar it indicates a no-regrets decision.
+is used to discover near-optimal alternatives. If the alternative objective's
+value is very different from its value in the cost-optimal solution, it
+indicates a choice; otherwise, similar values indicate a no-regrets decision.
 
 ```jldoctest alternative_objectives; output = false
 using Nosy

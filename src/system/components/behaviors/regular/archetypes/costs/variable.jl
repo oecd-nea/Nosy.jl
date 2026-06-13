@@ -42,6 +42,23 @@ struct VariableCostBehavior{T<:VAL,M<:Function} <: AbstractCostBehavior{T}
     val::T
 end
 
+# in this case, the usual (trapezoid) sum is not working
+# because we don't integrate a quantity by connecting instants:
+# the profile depends on the price shape (e.g. step function)
+function _interval_sum(s::Stepwise)
+    _res = zero(eltype(s))
+    if iscircular(s)
+        for i in eachindex(s)
+            _res = addto!(_res, s[i] * weight(s.mesh, i))
+        end
+    else
+        for i in firstindex(s):(lastindex(s)-1)
+            _res = addto!(_res, s[i] * weight(s.mesh, i))
+        end
+    end
+    return _res
+end
+
 # must not use the fallback function on model: we need the component to get the capacity behavior
 function buildbehavior(c::Component, b::VariableCost{M,Float64}) where M
     _cost = sum(_balance_one(c.s, b.pname, name(c), b.modifier)) * b.val
@@ -49,18 +66,18 @@ function buildbehavior(c::Component, b::VariableCost{M,Float64}) where M
 end
 
 function buildbehavior(c::Component, b::VariableCost{M,Vector{Float64}}) where M
-    if !(length(b.val) == nsteps(sim(c)) || length(b.val) == nhours(sim(c))) 
-        throw(ArgumentError("The length of variable cost vector must be equal to $(nsteps(sim(c))) or $(nhours(sim(c)))"))
+    if !(length(b.val) == nsteps(mesh(c)) || length(b.val) == nhours(mesh(c)))
+        throw(ArgumentError("The length of variable cost vector must be equal to $(nsteps(mesh(c))) or $(nhours(mesh(c)))"))
     end
-    _cost = Stepwise(b.val, sim(c).mesh)
+    _cost = Stepwise(b.val, mesh(c))
     _flow = _balance_one(c.s, b.pname, name(c), b.modifier)
 
     # here we assume, as for the rest of the model, that the flow (~power) is linear between steps
     # integration of power * cost over time depends on the shape of cost
     if b.style == :step # integrate power * cost over time assuming cost is a step function
-        _cost = sum(Stepwise(_cost .* (1/2 * _flow + 1/2 * shift(_flow, 1)), sim(c).mesh))
+        _cost = _interval_sum(_cost .* (1/2 * _flow + 1/2 * shift(_flow, 1)))
     elseif b.style == :linear # integrate power * cost over time assuming cost is a linear function
-        _cost = sum(1/3 * (_flow .* _cost) + 1/6 * (_flow .* shift(_cost, 1)) + 1/6 * (shift(_flow, 1) .* _cost) + 1/3 * (shift(_flow, 1) .* shift(_cost, 1))) # NB as there is summation, the formula could be simplified but we leave it this way for clarity
+        _cost = _interval_sum(1/3 * (_flow .* _cost) + 1/6 * (_flow .* shift(_cost, 1)) + 1/6 * (shift(_flow, 1) .* _cost) + 1/3 * (shift(_flow, 1) .* shift(_cost, 1))) # NB as there is summation, the formula could be simplified but we leave it this way for clarity
     end
 
     return VariableCostBehavior(b, _cost)

@@ -6,7 +6,7 @@ export Model, model, lowermodel, uppermodel
 export MassCarrier, EnergyCarrier, CO2Carrier, PowerCarrier
 
 export BasicConverter
-export BasicSink, Demand
+export BasicSink, Demand, ProfileSink
 export DispatchableSource, ProfileSource
 export BasicStorage, LazyStorage
 export ACLine, DCLine
@@ -17,7 +17,7 @@ export UnitCommitment
 export Ramping
 export YearlySum
 export ReserveUp, ReserveDown
-export VariableCost, FixedCost, NoLoadCost, StartupCost
+export VariableCost, FixedCost, ConstantCost, NoLoadCost, StartupCost
 
 export LinkedJointFlow, FreeJointFlow, FixedJointFlow
 
@@ -25,7 +25,7 @@ export Component, Node, Snapshot
 export connect!
 
 export capacity, nbunits
-export cost, variablecost, fixedcost, noloadcost, startupcost
+export cost, variablecost, fixedcost, constantcost, noloadcost, startupcost
 export dualprice
 
 export reserve

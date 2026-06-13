@@ -1,5 +1,6 @@
-using Nosy: TimeMesh
+using Nosy: GenericTimeSeries, TimeMesh, RTimeMesh, Sim, Hourly, Stepwise
 using Nosy: nhours, nsteps, weight, hour, step, eachhour, eachstep, iscircular
+using JuMP: Model
 using Test
 
 @testset "Time series mesh" begin
@@ -13,6 +14,38 @@ using Test
         @test_throws ArgumentError TimeMesh([1//2, 1//1]) # sum of weights is not integer
 
         @test_throws ArgumentError TimeMesh([1//1, 0//1]) # zero-duration timestep is not allowed
+
+        @test_throws ArgumentError TimeMesh([1.0]) # weights must be exact integers or rationals
+
+        @test_throws ArgumentError TimeMesh([true, true]) # booleans are not timestep durations
+
+        @test_throws ArgumentError TimeMesh([1//1]; circular=false) # open horizons need at least one interval
+
+    end
+
+
+    let
+
+        # GenericTimeSeries is not mesh-backed, so Base helpers must preserve
+        # only its own storage and circularity.
+        s = GenericTimeSeries([1, 2, 3], false)
+
+        c = copy(s)
+        @test c isa GenericTimeSeries{Int}
+        @test c !== s
+        @test parent(c) == parent(s)
+        @test parent(c) !== parent(s)
+        @test !iscircular(c)
+
+        z = zero(s)
+        @test z isa GenericTimeSeries{Int}
+        @test parent(z) == [0, 0, 0]
+        @test !iscircular(z)
+
+        t = similar(s)
+        @test t isa GenericTimeSeries{Int}
+        @test length(t) == length(s)
+        @test !iscircular(t)
 
     end
 
@@ -35,7 +68,25 @@ using Test
         @test eachhour(m) == 1:8760
         @test eachstep(m) == 1:8760
         @test iscircular(m)
+        @test m isa RTimeMesh
     
+    end
+
+
+    let
+
+        # Integer weights are normalized to the canonical rational mesh type
+        # used by simulations and mesh-backed time series.
+        m = TimeMesh(fill(1, 4))
+        s = Sim(Model(); mesh=m)
+        h = Hourly(Float64.(1:4), m)
+        st = Stepwise(Float64.(1:4), m)
+
+        @test s.mesh === m
+        @test h.mesh === m
+        @test st.mesh === m
+        @test all(weight(m, i) == 1//1 for i in 1:4)
+
     end
 
 

@@ -3,14 +3,14 @@ using Nosy: Sim, TimeMesh
 using Nosy: VariableCapacity, FixedCapacity
 using Nosy: FixedComposedCapacity
 using Nosy: CapacityMultiplier, Duration
-using Nosy: FixedCost, VariableCost
+using Nosy: FixedCost, ConstantCost, VariableCost
 using Nosy: BasicConverter, BasicStorage
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: mass, energy
 using Nosy: Component, getport
 using Nosy: capacity
 using Nosy: nbunits
-using Nosy: fixedcost, variablecost, cost
+using Nosy: fixedcost, constantcost, variablecost, cost
 using JuMP: Model, GenericAffExpr, AffExpr
 using JuMP: has_upper_bound, lower_bound
 using Test
@@ -35,6 +35,7 @@ using Test
 
         @test capacity(c) == 0.
         @test fixedcost(c) == 0.
+        @test constantcost(c) == 0.
         @test cost(c) == 0.
         @test nbunits(c) === nothing
 
@@ -53,19 +54,23 @@ using Test
 
     end
 
-    let c = makecomp([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
+    let c = makecomp([FixedCapacity("input", mass, 5.), FixedCost(:overnight, "input", mass, 10.), ConstantCost(:fixed_charge, 7.), VariableCost(:fuel, "input", energy, 2.), VariableCost(:vom, "output", energy, 3.)])
 
         @test capacity(c) == 5.
         @test fixedcost(c) == AffExpr(5. * 10.)
+        @test constantcost(c) == AffExpr(7.)
 
         # test selection based on cost type
         @test fixedcost(c, :overnight) == AffExpr(5. * 10.)
         @test fixedcost(c, :other) == 0.
+        @test constantcost(c, :fixed_charge) == AffExpr(7.)
+        @test constantcost(c, :other) == 0.
         @test variablecost(c) == sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
         @test variablecost(c, :fuel) == sum(energy(getport(c, "input"))) * 2
         @test variablecost(c, :vom) == sum(energy(getport(c, "output"))) * 3
-        @test cost(c) == AffExpr(5. * 10.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
+        @test cost(c) == AffExpr(5. * 10.) + AffExpr(7.) + sum(energy(getport(c, "input"))) * 2 + sum(energy(getport(c, "output"))) * 3
         @test cost(c, :overnight) == fixedcost(c, :overnight)
+        @test cost(c, :fixed_charge) == constantcost(c, :fixed_charge)
         @test cost(c, :fuel) == variablecost(c, :fuel)
         @test cost(c, :vom) == variablecost(c, :vom)
 

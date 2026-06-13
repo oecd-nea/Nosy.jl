@@ -221,4 +221,63 @@ using Test
 
     end
 
+    # mixed line meshes: KVL is projected onto the coarsest compatible AC cycle mesh
+    let
+        power_mesh = TimeMesh(fill(1//1, 24))
+        cycle_mesh = TimeMesh(fill(2//1, 12))
+        sim = Sim(Model(HiGHS.Optimizer), mesh=power_mesh)
+        set_silent(sim.model)
+
+        pc = PowerCarrier("electricity", sim)
+        s  = Snapshot(sim)
+
+        n1 = Node("n1", pc; rule=:default, mesh=cycle_mesh)
+        n2 = Node("n2", pc; rule=:default, mesh=cycle_mesh)
+        n3 = Node("n3", pc; rule=:default, mesh=cycle_mesh)
+
+        src  = Component("src", DispatchableSource(pc; mesh=power_mesh), [
+            VariableCost(:fuel, "output", energy, 1.0),
+            FixedCapacity("output", energy, 48.0),
+        ])
+        dmd2 = Component("dmd2", Demand(pc, fill(1.0, 24); mesh=power_mesh), [])
+        dmd3 = Component("dmd3", Demand(pc, fill(1.0, 24); mesh=power_mesh), [])
+        connect!(s, src, n1)
+        connect!(s, dmd2, n2)
+        connect!(s, dmd3, n3)
+
+        b12, b23, b31 = 1.5, 0.7, 2.0
+        l12 = Component("l12", ACLine(pc, pc, b12; mesh=power_mesh), [
+            FixedCapacity("from_out", energy, 100.0),
+            FixedCapacity("to_out", energy, 100.0),
+        ])
+        l23 = Component("l23", ACLine(pc, pc, b23; mesh=cycle_mesh), [
+            FixedCapacity("from_out", energy, 100.0),
+            FixedCapacity("to_out", energy, 100.0),
+        ])
+        l31 = Component("l31", ACLine(pc, pc, b31; mesh=cycle_mesh), [
+            FixedCapacity("from_out", energy, 100.0),
+            FixedCapacity("to_out", energy, 100.0),
+        ])
+
+        connect!(s, l12, n1, "from_out"); connect!(s, l12, n1, "from_in")
+        connect!(s, l12, n2, "to_in"); connect!(s, l12, n2, "to_out")
+
+        connect!(s, l23, n2, "from_out"); connect!(s, l23, n2, "from_in")
+        connect!(s, l23, n3, "to_in"); connect!(s, l23, n3, "to_out")
+
+        connect!(s, l31, n3, "from_out"); connect!(s, l31, n3, "from_in")
+        connect!(s, l31, n1, "to_in"); connect!(s, l31, n1, "to_out")
+
+        optimize!(s, cost(s))
+        @assert is_solved_and_feasible(sim.model)
+
+        f12 = JuMP.value.(_transmissionbalance(s, "n1", "n2"; target=cycle_mesh, ac_only=true))
+        f23 = JuMP.value.(_transmissionbalance(s, "n2", "n3"; target=cycle_mesh, ac_only=true))
+        f31 = JuMP.value.(_transmissionbalance(s, "n3", "n1"; target=cycle_mesh, ac_only=true))
+
+        lhs = f12 ./ b12 .+ f23 ./ b23 .+ f31 ./ b31
+        @test length(lhs) == 12
+        @test all(isapprox.(lhs, 0.0; atol=1e-6))
+    end
+
 end

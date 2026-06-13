@@ -1,9 +1,9 @@
 using Test
 using JuMP: Model
-using Nosy: Sim, TimeMesh, sim
+using Nosy: Sim, TimeMesh, sim, mesh, nsteps
 using Nosy: PowerCarrier, MassCarrier, Node
 using Nosy: ACLine, DCLine, ACLineModel, DCLineModel
-using Nosy: _input, _output, PortRef, _getport, hasport
+using Nosy: _input, _output, PortRef, _getport, hasport, series
 using Nosy: build  
 
 
@@ -41,10 +41,28 @@ tsim() = Sim(Model(), mesh=TimeMesh(fill(1//1, 10)))
         @test p_from_out.carrier === pc
         @test p_to_out.carrier === pc
         @test sim(acmodel.s) === s
+        @test mesh(p_from_out) == s.mesh
 
         # parameter validation (B>0)
         @test_throws ArgumentError ACLine(pc, pc, 0.0)
         @test_throws ArgumentError ACLine(pc, pc, -0.5)
+    end
+
+    # custom mesh
+    let
+        s = tsim()
+        pc = PowerCarrier("electricity", s)
+        m = TimeMesh(fill(2//1, 5))
+
+        acdata = ACLine(pc, pc, 0.1; mesh=m)
+        acmodel = build(acdata, "acline")
+        p_from_out = _getport(acmodel.s, "from_out", "acline", :output)
+
+        @test mesh(acdata) == m
+        @test mesh(acmodel) == m
+        @test mesh(p_from_out) == m
+        @test nsteps(series(p_from_out)) == nsteps(m)
+        @test_throws ArgumentError ACLine(pc, pc, 0.1; mesh=TimeMesh(fill(2//1, 4)))
     end
 
     # type safety: carriers must match PowerCarrier only
@@ -90,6 +108,24 @@ end
         @test p_from_out.carrier === pc
         @test p_to_out.carrier   === pc
         @test sim(dcmodel.s) === s
+        @test mesh(p_from_out) == s.mesh
+    end
+
+    # custom mesh
+    let
+        s = tsim()
+        pc = PowerCarrier("electricity", s)
+        m = TimeMesh(fill(2//1, 5))
+
+        dcdata = DCLine(pc, pc; mesh=m)
+        dcmodel = build(dcdata, "dcline")
+        p_from_out = _getport(dcmodel.s, "from_out", "dcline", :output)
+
+        @test mesh(dcdata) == m
+        @test mesh(dcmodel) == m
+        @test mesh(p_from_out) == m
+        @test nsteps(series(p_from_out)) == nsteps(m)
+        @test_throws ArgumentError DCLine(pc, pc; mesh=TimeMesh(fill(2//1, 4)))
     end
     
     # type safety: carriers must match PowerCarrier only

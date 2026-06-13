@@ -152,16 +152,16 @@ end
 # Non-UC case: create only r variable
 function _build_reserve_behavior_impl(c::Component, data::Union{ReserveUp, ReserveDown}, uc::Nothing, sense::Symbol)
     base = name(c) * (sense == :up ? "_rup_" : "_rdn_") * string(data.name) * "_" * data.pname
-    r = Stepwise(sim(c), lb=0, basename=base)
+    r = Stepwise(sim(c), mesh(c), lb=0, basename=base)
     return ReserveBehavior(data, r, sense, nothing, nothing)
 end
 
 # UC case (Fleet only): create r, r_online, r_fast variables
 function _build_reserve_behavior_impl(c::Component, data::Union{ReserveUp, ReserveDown}, uc::AbstractFleetUnitCommitmentBehavior, sense::Symbol)
     base = name(c) * (sense == :up ? "_rup_" : "_rdn_") * string(data.name) * "_" * data.pname
-    r = Stepwise(sim(c), lb=0, basename=base)
-    r_online = Stepwise(sim(c), lb=0, basename=base * "_ronline")
-    r_fast = Stepwise(sim(c), lb=0, basename=base * "_rfast")
+    r = Stepwise(sim(c), mesh(c), lb=0, basename=base)
+    r_online = Stepwise(sim(c), mesh(c), lb=0, basename=base * "_ronline")
+    r_fast = Stepwise(sim(c), mesh(c), lb=0, basename=base * "_rfast")
     return ReserveBehavior(data, r, sense, r_online, r_fast)
 end
 
@@ -206,7 +206,7 @@ function __apply_constraints_reserve_capacity!(c::Component{T}, b::AbstractReser
     mod_uc = uc.modifier
     mod_b = b.data.modifier
     @argcheck (mod_uc === mod_b || (mod_uc === defaultmodifier && mod_b === def) || (mod_b === defaultmodifier && mod_uc === def)) "$(behaviorname(b)) modifier must match unit commitment modifier for port '$(b.data.pname)'"
-    mesh = sim(c).mesh
+    msh = mesh(c)
     _d = uc.data.startup  # used only for :up r_fast
     max_capacity = uc.unitsize .* _state(uc).data
     if b.data.sense == :up
@@ -223,8 +223,8 @@ function __apply_constraints_reserve_capacity!(c::Component{T}, b::AbstractReser
         cap_beh = getcapacitybehavior(c, b.data.pname)
         nb_max = _nbunitsmax(cap_beh)
         off_cap = (nb_max .- _state(uc).data) .* uc.unitsize .* uc.data.startupratio
-        for t in eachstep(mesh)
-            dt_t = Float64(weight(mesh, t))
+        for t in eachstep(msh)
+            dt_t = Float64(weight(msh, t))
             if _d <= dt_t
                 @constraint(m, b.r_fast.data[t] <= off_cap[t])
             else
@@ -234,8 +234,8 @@ function __apply_constraints_reserve_capacity!(c::Component{T}, b::AbstractReser
         end
     else
         _d_sd = uc.data.shutdown
-        for t in eachstep(mesh)
-            dt_t = Float64(weight(mesh, t))
+        for t in eachstep(msh)
+            dt_t = Float64(weight(msh, t))
             if _d_sd <= dt_t
                 # on-units not in shutdown (excluded so as not to double-count with dispatch)
                 stable_on_t = _state(uc).data[t] - uc.shutdown.data[t]
@@ -266,11 +266,11 @@ end
 # non-UC: flow_diff = flow[t+1]−flow[t]; :up -> flow_diff + r <= max_ramp, :down -> flow_diff − r >= −max_ramp.
 function __apply_constraints_reserve_ramping!(c::Component{T}, b::AbstractReserveBehavior{T}, ramp_behavior::RampingBehavior, uc::Nothing) where T
     m = lowermodel(sim(c))
-    mesh = sim(c).mesh
+    msh = mesh(c)
     ramp_val = ramp_behavior.data.val
     flow = b.data.modifier(getport(c, b.data.pname))
     flow_diff = shift(flow, 1) - flow
-    max_ramp = ramp_val .* weight(mesh)
+    max_ramp = ramp_val .* weight(msh)
     if b.data.sense == :up
         @constraint(m, flow_diff.data .+ b.r.data .<= max_ramp)
     else
@@ -281,12 +281,12 @@ end
 # is within step delivery so not limited by inter step ramp.
 function __apply_constraints_reserve_ramping!(c::Component{T}, b::AbstractReserveBehavior{T}, ramp_behavior::RampingBehavior, uc::AbstractUnitCommitmentBehavior) where T
     m = lowermodel(sim(c))
-    mesh = sim(c).mesh
+    msh = mesh(c)
     ramp_val = ramp_behavior.data.val
     var = _var(uc)
     car = getport(c, b.data.pname).carrier
     flow_diff = (shift(var, 1) - var) .* b.data.modifier(car) ./ uc.modifier(car)
-    max_ramp = _state(uc) .* weight(mesh) .* ramp_val
+    max_ramp = _state(uc) .* weight(msh) .* ramp_val
     if b.data.sense == :up
         @constraint(m, flow_diff.data .+ b.r_online.data .<= max_ramp.data)
     else
