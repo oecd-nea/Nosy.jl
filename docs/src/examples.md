@@ -19,7 +19,7 @@ reports and data resources.
 - [Linked Capacities](examples/linked-capacities.md)
 - [Two Power Nodes](examples/two-power-nodes.md)
 - [Power And Hydrogen Demand](examples/power-hydrogen-demand.md)
-- [Power And Hydrogen With A Coarse Hydrogen Mesh](examples/power-hydrogen-mixed-mesh.md)
+- [PV, Battery, And Hydrogen With A Coarse Hydrogen Mesh](examples/power-hydrogen-mixed-mesh.md)
 - [Combined Heat And Power](examples/combined-heat-power.md)
 - [Unit Commitment](examples/unit-commitment.md)
 - [Operating Reserve](examples/operating-reserve.md)

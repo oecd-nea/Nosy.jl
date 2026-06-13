@@ -41,7 +41,7 @@ s = Sim(HiGHS.Optimizer; mesh=mesh)
 ```
 
 Irregular meshes are useful when some hours need more detail than others. The
-current `TimeMesh` API accepts timestep weights smaller than zero. 
+current `TimeMesh` API accepts positive integer or rational timestep weights.
 
 Timesteps longer than one hour can be useful to reduce the numerical complexity
 of the optimization. 
