@@ -12,7 +12,7 @@ Nosy requires Julia 1.11 or newer and a LP or MILP solver compatible with
 use [HiGHS](https://highs.dev/) because it is open source and works well for
 many linear examples. Other
 [JuMP-compatible solvers](https://jump.dev/JuMP.jl/stable/installation/#Supported-solvers)
-can be used by passing their optimiser constructor to [`Sim`](@ref).
+can be used the same way. Please note: some solvers require a separate installation and license.
 
 ## Minimal Workflow
 
@@ -38,7 +38,7 @@ plant = Component(
     "plant",
     DispatchableSource(elec),
     [
-        VariableCapacity("output", energy), # output capacity of the plant is an optimizatoin variable
+        VariableCapacity("output", energy), # output capacity of the plant is an optimization variable
         FixedCost(:capex, "output", energy, 60_000.0), # annualized CAPEX of 60000 USD/MW/year
         VariableCost(:fuel, "output", energy, 50.0), # fuel cost of 50 USD/MWh
     ],
@@ -46,7 +46,7 @@ plant = Component(
 connect!(snapshot, plant, grid)
 
 # Minimize total system cost and extract the solved values.
-optimize!(snapshot, cost(snapshot)) # optimize the Snapshot (with HiGHS) by minimizine total cost
+optimize!(snapshot, cost(snapshot)) # optimize the Snapshot (with HiGHS) by minimizing total cost
 result = extract(snapshot) # generate a Snapshot populated with the optimal solution
 
 # Inspect results.

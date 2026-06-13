@@ -78,8 +78,8 @@ archetype.
 The ports of components are connected to nodes with [`connect!`](@ref). A node
 then collects compatible component ports and applies the local balance rule.
 
-All ports do not must be connected. In particular, `level`s and ports created
-by joint flows with the option `mustconnect=false` will not be connected.
+Not all ports must be connected. In particular, `level`s and ports created by
+joint flows with the option `mustconnect=false` do not need to be connected.
 
 
 ## Nodes
@@ -461,7 +461,7 @@ cost is an annualized cost, and is expressed in currency / year.
 
 - [`YearlySum`](@ref): creates no variables and adds one constraint on the
   annual sum of a port flow, calculated as trapezoidal integral assuming 
-  [linear trends between instants](#time).
+  [linear trends between instants](time.md).
 
   ```math
   \sum_t \frac{\Delta_{t-1} + \Delta_t}{2} f_t \le B, \qquad

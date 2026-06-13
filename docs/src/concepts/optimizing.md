@@ -34,10 +34,11 @@ optimize!([snapshot1, snapshot2], cost(snapshot1) + 2 * cost(snapshot2))
 
 ## Infeasible problems
 
-Some problem are not feasible, generally due to conflicting constraints. In that case, you 
-can identify the conflicting constraints using the [`conflicts`](@ref) function. Nosy generates
-variables with explicit names to facilitate debug. Please note: the IIS of an infeasible problem
-is not necessarily unique, and this step can be iterative.
+Some problems are infeasible, generally due to conflicting constraints. In that
+case, you can identify the conflicting constraints using the [`conflicts`](@ref)
+function. Nosy generates variables with explicit names to facilitate debugging.
+Please note: the IIS of an infeasible problem is not necessarily unique, and
+this step can be iterative.
 
 
 ## Extract results

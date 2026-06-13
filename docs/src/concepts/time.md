@@ -26,8 +26,14 @@ The default `TimeMesh` is full year with 8760 hourly timesteps:
 s = Sim(HiGHS.Optimizer; mesh=TimeMesh())
 ```
 
-The default `TimeMesh` is circular: time is modeled as a 
+The default `TimeMesh` is circular: the step after the last step is the first step.
+This ensures a clean application of constraints working on extended periods of time
+such as minimum downtime. In addition, it enforces long-term storage to be at equilibrium
+over the year.
 
+Non-circular `TimeMesh` is also allowed, although generally not advised. Unless
+you need the end to be distinct from the beginning, using a circular `TimeMesh`
+is usually a cleaner formalism.
 
 For quick prototypes, one can use a shorter horizon, such as one 30-day month.
 This is only a development convenience for checking model structure, costs,
@@ -47,16 +53,16 @@ Timesteps longer than one hour can be useful to reduce the numerical complexity
 of the optimization. 
 
 ```julia
-# One day with two-hours time steps between 0 and 4h, and one-hour timesteps
+# One day with two-hour timesteps between 0 and 4h, and one-hour timesteps
 # for the rest of the day
 night = fill(2, 2)
 day = fill(1, 20)
 mesh = TimeMesh(vcat(night, day))
 ```
 
-Timesteps shorter than one hour can help describe sub-hourly phenomena, but add 
-numerical complexity to the simulation. Use `Rational` number for sub-hourly
-timesteps. 
+Timesteps shorter than one hour can help describe sub-hourly phenomena, but add
+numerical complexity to the simulation. Use `Rational` numbers for sub-hourly
+timesteps.
 
 ```julia
 # One day: hourly night steps, finer morning and evening ramps.
