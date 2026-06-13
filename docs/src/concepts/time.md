@@ -75,6 +75,16 @@ it can speed up the solve, but it can also hide quick events relative to
 ramps, startup, scarcity periods etc. It is advised to validate custom `TimeMesh` 
 before production use.
 
+The [PV, Storage, And Consumption With Heterogeneous Time Meshes](../examples/heterogeneous-mesh.md)
+example compares an hourly mesh, a uniformly coarse mesh, and a heterogeneous
+mesh on the same system.
+
+Nosy can also use multiple compatible meshes in the same snapshot. This is
+useful when one part of the system needs fine temporal detail while another
+part can be represented more coarsely. The
+[PV, Battery, And Hydrogen With A Coarse Hydrogen Mesh](../examples/power-hydrogen-mixed-mesh.md)
+example keeps the electricity side hourly while using a coarser hydrogen mesh.
+
 ## Component And Node Meshes
 
 By default, components and nodes use the simulation mesh. Component archetypes

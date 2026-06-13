@@ -38,22 +38,28 @@ makedocs(
         "Performance" => "performance.md",
         "Examples" => [
             "Overview" => "examples.md",
-            "Dispatchable Source And Demand" => "examples/dispatchable-source-demand.md",
-            "Unit Commitment" => "examples/unit-commitment.md",
-            "CO2 Emissions And Carbon Tax" => "examples/co2-emissions-carbon-tax.md",
-            "PV And Battery Storage" => "examples/pv-battery-storage.md",
-            "Linked Capacities" => "examples/linked-capacities.md",
-            "Two Power Nodes" => "examples/two-power-nodes.md",
-            "Power And Hydrogen Demand" => "examples/power-hydrogen-demand.md",
-            "PV, Battery, And Hydrogen With A Coarse Hydrogen Mesh" =>
-                "examples/power-hydrogen-mixed-mesh.md",
-            "Combined Heat And Power" => "examples/combined-heat-power.md",
-            "Operating Reserve" => "examples/operating-reserve.md",
-            "PV, Battery, And Upward Reserve" => "examples/pv-battery-upward-reserve.md",
-            "Infeasibility And Conflicts" => "examples/infeasibility-conflicts.md",
-            "Alternative Objectives" => "examples/alternative-objectives.md",
-            "Single-Level Vs Bilevel Capacity Expansion And Dispatch" =>
-                "examples/bilevel-capacity-expansion-dispatch.md",
+            "Building components and systems" => [
+                "Dispatchable Source and Demand" => "examples/dispatchable-source-demand.md",
+                "CO2 Emissions and Carbon Tax" => "examples/co2-emissions-carbon-tax.md",
+                "PV and Battery Storage" => "examples/pv-battery-storage.md",
+                "Two Power Nodes" => "examples/two-power-nodes.md",
+                "Power and Hydrogen Demand" => "examples/power-hydrogen-demand.md",
+                "Combined Heat and Power" => "examples/combined-heat-power.md",
+                "Unit Commitment" => "examples/unit-commitment.md",
+                "Operating Reserve" => "examples/operating-reserve.md",
+                "PV, Battery, and Upward Reserve" =>
+                    "examples/pv-battery-upward-reserve.md",
+            ],
+            "Advanced modelling capabilities" => [
+                "Alternative Objectives" => "examples/alternative-objectives.md",
+                "Linked Capacities" => "examples/linked-capacities.md",
+                "Infeasibility and Conflicts" => "examples/infeasibility-conflicts.md",
+                "Heterogeneous Time Meshes" => "examples/heterogeneous-mesh.md",
+                "Multiple Time Meshes and Mesh Projection" =>
+                    "examples/power-hydrogen-mixed-mesh.md",
+                "Single-Level Vs Bilevel Capacity Expansion and Dispatch" =>
+                    "examples/bilevel-capacity-expansion-dispatch.md",
+            ],
         ],
         "API Reference" => "api.md",
     ],
