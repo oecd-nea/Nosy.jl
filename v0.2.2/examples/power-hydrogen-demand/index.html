@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Power and Hydrogen Demand · Nosy.jl</title><meta name="title" content="Power and Hydrogen Demand · Nosy.jl"/><meta property="og:title" content="Power and Hydrogen Demand · Nosy.jl"/><meta property="twitter:title" content="Power and Hydrogen Demand · Nosy.jl"/><meta name="description" content="Documentation for Nosy.jl."/><meta property="og:description" content="Documentation for Nosy.jl."/><meta property="twitter:description" content="Documentation for Nosy.jl."/><meta property="og:url" content="https://oecd-nea.github.io/Nosy.jl/stable/examples/power-hydrogen-demand/"/><meta property="twitter:url" content="https://oecd-nea.github.io/Nosy.jl/stable/examples/power-hydrogen-demand/"/><link rel="canonical" href="https://oecd-nea.github.io/Nosy.jl/stable/examples/power-hydrogen-demand/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Nosy.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../getting-started/">Getting Started</a></li><li><span class="tocitem">Modelling Concepts</span><ul><li><a class="tocitem" href="../../concepts/">Overview</a></li><li><a class="tocitem" href="../../concepts/time/">Time</a></li><li><a class="tocitem" href="../../concepts/building-snapshot/">Building a Snapshot</a></li><li><a class="tocitem" href="../../concepts/optimizing/">Optimizing a Snapshot</a></li><li><a class="tocitem" href="../../concepts/querying/">Querying a Snapshot</a></li><li><a class="tocitem" href="../../concepts/exporting/">Exporting / Importing a Snapshot</a></li></ul></li><li><a class="tocitem" href="../../performance/">Performance</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../">Overview</a></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox" checked/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">Building components and systems</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../dispatchable-source-demand/">Dispatchable Source and Demand</a></li><li><a class="tocitem" href="../co2-emissions-carbon-tax/">CO2 Emissions and Carbon Tax</a></li><li><a class="tocitem" href="../pv-battery-storage/">PV and Battery Storage</a></li><li><a class="tocitem" href="../two-power-nodes/">Two Power Nodes</a></li><li class="is-active"><a class="tocitem" href>Power and Hydrogen Demand</a></li><li><a class="tocitem" href="../combined-heat-power/">Combined Heat and Power</a></li><li><a class="tocitem" href="../unit-commitment/">Unit Commitment</a></li><li><a class="tocitem" href="../operating-reserve/">Operating Reserve</a></li><li><a class="tocitem" href="../pv-battery-upward-reserve/">PV, Battery, and Upward Reserve</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Advanced modelling capabilities</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../alternative-objectives/">Alternative Objectives</a></li><li><a class="tocitem" href="../linked-capacities/">Linked Capacities</a></li><li><a class="tocitem" href="../infeasibility-conflicts/">Infeasibility and Conflicts</a></li><li><a class="tocitem" href="../heterogeneous-mesh/">Heterogeneous Time Meshes</a></li><li><a class="tocitem" href="../power-hydrogen-mixed-mesh/">Multiple Time Meshes and Mesh Projection</a></li><li><a class="tocitem" href="../bilevel-capacity-expansion-dispatch/">Single-Level Vs Bilevel Capacity Expansion and Dispatch</a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li><a class="is-disabled">Building components and systems</a></li><li class="is-active"><a href>Power and Hydrogen Demand</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Power and Hydrogen Demand</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/oecd-nea/Nosy.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Power-And-Hydrogen-Demand"><a class="docs-heading-anchor" href="#Power-And-Hydrogen-Demand">Power And Hydrogen Demand</a><a id="Power-And-Hydrogen-Demand-1"></a><a class="docs-heading-anchor-permalink" href="#Power-And-Hydrogen-Demand" title="Permalink"></a></h1><p>Hydrogen can be handled through both mass and energy modifiers. Here the hydrogen carrier is a <a href="../../api/#Nosy.MassCarrier"><code>MassCarrier</code></a> with an energy density of 33.33 MWh/t.</p><pre><code class="language-julia hljs">using Nosy
+using HiGHS
+import JuMP: set_silent
+
+# Generate a simulation and carriers.
+s = Sim(Model(HiGHS.Optimizer); mesh=TimeMesh())
+set_silent(model(s))
+elec_carrier = EnergyCarrier(&quot;power&quot;, s)
+h2_carrier = MassCarrier(&quot;hydrogen&quot;, s; energy=33.33) # H2 energy density, in MWh/t
+
+# Synthetic data for load
+hours = 1:8760
+day_angle = 2pi .* ((hours .- 1) .% 24) ./ 24
+season_angle = 2pi .* (hours .- 1) ./ 8760
+load_profile = 3000 .+ 1500 .* sin.(day_angle .- pi / 2) .+
+    120 .* sin.(season_angle .- pi / 2)
+
+# Synthetic data for hydrogen demand and PV.
+h2load = 10.0 # Tons per hour
+cf_pv = [
+    x &lt; 1e-6 ? 0.0 : x for x in [
+        max(0, cos((h % 24 - 12) / 12 * pi) * (0.6 + 0.4 * sin(2pi * (h / 24) / 365)))
+        for h in 1:8760
+    ]
+]
+
+# Snapshot initialisation
+snapshot = Snapshot(s)
+
+# One electricity node and one hydrogen node.
+grid = Node(&quot;grid&quot;, elec_carrier, rule=:curtailed, evalprice=true)
+h2_node = Node(&quot;hydrogen&quot;, h2_carrier, rule=:default, evalprice=true) # No H2 curtailment
+
+# Component: electricity consumption.
+consumption = Component(&quot;consumption&quot;, Demand(elec_carrier, load_profile))
+connect!(snapshot, consumption, grid)
+
+# Component: constant hydrogen demand.
+h2_consumption = Component(&quot;H2 consumption&quot;, Demand(h2_carrier, h2load; modifier=mass))
+connect!(snapshot, h2_consumption, h2_node)
+
+# Component: PV.
+pv = Component(
+    &quot;PV&quot;,
+    ProfileSource(elec_carrier, cf_pv),
+    [
+        VariableCapacity(&quot;output&quot;, energy),
+        FixedCost(:capex, &quot;output&quot;, energy, 50_000.0),
+    ],
+)
+connect!(snapshot, pv, grid)
+
+# Component: PEM electrolyser converting electricity into hydrogen energy.
+pem = Component(
+    &quot;PEM&quot;,
+    BasicConverter(elec_carrier, h2_carrier; ratio=0.70, modifier=energy), # 70% conversion efficiency on energy
+    [
+        VariableCapacity(&quot;input&quot;, energy), # Electrical input capacity, in MW
+        FixedCost(:capex, &quot;input&quot;, energy, 60_000.0),
+    ],
+)
+connect!(snapshot, pem, grid)
+connect!(snapshot, pem, h2_node)
+
+# Component: battery storage.
+battery = Component(
+    &quot;battery&quot;,
+    BasicStorage(elec_carrier, elec_carrier, elec_carrier, energy; eff_i=0.85),
+    [
+        VariableCapacity(&quot;input&quot;, energy),
+        FixedCost(:capex, &quot;input&quot;, energy, 50_000.0),
+        Duration(6),
+    ],
+)
+connect!(snapshot, battery, grid)
+
+# Component: hydrogen storage with fixed level capacity and no cost.
+h2storage = Component(
+    &quot;H2 storage&quot;,
+    BasicStorage(h2_carrier, h2_carrier, h2_carrier, energy), # No losses
+    [FixedCapacity(&quot;level&quot;, mass, h2load * 24 * 3)], # Three days of storage in the chosen level units
+)
+connect!(snapshot, h2storage, h2_node)
+
+# Optimisation
+optimize!(snapshot, cost(snapshot))
+result = extract(snapshot)</code></pre><p>The capacities of the components in the cost-optimal solution are accessed as before. Their meaning depends on how each component was built:</p><ul><li><code>H2 consumption</code>: hydrogen demand in t/h</li><li><code>H2 storage</code>: maximum hydrogen level in t</li><li><code>PEM</code>: electricity input capacity in MW</li><li><code>PV</code>: electricity output capacity in MW</li><li><code>battery</code>: electricity input capacity in MW</li><li>consumption components do not have capacity</li></ul><p>Expected results:</p><pre><code class="language-julia-repl hljs">julia&gt; table(result, capacity)
+1×6 DataFrame
+ Row │ H2 consumption  H2 storage  PEM      PV       battery  consumption 
+     │ Float64         Float64     Float64  Float64  Float64  Float64     
+─────┼────────────────────────────────────────────────────────────────────
+   1 │            0.0       720.0  1120.84  56674.3  5784.46          0.0
+   
+julia&gt; balance(result, &quot;PEM&quot;, :output, mass; collapse=true, aggregate=true)
+87599.99999999667
+
+julia&gt; balance(result, &quot;PEM&quot;, :output, energy; collapse=true, aggregate=true)
+2.919708000000001e6</code></pre><p>The mass result is the annual hydrogen demand, 10 t/h for 8760 hours. The energy result is the same hydrogen flow converted with the carrier energy density.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../two-power-nodes/">« Two Power Nodes</a><a class="docs-footer-nextpage" href="../combined-heat-power/">Combined Heat and Power »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 14 June 2026 07:51">Sunday 14 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
