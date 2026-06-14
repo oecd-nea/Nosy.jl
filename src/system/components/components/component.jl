@@ -21,6 +21,7 @@ model(c::Component) = c.model
 name(c::Component) = c.name
 behaviors(c::Component) = c.behaviors
 sim(c::Component) = sim((model(c)))
+mesh(c::Component) = mesh(model(c))
 
 hasport(c::Component, pname::String) = hasport(c.s, pname, name(c))
 hasinput(c::Component, pname::String) = _hasinput(c.s, pname, name(c))

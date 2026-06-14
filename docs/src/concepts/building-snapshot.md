@@ -78,8 +78,8 @@ archetype.
 The ports of components are connected to nodes with [`connect!`](@ref). A node
 then collects compatible component ports and applies the local balance rule.
 
-All ports do not must be connected. In particular, `level`s and ports created
-by joint flows with the option `mustconnect=false` will not be connected.
+Not all ports must be connected. In particular, `level`s and ports created by
+joint flows with the option `mustconnect=false` do not need to be connected.
 
 
 ## Nodes
@@ -88,6 +88,12 @@ by joint flows with the option `mustconnect=false` will not be connected.
 constraints enforce the local flow rule. A default node balances input and
 output. A curtailed node allows production to exceed consumption, which is often
 useful for electricity systems with renewable curtailment.
+
+Nodes default to the simulation mesh, but can be given a different balance mesh
+with `Node("name", carrier; mesh=mesh)`. Connected component flows are then
+projected to the node mesh before applying the balance constraint. A node mesh
+must be the same as or coarser than every connected component port mesh. See
+[Component And Node Meshes](time.md#component-and-node-meshes).
 
 Examples of nodes:
   * an electricity bidding zone
@@ -100,6 +106,12 @@ Examples of nodes:
 
 [`Component`](@ref)s are active system elements. A component is built from one
 model archetype and any number of behaviors and joint flows.
+
+Components default to the simulation mesh. Component archetypes accept
+`mesh=...` and build their ports, variables, profiles, costs, and
+component-internal constraints on that mesh. Transmission lines also build
+their flow variables on their component mesh; KVL constraints project AC line
+flows onto a compatible cycle mesh when needed.
 
 
 ## Model Archetype
@@ -449,7 +461,7 @@ cost is an annualized cost, and is expressed in currency / year.
 
 - [`YearlySum`](@ref): creates no variables and adds one constraint on the
   annual sum of a port flow, calculated as trapezoidal integral assuming 
-  [linear trends between instants](#time).
+  [linear trends between instants](time.md).
 
   ```math
   \sum_t \frac{\Delta_{t-1} + \Delta_t}{2} f_t \le B, \qquad
@@ -475,7 +487,9 @@ Joint-flow types are:
 - [`FixedJointFlow`](@ref): creates a new port with the requested name and
   sense, but creates no variables and no constraints. It adds an exogenous input
   or output profile to a component. Use it for fixed auxiliary consumption,
-  fixed emissions, or any additional flow known before optimisation.
+  fixed emissions, or any additional flow known before optimisation. The fixed
+  profile uses the carrier simulation mesh and is projected to the component
+  mesh.
 - [`FreeJointFlow`](@ref): creates a new port with the requested name and sense,
   backed by ``N`` non-negative variables as an extra component flow. Use it when
   the additional flow is a decision variable but is not already represented by

@@ -13,11 +13,12 @@ struct Port{T<:VAL,C<:AbstractCarrier} <: AbstractPort{T}
 end
 
 """
-    Port(c::AbstractCarrier, s::AbstractVector)
-Construct a Port with a time series populated with expressions. Initial "used" state is false.
+    Port(c::AbstractCarrier, s::Stepwise, used::Bool=false)
+
+Construct a Port from a `Stepwise` series. Initial "used" state is false.
 """
-function Port(c::AbstractCarrier, s::AbstractVector, used::Bool=false)
-    return Port(c, Stepwise(_to_affexpr.(s, sim(c).model), sim(c).mesh), RefValue(used))
+function Port(c::AbstractCarrier, s::Stepwise, used::Bool=false)
+    return Port(c, Stepwise(_to_affexpr.(s.data, sim(c).model), mesh(s)), RefValue(used))
 end
 
 # There is not method besides the natural constructor to construct a Port{Float64,C}.
@@ -25,6 +26,7 @@ end
 
 carrier(p::AbstractPort) = p.carrier
 series(p::AbstractPort) = p.series
+mesh(p::AbstractPort) = mesh(series(p))
 sim(p::AbstractPort) = sim(carrier(p))
 
 """
@@ -45,15 +47,11 @@ function set_used!(p::Port)
     setindex!(p.used, true)
 end
 
-Base.similar(p::Port) = typeof(p)(p.carrier, Stepwise(zeros(eltype(p.series.data), length(p.series.data)), p.series.mesh), p.used)
-
-shallowcopy(p::Port) = typeof(p)(p.carrier, Stepwise(p.series.data, p.series.mesh), p.used)
-
 """
 Apply modification to ports.
 """
 
-_mult(s::Stepwise, p::AbstractPort) = Stepwise(s .* series(p), mesh(s))
+_mult(s::Stepwise, p::AbstractPort) = remesh(s, mesh(p)) .* series(p)
 
 
 mass(p::AbstractPort) = _mass(carrierstyle(carrier(p)), p)

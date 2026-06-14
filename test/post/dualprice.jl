@@ -1,12 +1,12 @@
 import Nosy
 using Nosy: energy
 using Nosy: Sim, TimeMesh, Model
-using Nosy: DispatchableSource, Demand
-using Nosy: EnergyCarrier
+using Nosy: DispatchableSource, Demand, BasicConverter
+using Nosy: EnergyCarrier, MassCarrier
 using Nosy: VariableCapacity, FixedCapacity, FixedCost, VariableCost
 using Nosy: UnitCommitment
 using Nosy: Component, Node, Snapshot, connect!, optimize!, extract
-using Nosy: cost
+using Nosy: cost, balance, mass
 using Nosy: _extract
 using Nosy: dualprice, DualPrice, Hourly
 using Nosy: SavedDualPrice
@@ -51,7 +51,7 @@ using Test
         fill(1//2, 6),
         fill(1//1, 3),
         fill(2//1, 3),
-        [1//2, 1//2, 2//1],
+        [1//2, 1//2, 1//1],
     )
         expected = fill(1.0, Int(sum(weights)))
         live_price, extracted_price = constant_variable_cost_dualprices(weights)
@@ -129,6 +129,39 @@ using Test
         @test all(isapprox.(dualprice(en), [5.0, 1.0, 1.0, 1.0, 1.0]))
         e = _extract(en)
         @test all(isapprox.(dualprice(e), [5.0, 1.0, 1.0, 1.0, 1.0]))
+    end
+
+    # mixed component/node meshes: hourly PEM output is balanced against coarse
+    # hydrogen demand at the hydrogen node, and prices are reported per unit.
+    let fine = TimeMesh(fill(1//1, 4)), coarse = TimeMesh(fill(2//1, 2))
+        s = Sim(Model(Optimizer), mesh=fine)
+        set_silent(s.model)
+
+        snap = Snapshot(s)
+
+        power = EnergyCarrier("power", s)
+        h2 = MassCarrier("hydrogen", s; energy=1.0)
+        grid = Node("grid", power)
+        h2node = Node("hydrogen", h2; mesh=coarse, evalprice=true)
+
+        src = Component("src", DispatchableSource(power), [
+            VariableCost(:fuel, "output", energy, 1.0),
+        ])
+        pem = Component("pem", BasicConverter(power, h2; ratio=1.0, modifier=energy, mesh=fine))
+        cons = Component("cons", Demand(h2, [10.0, 10.0]; modifier=mass, mesh=coarse))
+
+        connect!(snap, src, grid)
+        connect!(snap, pem, grid)
+        connect!(snap, pem, h2node)
+        connect!(snap, cons, h2node)
+
+        optimize!(snap, cost(snap))
+        result = extract(snap)
+
+        @test all(isapprox.(balance(result, "hydrogen", :input, mass, collapse=false, aggregate=true), fill(10.0, 4)))
+        @test all(isapprox.(balance(result, "hydrogen", :output, mass, collapse=false, aggregate=true), fill(10.0, 4)))
+        @test all(isapprox.(dualprice(h2node), fill(1.0, 4); atol=1e-7))
+        @test all(isapprox.(dualprice(result.nodes["hydrogen"]), fill(1.0, 4); atol=1e-7))
     end
 
     # no dual price registered

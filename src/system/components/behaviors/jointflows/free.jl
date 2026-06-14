@@ -30,7 +30,7 @@ end
 
 # return a FreeJointFlowBehavior
 function buildjointflow(c::Component, j::FreeJointFlow)
-    f = Stepwise(sim(c), lb=0., ub=Inf64, binary=false, integer=false, basename=name(c) * "_" * j.name * "_" * modifiername(_defaultmodifier(carrierstyle(j.carrier))))
+    f = Stepwise(sim(c), mesh(c), lb=0., ub=Inf64, binary=false, integer=false, basename=name(c) * "_" * j.name * "_" * modifiername(_defaultmodifier(carrierstyle(j.carrier))))
     return FreeJointFlowModel(j, f)
 end
 

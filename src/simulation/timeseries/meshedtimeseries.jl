@@ -12,9 +12,9 @@ iscircular(s::AbstractMeshedTimeSeries) = iscircular(s.mesh)
 AbstractMeshedTimeSeries interface (on top of AbstractTimeSeries)
 """
 
-Base.copy(s::AbstractTimeSeries) = typeof(s)(copy(parent(s)), s.mesh)
-Base.similar(s::AbstractTimeSeries) = typeof(s).name.wrapper(similar(parent(s)), s.mesh)
-Base.zero(s::AbstractTimeSeries{T}) where T = fill!(similar(s), zero(T))
+Base.copy(s::AbstractMeshedTimeSeries) = parenttype(s)(copy(parent(s)), s.mesh)
+Base.similar(s::AbstractMeshedTimeSeries) = parenttype(s)(similar(parent(s)), s.mesh)
+Base.zero(s::AbstractMeshedTimeSeries{T}) where T = parenttype(s)(differentzerovector(T, length(s)), s.mesh)
 
 """
 AbstractMeshedTimeSeries algebra.
@@ -76,9 +76,11 @@ struct Stepwise{T} <: AbstractMeshedTimeSeries{T}
         l = length(v)
         @argcheck l == nsteps(m) || l == nhours(m) "The provided time series does not have the correct number of steps ($(length(v)) instead of $(nsteps(m)) or $(nhours(m)))"
         _data = _toVal(v)
-        if length(v) == nsteps(m)
+        if l == nsteps(m) && l == nhours(m) && !isunit(m) && !all(==(first(_data)), _data)
+            throw(ArgumentError("Ambiguous time series length"))
+        elseif l == nsteps(m)
             return new{eltype(_data)}(_data,m)
-        elseif length(v) == nhours(m)
+        else
             return Stepwise(Hourly(_data, m))
         end
     end
@@ -252,6 +254,119 @@ function Base.sum(h::Hourly{<:GenericAffExpr})
 end
 
 Base.sum(s::Hourly{Float64}) = sum(s.data)
+
+# Cross-mesh operations are only defined from a source mesh to an equal or
+# coarser target mesh with the same horizon and aligned boundaries.
+_mesh_ends(m::TimeMesh) = cumsum(parent(weight(m)))
+
+function _containsmesh(source::TimeMesh, target::TimeMesh)
+    source == target && return true
+    nhours(source) == nhours(target) || return false
+    iscircular(source) == iscircular(target) || return false
+
+    source_ends = _mesh_ends(source)
+    target_ends = _mesh_ends(target)
+    i = firstindex(source_ends)
+    for b in target_ends
+        while i <= lastindex(source_ends) && source_ends[i] < b
+            i += 1
+        end
+        (i <= lastindex(source_ends) && source_ends[i] == b) || return false
+    end
+    return true
+end
+
+# Non-directional mesh compatibility: the meshes share horizon/circularity and
+# one mesh's boundaries are nested in the other's. 
+# Use `_containsmesh(source, target)` when projection direction matters.
+_compatiblemesh(m1::TimeMesh, m2::TimeMesh) = _containsmesh(m1, m2) || _containsmesh(m2, m1)
+
+"""
+    remesh(s::Stepwise, mesh::TimeMesh; method::Symbol=:average)
+
+Remesh a `Stepwise` series onto a compatible coarser mesh.
+If the target `TimeMesh`is the same as s, return `mesh(s)`.
+
+`method=:average` preserves the average value over each target interval.
+`method=:exact` samples the exact source value at each target mesh boundary.
+"""
+function remesh(s::Stepwise, target::TimeMesh; method::Symbol=:average)
+    source = mesh(s)
+    source == target && return s
+    @argcheck _containsmesh(source, target) "Target mesh must have the same horizon, matching circularity, and aligned boundaries with source mesh"
+    if method == :exact
+        return _remesh_exact(s, target)
+    elseif method == :average
+        return _remesh_average(s, target)
+    else
+        throw(ArgumentError("method must be :average or :exact"))
+    end
+end
+
+# samples the exact source value at each target mesh boundary
+function _remesh_exact(s::Stepwise{T}, target::TimeMesh) where T
+    source = mesh(s)
+    source_ends = _mesh_ends(source)
+    target_ends = _mesh_ends(target)
+    v = Vector{T}(undef, nsteps(target))
+
+    for i in eachindex(v)
+        boundary = i == firstindex(v) ? zero(eltype(target_ends)) : target_ends[i - 1]
+        v[i] = s[_source_step_at_boundary(source_ends, boundary)]
+    end
+    return Stepwise(v, target)
+end
+
+# preserves the average value over each target interval
+function _remesh_average(s::Stepwise, target::TimeMesh)
+    source = mesh(s)
+    source_ends = _mesh_ends(source)
+    target_ends = _mesh_ends(target)
+
+    v = [
+        _average_between_bounds(s, source_ends, _target_start(target_ends, i), target_ends[i]) /
+        weight(target, i)
+        for i in eachstep(target)
+    ]
+    return Stepwise(v, target)
+end
+
+_target_start(target_ends, i) = i == firstindex(target_ends) ? zero(eltype(target_ends)) : target_ends[i - 1]
+
+function _source_step_at_boundary(source_ends, boundary)
+    iszero(boundary) && return firstindex(source_ends)
+    si = searchsortedfirst(source_ends, boundary)
+    return si == lastindex(source_ends) ? firstindex(source_ends) : si + 1
+end
+
+# Stepwise values are interpreted as linearly connected point values.
+# Accumulate the trapezoid integral over the source intervals contained in
+# the target interval; the caller divides by the target duration.
+function _average_between_bounds(s::Stepwise{T}, source_ends, start, stop) where T
+    current = start
+    step = _source_step_at_boundary(source_ends, start)
+    total = zero(T)
+
+    while current < stop
+        next_step = iscircular(s) ? step + 1 : min(step + 1, lastindex(s))
+        total += (s[step] + s[next_step]) * weight(mesh(s), step) / 2
+        current += weight(mesh(s), step)
+        step += 1
+    end
+
+    return total
+end
+
+# Node balances are written on the node mesh. Connected flows may use a
+# finer mesh, so project each flow by preserving its average value over
+# every target interval before adding it to the balance expression.
+function _sum_to_mesh(series, target::TimeMesh, ::Type{T}) where T
+    total = Stepwise(differentzerovector(T, nsteps(target)), target)
+    for s in series
+        total.data .= addto!.(total.data, remesh(s, target, method=:average).data)
+    end
+    return total
+end
 
 
 # Broadcasting interface

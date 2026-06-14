@@ -1,7 +1,7 @@
 using Nosy: mass, energy
 using Nosy: Sim, TimeMesh, nvariables, nconstraints
 using Nosy: sim, eachstep, Hourly, Stepwise
-using Nosy: FixedJointFlow
+using Nosy: FixedJointFlow, remesh
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
 using Nosy: Component
@@ -33,6 +33,7 @@ using Test
         ff = FixedJointFlow("ff", mc, :input, Float64.(1:10))
 
         @test ff isa FixedJointFlow
+        @test ff.series.mesh == sim(mc).mesh
 
         c = Component("test", m, [ff])
 
@@ -67,6 +68,26 @@ using Test
         # no variable or constraint should be created here
         @test nvariables(sim(mc)) == 10 # time series for converter model
         @test nconstraints(sim(mc)) == 10 # converter time series lower bounds @ 0
+
+    end
+
+
+    # flow series on a finer mesh is remeshed onto a coarser component mesh
+    let s = tsim()
+
+        coarse = TimeMesh(fill(1//1, 5))
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5])
+        ec = EnergyCarrier("e", s)
+        d = BasicConverter(mc, ec, mesh=coarse)
+        ff = FixedJointFlow("ff", mc, :input, Float64.(1:10))
+
+        c = Component("test", d, [ff])
+        expected = remesh(Stepwise(Float64.(1:10), s.mesh), coarse)
+        actual = _balance(c, :input, mass, collapse=false, aggregate=false)["ff"]
+
+        @test actual.mesh == coarse
+        @test all(actual[i] == expected[i] for i in eachstep(coarse))
+        @test sum(actual) == sum(expected)
 
     end
 

@@ -26,7 +26,12 @@ Not implemented by default:
 portstructure(m::AbstractModel) = m.s
 
 # default implementation of sim
+sim(m::AbstractModelData) = m.sim
 sim(m::AbstractModel) = m.data.sim
+
+# default implementation of component mesh
+mesh(m::AbstractModelData) = throw(AssertionError("No mesh data found for $(string(m))"))
+mesh(m::AbstractModel) = mesh(m.data)
 
 # fallback function for _apply_constraints!
 # used when no specific model constraint is defined
