@@ -113,6 +113,7 @@ dualprice
 ## Export and Import Snapshots
 
 ```@docs
+sanitize
 exportsnapshot
 importsnapshot
 ```

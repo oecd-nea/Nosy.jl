@@ -40,7 +40,7 @@ export extract
 
 export tag!, hastag, getnodes, getcomponents
 
-export exportsnapshot, importsnapshot
+export sanitize, exportsnapshot, importsnapshot
 
 
 include("simulation/_includes.jl")

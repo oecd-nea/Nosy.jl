@@ -225,6 +225,35 @@ function _exportsnapshot_path(path::AbstractString)
 end
 
 """
+    sanitize(snapshot)
+
+Return a lightweight copy of an extracted `Snapshot{Float64}`.
+
+The sanitized snapshot has no JuMP model, keeps only portable option values,
+and replaces captured implementation functions with a Nosy-owned placeholder.
+This function does not serialize the snapshot. The original snapshot is
+restored before this function returns.
+"""
+function sanitize(s::Snapshot{Float64})
+    oldmodel = sim(s).model
+    oldcomponents = _exportsnapshot_sanitize_components!(s)
+    oldsnapshotoptions = _exportsnapshot_sanitize_options!(s.options)
+    oldsimoptions = _exportsnapshot_sanitize_options!(sim(s).options)
+    sim(s).model = nothing
+    try
+        return deepcopy(s)
+    finally
+        sim(s).model = oldmodel
+        _exportsnapshot_restore_components!(s, oldcomponents)
+        _exportsnapshot_restore_options!(s.options, oldsnapshotoptions)
+        _exportsnapshot_restore_options!(sim(s).options, oldsimoptions)
+    end
+end
+
+sanitize(::Snapshot) =
+    throw(ArgumentError("Only Snapshot{Float64} can be sanitized. Call extract on an optimized snapshot first."))
+
+"""
     exportsnapshot(path, snapshot)
     exportsnapshot(io, snapshot)
 
@@ -237,19 +266,7 @@ The original snapshot keeps its model after export. Imported snapshots are meant
 for reporting and post-processing, not for further optimization.
 """
 function exportsnapshot(io::IO, s::Snapshot{Float64})
-    oldmodel = sim(s).model
-    oldcomponents = _exportsnapshot_sanitize_components!(s)
-    oldsnapshotoptions = _exportsnapshot_sanitize_options!(s.options)
-    oldsimoptions = _exportsnapshot_sanitize_options!(sim(s).options)
-    sim(s).model = nothing
-    try
-        serialize(io, s)
-    finally
-        sim(s).model = oldmodel
-        _exportsnapshot_restore_components!(s, oldcomponents)
-        _exportsnapshot_restore_options!(s.options, oldsnapshotoptions)
-        _exportsnapshot_restore_options!(sim(s).options, oldsimoptions)
-    end
+    serialize(io, sanitize(s))
     return nothing
 end
 

@@ -1,3 +1,5 @@
+import Nosy
+
 using Nosy: Sim, TimeMesh, Model
 using Nosy: EnergyCarrier
 using Nosy: DispatchableSource, Demand
@@ -5,7 +7,7 @@ using Nosy: VariableCapacity, FixedCost, VariableCost
 using Nosy: Component, Node, Snapshot, connect!, optimize!
 using Nosy: LinkedJointFlow
 using Nosy: cost, capacity, balance, dualprice, energy
-using Nosy: extract, exportsnapshot, importsnapshot
+using Nosy: extract, sanitize, exportsnapshot, importsnapshot
 using Nosy: getcomponent, getnode, model, sim
 
 using HiGHS: Optimizer
@@ -61,10 +63,30 @@ end
         connect!(snap, cons, en)
         connect!(snap, disp, en)
 
+        @test_throws ArgumentError sanitize(snap)
         @test_throws ArgumentError exportsnapshot(IOBuffer(), snap)
 
         optimize!(snap, cost(snap))
         extracted = extract(snap)
+        extracted.options[:keep_number] = 1.0
+        sim(extracted).options[:keep_string] = "portable"
+        sim(extracted).options[:drop_external] = SnapshotIOClosurePayload.ExternalOption(ones(2))
+
+        sanitized = sanitize(extracted)
+        @test sanitized isa Snapshot{Float64}
+        @test sanitized !== extracted
+        @test sim(sanitized) !== sim(extracted)
+        @test sim(sanitized).model === nothing
+        @test sim(extracted).model !== nothing
+        @test sim(getcomponent(sanitized, "disp")).model === nothing
+        @test sim(getnode(sanitized, "energy")).model === nothing
+        @test sanitized.options[:keep_number] == 1.0
+        @test sim(sanitized).options[:keep_string] == "portable"
+        @test !haskey(sim(sanitized).options, :drop_external)
+        @test sim(extracted).options[:drop_external] isa SnapshotIOClosurePayload.ExternalOption
+        @test_throws ArgumentError model(sim(sanitized))
+        @test isapprox(cost(sanitized), 20.)
+        @test isapprox(capacity(sanitized, "disp"), 10.)
 
         path = tempname()
         exportpath = string(path, ".snap")
@@ -155,10 +177,13 @@ end
         connect!(snap, disp, en)
         optimize!(snap, cost(snap))
         extracted = extract(snap)
+        sanitized = sanitize(extracted)
 
         path = string(tempname(), ".snap")
         try
             @test occursin("SnapshotIOClosurePayload", string(typeof(getcomponent(extracted, "disp").jointflows[1].data.f)))
+            @test !occursin("SnapshotIOClosurePayload", string(typeof(getcomponent(sanitized, "disp").jointflows[1].data.f)))
+            @test cost(sanitized) ≈ 20.
             exportsnapshot(path, extracted)
 
             @test filesize(path) < 1_000_000
