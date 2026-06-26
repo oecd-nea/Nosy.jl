@@ -54,20 +54,26 @@ getcomponent(s::Snapshot, cname::String) = hascomponent(s, cname) ? components(s
 
 _getwithtags(s::Snapshot, f::Function, withtags::Vector{Symbol}, withouttags::Vector{Symbol}) = sort(LittleDict([(k,v) for (k,v) in f(s) if (all(hastag(v, tag) for tag in withtags) && !any(hastag(v, tag) for tag in withouttags))]))
 
+_getcomponentswithtags(s::Snapshot, with::Vector{Pair{Symbol,String}}, without::Vector{Pair{Symbol,String}}) =
+    sort(LittleDict([(k, v) for (k, v) in components(s) if (all(p -> hastag(v, p.first, p.second), with) && !any(p -> hastag(v, p.first, p.second), without))]))
+
 """
-    getcomponents(snapshot; with=Symbol[], without=Symbol[])
+    getcomponents(snapshot; with=Pair{Symbol,String}[], without=Pair{Symbol,String}[])
 
 Return the components in `snapshot`, optionally filtered by tags.
+Each `with` pair requires the component to have the corresponding tag value.
+Each `without` pair excludes components that have the corresponding tag value.
 """
-getcomponents(s::Snapshot; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[]) = _getwithtags(s, components, with, without)
+getcomponents(s::Snapshot; with::Vector{Pair{Symbol,String}}=Pair{Symbol,String}[], without::Vector{Pair{Symbol,String}}=Pair{Symbol,String}[]) =
+    _getcomponentswithtags(s, with, without)
 
 """
-    getcomponents(s::Snapshot, nodename::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[])
+    getcomponents(s::Snapshot, nodename::String; with=Pair{Symbol,String}[], without=Pair{Symbol,String}[])
 
 Return components connected to the node named `nodename` in snapshot `s`.
 The `with` and `without` keywords filter connected components by tags.
 """
-function getcomponents(s::Snapshot, nodename::String; with::Vector{Symbol}=Symbol[], without::Vector{Symbol}=Symbol[])
+function getcomponents(s::Snapshot, nodename::String; with::Vector{Pair{Symbol,String}}=Pair{Symbol,String}[], without::Vector{Pair{Symbol,String}}=Pair{Symbol,String}[])
     d0 = getcomponents(s, with=with, without=without)
     n = getnode(s, nodename)
     d = LittleDict{String,AbstractComponent}()
