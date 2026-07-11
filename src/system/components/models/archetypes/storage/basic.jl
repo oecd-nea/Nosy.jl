@@ -35,11 +35,16 @@ end
 
 mesh(m::BasicStorage) = m.mesh
 
+# Convert the fraction lost in one hour to the fraction retained per timestep.
+_self_discharge_multiplier(self_discharge, mesh) = (1.0 - self_discharge) .^ weight(mesh)
+
 """
     BasicStorage(carrier::AbstractCarrier; eff_i::Float64=1., eff_o::Float64=1., self_discharge::Float64=0., modifier=_defaultmodifier(carrierstyle(carrier)), simplified::Bool=false, mesh=sim(carrier).mesh)
 
 Return a `BasicStorage` model archetype using `carrier` for input, output, and level.
-The model uses input efficiency `eff_i`, output efficiency `eff_o`, and hourly self-discharge rate `self_discharge`.
+The model uses input efficiency `eff_i`, output efficiency `eff_o`, and hourly
+self-discharge fraction `self_discharge`. A timestep of duration `Δt` retains
+`(1 - self_discharge)^Δt` of the initial level.
 The `mesh` argument defines the component mesh used by input, output, level,
 and the storage balance.
 """
@@ -57,7 +62,8 @@ Return a `BasicStorage` model archetype associated with:
   * `modifier`: modifier for all carriers
   * `eff_i`: input efficiency
   * `eff_o`: output efficiency
-  * `self_discharge`: hourly rate of self-discharge
+  * `self_discharge`: fraction of stored energy lost per hour; a timestep of
+    duration `Δt` retains `(1 - self_discharge)^Δt`
   * `simplified`: if `true`, use step flows instead of trapezoidal integration
   * `mesh`: component mesh used by input, output, level, and the storage balance
 
@@ -98,9 +104,9 @@ function _apply_constraints!(c::AbstractComponent, m::BasicStorageModel)
     _out = m.data.modifier(getport(c, "output"))
     _level = m.data.modifier(getport(c, "level"))
     
-    # multiplicator representing 1 - self-discharge, taking timestep duration into account
+    # multiplier representing retained energy, taking timestep duration into account
     # NB multiplicator does not consider variation of level, it is applied to initial level at each step
-    sdmult = exp.(- m.data.self_discharge .* weight(mesh(c)))
+    sdmult = _self_discharge_multiplier(m.data.self_discharge, mesh(c))
 
     # constraint: conservation of modified, efficiency-weighted flows & storage
     if m.data.simplified

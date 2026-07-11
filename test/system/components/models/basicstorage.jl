@@ -119,7 +119,7 @@ using Test
 
         @test all(_c.model.s.level[PortRef("sto", "level")].series[1:5] .== [0., 10., 20., 30., 40.])
         @test all(_balance(_c, :output, energy, collapse=false)[1:4] .== [0., 0., 0., 0.])       
-        l = exp(-0.1 * 0.5) # ratio of energy loss per half-hour
+        l = (1 - 0.1)^0.5 # ratio of energy retained per half-hour
         @test all(isapprox.(_balance(_c, :input, energy, collapse=false)[1:4], [(10 - 0 * l)/0.5, (20 - 10 * l)/0.5, (30 - 20 *l)/0.5, (40 - 30 * l)/0.5]))
         
     end
@@ -129,7 +129,7 @@ using Test
 
         ec = EnergyCarrier("m", s)
 
-        m = BasicStorage(ec, eff_i=1., eff_o=1., simplified=true)
+        m = BasicStorage(ec, eff_i=1., eff_o=1., self_discharge=0.1, simplified=true)
         icap = FixedCapacity("input", energy, 40.)
         ocap = FixedCapacity("output", energy, 40.)
         lcap = FixedCapacity("level", energy, 40.)
@@ -143,8 +143,8 @@ using Test
         JuMP.optimize!(sim(c).model)
         _c = _extract(c)
 
-        @test all(isapprox.(_balance(_c, :input, energy, collapse=false), [10., 0., 0., 0.]; atol=1e-6))
-        @test all(isapprox.(_balance(_c, :output, energy, collapse=false), [0., 0., 10., 0.]; atol=1e-6))
+        @test all(isapprox.(_balance(_c, :input, energy, collapse=false), [10., 1.9, 0., 0.]; atol=1e-6))
+        @test all(isapprox.(_balance(_c, :output, energy, collapse=false), [0., 0., 8.1, 0.]; atol=1e-6))
 
     end
 

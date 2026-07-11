@@ -26,6 +26,8 @@ mesh(m::LazyStorage) = m.mesh
 
 Return a `LazyStorage` model archetype with a level of carrier `level`.
 The lazy storage constraint is applied to the level and associated joint flows after applying `modifier` to flows.
+`self_discharge` is the fraction of stored energy lost per hour. For a timestep
+of duration `Δt`, the fraction retained is `(1 - self_discharge)^Δt`.
 Storage is periodic: the step after the last step is the first step.
 """
 function LazyStorage(level::AbstractCarrier; modifier::Function=defaultmodifier, eff=nothing, self_discharge=0., simplified::Bool=false, mesh::RTimeMesh=sim(level).mesh)
@@ -88,9 +90,9 @@ function _apply_constraints!(c::AbstractComponent, m::LazyStorageModel)
     _out = sum(_geteff(m, k) * v for (k,v) in _balance(c, :output, mod, collapse=false, aggregate=false))
     _lev = mod(first(values(_level(m.s).d)))
 
-    # multiplicator representing 1 - self-discharge, taking timestep duration into account
+    # multiplier representing retained energy, taking timestep duration into account
     # NB multiplicator does not consider variation of level, it is applied to initial level at each step
-    sdmult = exp.(- m.data.self_discharge .* weight(mesh(c)))
+    sdmult = _self_discharge_multiplier(m.data.self_discharge, mesh(c))
 
     # constraint: conservation of modified, efficiency-weighted flows & storage
     if m.data.simplified
