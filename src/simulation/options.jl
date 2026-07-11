@@ -8,12 +8,12 @@ function _defaultoptions()
         
         # scaling of constraints
         :scalingtarget => 1, # rescale all constraints so that minimum * maximum factors (excl. constant) is equal to that
-        :expthreshold => 1E-9, # constraints terms with absolute value of factor lower than that are removed
+        :expthreshold => 0., # relative threshold for removing constraint terms; zero keeps every term
         
         # cleaning objective function
-        :objthreshold => 1E-9, # in the objective expression, remove terms with factor lower than that
+        :objthreshold => 0., # relative threshold for filtering and rounding objective terms; zero keeps the objective exact
 
         # fixing unimportant variables
-        :boundthreshold => 1E-3, # positive variables with upper bound lower than that are fixed to zero
+        :boundthreshold => 0., # positive variables with upper bound at most that are fixed to zero; zero disables cleanup
     )
 end

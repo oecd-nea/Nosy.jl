@@ -60,7 +60,7 @@ end
     # Tiny coefficients are dropped before the row is scaled
     let
         inner = MOI.Utilities.Model{Float64}()
-        optimizer = ScaledOptimizer(inner; target=1e5)
+        optimizer = ScaledOptimizer(inner; target=1e5, expthreshold=1e-9)
         x = MOI.add_variable(optimizer)
         y = MOI.add_variable(optimizer)
 
@@ -133,7 +133,11 @@ end
 
     # Scaling and removed constraint terms are reported once, in total, at optimize time
     let
-        model = JuMP.Model(ScaledOptimizer(HiGHS.Optimizer; target=1e5))
+        model = JuMP.Model(ScaledOptimizer(
+            HiGHS.Optimizer;
+            target=1e5,
+            expthreshold=1e-9,
+        ))
         JuMP.set_silent(model)
         JuMP.@variable(model, x >= 0)
         JuMP.@variable(model, y >= 0)
@@ -189,10 +193,30 @@ end
     let
         sim = Sim(HiGHS.Optimizer; mesh=TimeMesh(fill(1 // 1, 1)))
         @test occursin("ScaledOptimizer", JuMP.solver_name(sim.model))
-        @test sim.options[:boundthreshold] == 1e-3
-        @test sim.options[:expthreshold] == 1e-9
+        @test sim.options[:boundthreshold] == 0
+        @test sim.options[:expthreshold] == 0
         @test sim.options[:scalingtarget] == 1
-        @test sim.options[:objthreshold] == 1e-9
+        @test sim.options[:objthreshold] == 0
+    end
+
+    # Default row scaling preserves tiny coefficients
+    let
+        inner = MOI.Utilities.Model{Float64}()
+        optimizer = ScaledOptimizer(inner)
+        x = MOI.add_variable(optimizer)
+        y = MOI.add_variable(optimizer)
+        f = MOI.ScalarAffineFunction(
+            [
+                MOI.ScalarAffineTerm(1e-12, x),
+                MOI.ScalarAffineTerm(1.0, y),
+            ],
+            0.0,
+        )
+        c = MOI.add_constraint(optimizer, f, MOI.LessThan(2.0))
+
+        unscaled_f = MOI.get(optimizer, MOI.ConstraintFunction(), c)
+        @test length(unscaled_f.terms) == 2
+        @test unscaled_f ≈ f
     end
 
     # Sim optimizer constructor keyword arguments override simulation options

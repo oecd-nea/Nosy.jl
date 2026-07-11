@@ -205,9 +205,11 @@ storage-balance constraints. In the default linear-in-time formulation:
 \frac{y_{t+1}+y_t}{\eta_o}\right),
 ```
 
-where ``s_t`` is the self-discharge multiplier, ``\eta_i`` is input
-efficiency, and ``\eta_o`` is output efficiency. With `simplified=true`, the
-right-hand side uses only the current-step flows:
+where ``s_t = (1-d)^{\Delta_t}``, ``d`` is the hourly `self_discharge`
+fraction, ``\eta_i`` is input efficiency, and ``\eta_o`` is output efficiency.
+For example, `self_discharge=0.1` retains 90% after one hour and 81% after two
+hours. With `simplified=true`, the right-hand side uses only the current-step
+flows:
 
 ```math
 \ell_{t+1} - s_t \ell_t =

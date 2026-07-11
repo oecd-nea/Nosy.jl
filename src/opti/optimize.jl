@@ -6,6 +6,8 @@ using JuMP: GenericAffExpr, MIN_SENSE, all_variables, upper_bound
 
 # remove terms with coefficients below a threshold in an expression
 function filterexpression!(exp::GenericAffExpr, threshold::Number) # relative threshold
+    threshold >= 0 || throw(ArgumentError("objective threshold must be nonnegative"))
+    iszero(threshold) && return nothing
     if !isempty(exp.terms)
         _max = maximum(abs.(values(exp.terms)))
         sd = Int(round(-log10(threshold)))
@@ -26,7 +28,10 @@ function filterexpression!(exp::GenericAffExpr, threshold::Number) # relative th
         end
     end
 end
-filterexpression!(exp::Number, threshold::Number) = nothing
+function filterexpression!(exp::Number, threshold::Number)
+    threshold >= 0 || throw(ArgumentError("objective threshold must be nonnegative"))
+    return nothing
+end
 
 function _variable_display_name(v)
     n = JuMP.name(v)
@@ -36,6 +41,8 @@ end
 # fix variables to zero when upper bound is below threshold
 function cleanup_bounds!(s::Snapshot)
     threshold = sim(s).options[:boundthreshold]
+    threshold >= 0 || throw(ArgumentError("bound threshold must be nonnegative"))
+    iszero(threshold) && return nothing
     fixed_variables = 0
     fixed_variable_names = String[]
     for v in all_variables(s.sim.model)

@@ -27,6 +27,22 @@ using Test
         @test JuMP.coefficient(exp, y) == 0.0
     end
 
+    # exact defaults preserve small objective terms and small positive bounds
+    let s = Sim(Model(); mesh=TimeMesh(fill(1//1, 1)))
+        snap = Snapshot(s)
+        JuMP.@variable(s.model, 0 <= tiny_bound <= 1e-4)
+        JuMP.@variable(s.model, x)
+        JuMP.@variable(s.model, y)
+        exp = 1.23456789012345 * x + 1e-12 * y
+
+        cleanup_bounds!(snap)
+        set_objective!(snap, exp)
+
+        @test !JuMP.is_fixed(tiny_bound)
+        @test JuMP.coefficient(exp, x) == 1.23456789012345
+        @test JuMP.coefficient(exp, y) == 1e-12
+    end
+
     # low upper-bound cleanup reports removed variables
     let s = Sim(Model(); mesh=TimeMesh(fill(1//1, 1)))
         s.options[:boundthreshold] = 1e-3
@@ -90,7 +106,11 @@ using Test
 
     # optimizing an already-finalized snapshot reuses finalization without
     # adding duplicate constraints
-    let s = Sim(Model(Optimizer), mesh=TimeMesh(fill(1//1, 1)))
+    let s = Sim(
+        Model(Optimizer);
+        mesh=TimeMesh(fill(1//1, 1)),
+        boundthreshold=1e-3,
+    )
         set_silent(s.model)
         snap = Snapshot(s)
 

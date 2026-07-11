@@ -16,13 +16,15 @@ JuMP.set_string_names_on_creation(model(sim(snapshot)), false)
 ```
 
 The levers below mostly target solver time by reducing model size, dropping
-irrelevant tiny coefficients, or improving numerical conditioning.
+irrelevant tiny coefficients, or improving numerical conditioning. Nosy's
+defaults preserve the mathematical model exactly.
 
 ## Objective Cleanup
 
-[`optimize!`](@ref) filters small objective coefficients before sending the
+[`optimize!`](@ref) can filter small objective coefficients before sending the
 objective to JuMP. The threshold is read from the simulation option
-`objthreshold`, whose default value is `1e-9`.
+`objthreshold`. Its default is `0`, which preserves every coefficient without
+rounding. Set a positive threshold to opt in to filtering and rounding:
 
 ```julia
 using Nosy
@@ -52,11 +54,14 @@ s = Sim(HiGHS.Optimizer; constraint_scaling=true)
 The bridge rewrites scalar affine constraints before they reach the solver. For
 each constraint row, it:
 
-- removes coefficients, left-hand-side constants, and right-hand-side bounds
-  below `expthreshold * maxabs`, where `maxabs` is the largest finite
-  coefficient in that row;
 - scales the row so that the geometric mean of the smallest and largest finite
   nonzero absolute values is equal to `scalingtarget`.
+
+This row scaling is enabled by default and is mathematically lossless. Setting
+`expthreshold` to a positive value additionally removes coefficients,
+left-hand-side constants, and right-hand-side bounds below
+`expthreshold * maxabs`, where `maxabs` is the largest finite coefficient in
+that row.
 
 The defaults are:
 
@@ -64,7 +69,7 @@ The defaults are:
 s = Sim(
     HiGHS.Optimizer;
     constraint_scaling=true,
-    expthreshold=1e-9,
+    expthreshold=0.0,
     scalingtarget=1.0,
 )
 ```
@@ -82,8 +87,9 @@ s = Sim(HiGHS.Optimizer; constraint_scaling=false)
 
 ## Small Bound Cleanup
 
-Nosy can also fix nonnegative variables to zero when their upper bound is below
-`boundthreshold`. The default value is `1e-3`.
+Nosy can also fix nonnegative variables to zero when their upper bound is at
+most `boundthreshold`. The default is `0`, which disables this cleanup. Set a
+positive threshold to opt in:
 
 ```julia
 s = Sim(HiGHS.Optimizer; boundthreshold=1e-4)

@@ -381,14 +381,14 @@ function MOI.set(
 end
 
 """
-    ScaledOptimizer(optimizer_constructor; target = 1e5, expthreshold = 1e-9)
+    ScaledOptimizer(optimizer_constructor; target = 1, expthreshold = 0)
 
 Return an optimizer factory that scales scalar affine constraints before they
 are passed to `optimizer_constructor`.
 
 Scalar affine constraints in `LessThan`, `GreaterThan`, `EqualTo`, and
-`Interval` sets are scaled. Before scaling each row, finite coefficients,
-left-hand-side constants, and right-hand-side bounds smaller than
+`Interval` sets are scaled. When `expthreshold` is positive, finite
+coefficients, left-hand-side constants, and right-hand-side bounds smaller than
 `expthreshold` times the largest finite coefficient in that row are dropped.
 The geometric mean of the smallest and largest finite nonzero absolute values
 among the remaining left-hand-side coefficients and right-hand-side bounds is
@@ -474,7 +474,7 @@ function MOI.get(
 end
 
 """
-    scaled_model(optimizer_constructor; target = 1e5, expthreshold = 1e-9, kwargs...)
+    scaled_model(optimizer_constructor; target = 1, expthreshold = 0, kwargs...)
 
 Create a `JuMP.Model` whose optimizer is wrapped in [`ScaledOptimizer`](@ref).
 Constraints added with JuMP's `@constraint` macro are therefore scaled before
