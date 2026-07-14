@@ -76,6 +76,8 @@ function FleetUnitCommitmentBehavior(c::Component{T}, b::UnitCommitment, cap::Ab
     for i in eachindex(b.downtime)
         shutdownselector[i] = Stepwise(s, m, ub=umax, integer=b.integer, basename=name(c) * "_sds" * string(i), mask=sdm[i]) # integer shutdown
     end
+    # Keep aggregate shutdown as an expression so no additional variable or
+    # selector-linking equality is needed.
     shutdown = sum(shutdownselector)
 
 
@@ -361,19 +363,6 @@ function _apply_constraints_uc_mindowntime!(c::Component, b::AbstractFleetUnitCo
 end
 
 
-function _apply_constraints_uc_shutdownselector!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
-    # this constraint is only meaningful if there are multiple shutdown selectors
-    if length(b.shutdownselector) > 1
-        lm = lowermodel(sim(c))
-        shutdownsum = sum(b.shutdownselector)
-        for step in eachindex(b.shutdown)
-            if !iszero(shutdownsum[step] - b.shutdown[step])
-                @constraint(lm, shutdownsum[step] == b.shutdown[step])
-            end
-        end
-    end
-end
-
 function _apply_constraint_su_sd(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     # cannot shutdown more units than committed
     lm = lowermodel(sim(c))
@@ -393,7 +382,6 @@ function _apply_constraints!(c::Component, b::AbstractFleetUnitCommitmentBehavio
     _apply_constraint_uc_units!(c, b)
     _apply_constraints_uc_minuptime!(c, b)
     _apply_constraints_uc_mindowntime!(c, b)
-    _apply_constraints_uc_shutdownselector!(c,b)
     _apply_constraint_su_sd(c, b)
 end
 

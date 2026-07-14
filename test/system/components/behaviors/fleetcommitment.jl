@@ -139,6 +139,21 @@ Some notes and observations:
         @test nconstraints(sim(m)) == 33
     end
 
+    # Aggregate shutdown is the selector sum by construction. Multiple
+    # downtime alternatives therefore require neither an aggregate shutdown
+    # variable nor selector-linking equalities.
+    let
+        cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        uc = UnitCommitment("input", 1., downtime=[0., 1.], integer=true)
+
+        m = makecomp([cap, uc])
+        uc_behavior = first(getbehaviors(m, FleetUnitCommitmentBehavior))
+        selector_sum = sum(uc_behavior.shutdownselector)
+
+        @test nvariables(sim(m)) == 50
+        @test all(iszero.((uc_behavior.shutdown - selector_sum).data))
+    end
+
     # Commitment must be coupled to the capacity actually built even when all
     # shutdown variables are masked out. Without the explicit units constraint,
     # the minimum-downtime rows disappear and state could reach the build upper
