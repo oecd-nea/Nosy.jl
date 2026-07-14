@@ -59,7 +59,7 @@ struct FleetUnitCommitmentFromIniBehavior{T<:VAL,M<:Function} <: AbstractFleetUn
     shutdownselector::Vector{Stepwise{Float64}}
     state::Stepwise{Float64}
 
-    # uc variables
+    # UC variable-dispatch expression
     variable::Stepwise{T}
 end
 
@@ -85,25 +85,27 @@ function buildbehavior(c::Component, b::FleetUnitCommitmentFromIni)
 end
 
 function FleetUnitCommitmentFromIniBehavior(c::Component, b::FleetUnitCommitmentFromIni, cap::AbstractCapacityBehavior)
-    s = sim(c)
-    m = mesh(c)
+    unitsize = _unitsize(cap)
+    variable = _variable_dispatch(
+        c,
+        b,
+        cap.data.modifier,
+        unitsize,
+        b.series_startup,
+        b.series_shutdown,
+        b.series_state,
+    )
     
-    umax = _nbunitsmax(cap) # max number of units
-    
-    if b.minratio == 1.
-        vmax = 0. # remove ambiguity when minratio == 1 and umax == Inf
-    else
-        vmax = Float64(umax * _unitsize(cap) * (1 - b.minratio))  # max variable output
-    end
-
-    # if there is no variable part for the output, we don't generate a variable for it
-    if iszero(vmax)
-        variable = Stepwise(zeros(exptype(s), nsteps(m)), m) # warning: all elements link to same GenericAffExpr. This is on purpose, to reduce allocation.
-    else
-        variable = Stepwise(s, m, lb=0, ub=vmax, basename=name(c) * "_var")
-    end
-    
-    return FleetUnitCommitmentFromIniBehavior(b, cap.data.modifier, _unitsize(cap), b.series_startup, b.series_shutdown, b.series_shutdown_selector, b.series_state, variable)
+    return FleetUnitCommitmentFromIniBehavior(
+        b,
+        cap.data.modifier,
+        unitsize,
+        b.series_startup,
+        b.series_shutdown,
+        b.series_shutdown_selector,
+        b.series_state,
+        variable,
+    )
 end
 
 # constraints are defined by AbstractFleetUnitCommitmentBehavior

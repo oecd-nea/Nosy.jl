@@ -194,22 +194,22 @@ Some notes and observations:
         # variables
         # 10 for converter
         # 0 for capacity (fixed)
-        # 40 for UC (startup, shutdown, state, variable). NB minratio is >0 so variable flow is indeed associated w a variable
-        @test nvariables(sim(m)) == 50
+        # 30 for UC (startup, shutdown, state); variable dispatch reuses the converter flow
+        @test nvariables(sim(m)) == 40
         
         # constraints
         # 10 for converter lower bound
         # 10 for capacity
-        # 40 for uc attributes lower bounds (startup, shutdown, state, variable)
-        # 40 for uc attributes upper bounds (startup, shutdown, state, variable)
+        # 30 for uc variable lower bounds (startup, shutdown, state)
+        # 30 for uc variable upper bounds (startup, shutdown, state)
         # 10 for uc switch constraint
+        # 10 for uc variable dispatch lower bound
         # 20 for uc startup and shutdown endpoint flow constraints
         # 0 for uc units constraint (fixed capacity is enforced by the state variable upper bound)
         # 0 for uc min uptime constraint (uptime=0)
         # 10 for uc min downtime constraint (downtime=0 but startup and shutdown are actually included and take at least one step each - even when duration is 0)
-        # 10 for uc flow constraint
         # 10 for shutdown <= uc constraint
-        @test nconstraints(sim(m)) == 160
+        @test nconstraints(sim(m)) == 140
         
         # test: maximum capacity can be reached, even with constraint of 0 flow at some point
         # no startup / shutdown constraints
@@ -442,24 +442,24 @@ Some notes and observations:
         # variables
         # 10 for converter
         # 1 for capacity
-        # 40 for UC (startup, shutdown, state, variable). NB minratio is >0 so variable flow is indeed associated w a variable
-        @test nvariables(sim(m)) == 51
+        # 30 for UC (startup, shutdown, state); variable dispatch reuses the converter flow
+        @test nvariables(sim(m)) == 41
         
         # constraints
         # 10 for converter lower bound
         # 2 for capacity lb and ub
         # 10 for capacity
-        # 40 for uc attributes lower bounds (startup, shutdown, state, variable)
-        # 40 for uc attributes upper bounds (startup, shutdown, state, variable)
+        # 30 for uc variable lower bounds (startup, shutdown, state)
+        # 30 for uc variable upper bounds (startup, shutdown, state)
         # 30 for uc attributes integer constraint (startup, shutdown, state)
         # 10 for uc switch constraint
+        # 10 for uc variable dispatch lower bound
         # 20 for uc startup and shutdown endpoint flow constraints
         # 10 for uc units constraint (state cannot exceed built capacity)
         # 0 for uc min uptime constraint (uptime=0)
         # 10 for uc min downtime constraint
-        # 10 for uc flow constraint
         # 10 for shutdown <= uc constraint
-        @test nconstraints(sim(m)) == 202
+        @test nconstraints(sim(m)) == 182
 
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 5.)
@@ -723,7 +723,7 @@ Some notes and observations:
         _m = _extract(m)
         # _uctable(_m)
         @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 2.5, 2.8125, 1.875, 0.9375]))
-        @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
+        @test all(isapprox.(_up(_m.behaviors[2]), [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.], atol=1E-8))
     end
    
 
@@ -956,7 +956,7 @@ Some notes and observations:
     @testset "Fleet unit commitment from ini" begin
 
         # FromIni fixes the discrete UC trajectory from an extracted model and
-        # rebuilds only the continuous variable part.
+        # reuses the rebuilt component's dispatch variable.
         function make_fromini(minratio)
             cap = FixedCapacity("input", mass, 10., unitsize=5.)
             uc = UnitCommitment("input", minratio, startup=1., shutdown=1., uptime=0., downtime=0., integer=true)
@@ -1004,7 +1004,7 @@ Some notes and observations:
             @test rebuilduc.shutdown === ucfromini.series_shutdown
             @test rebuilduc.shutdownselector === ucfromini.series_shutdown_selector
             @test rebuilduc.state === ucfromini.series_state
-            @test nvariables(sim(rebuilt)) == 20
+            @test nvariables(sim(rebuilt)) == 10
             @test all(_up(rebuilduc) .== _up(ini.behaviors[2]))
         end
 
@@ -1015,7 +1015,9 @@ Some notes and observations:
 
             @test rebuilduc isa Nosy.FleetUnitCommitmentFromIniBehavior
             @test nvariables(sim(rebuilt)) == 10
-            @test all(iszero.(rebuilduc.variable.data))
+            JuMP.set_silent(sim(rebuilt).model)
+            JuMP.optimize!(sim(rebuilt).model)
+            @test all(isapprox.(JuMP.value.(rebuilduc.variable.data), 0.; atol=1E-8))
             @test all(_up(rebuilduc) .== _up(ini.behaviors[2]))
         end
     end

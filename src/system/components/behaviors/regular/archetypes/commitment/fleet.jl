@@ -24,7 +24,7 @@ struct FleetUnitCommitmentBehavior{T<:VAL,M<:Function} <: AbstractFleetUnitCommi
     modifier::M
     unitsize::Float64
 
-    # uc variables
+    # UC variables and expressions
     startup::Stepwise{T}
     shutdown::Stepwise{T}
     shutdownselector::Vector{Stepwise{T}}
@@ -35,7 +35,8 @@ end
 function FleetUnitCommitmentBehavior(c::Component{T}, b::UnitCommitment, cap::AbstractCapacityBehavior) where T
     s = sim(c)
     m = mesh(c)
-    
+    modifier = cap.data.modifier
+    unitsize = _unitsize(cap)
 
     umax = _nbunitsmax(cap) # max number of units
     # check inconsistency between capacity and number of units
@@ -99,20 +100,20 @@ function FleetUnitCommitmentBehavior(c::Component{T}, b::UnitCommitment, cap::Ab
         end
     end
 
-    if b.minratio == 1.
-        vmax = 0. # remove ambiguity when minratio == 1 and umax == Inf
-    else
-        vmax = Float64(umax * _unitsize(cap) * (1 - b.minratio))  # max variable output
-    end
+    # Reuse the port dispatch instead of introducing a second continuous
+    # variable and an equality linking it to the UC flow decomposition.
+    variable = _variable_dispatch(c, b, modifier, unitsize, startup, shutdown, state)
 
-    # if there is no variable part for the output, we don't generate a variable for it
-    if iszero(vmax)
-        variable = Stepwise(zeros(exptype(s), nsteps(m)), m) # warning: all elements link to same GenericAffExpr. This is on purpose, to reduce allocation.
-    else
-        variable = Stepwise(s, m, lb=0, ub=vmax, basename=name(c) * "_var") # deactivate ub=ub(vmax) because constraint is mandatory
-    end
-
-    return FleetUnitCommitmentBehavior(b, cap.data.modifier, _unitsize(cap), startup, shutdown, shutdownselector, state, variable)
+    return FleetUnitCommitmentBehavior(
+        b,
+        modifier,
+        unitsize,
+        startup,
+        shutdown,
+        shutdownselector,
+        state,
+        variable,
+    )
 end
 
 """
@@ -140,20 +141,23 @@ function _lin_ratio_su(sud, timebeforesu)
     end
 end
 
-function _su(b::AbstractFleetUnitCommitmentBehavior{T}) where T
-    m = b.startup.mesh # mesh
+function _su(data::AbstractUnitCommitmentData, unitsize::Float64, startup::Stepwise{T}) where T
+    m = startup.mesh
     _su = Stepwise(differentzerovector(T, nsteps(m)), m)
     for step in eachindex(_su)
         local deltah = 0//1
         local step2 = step - 1
-        while deltah < b.data.startup        
+        while deltah < data.startup
             deltah += weight(m, step2)
-            _su[step2] += b.startup[step] * b.unitsize * b.data.startupratio * _lin_ratio_su(b.data.startup, deltah)
+            ratio = _lin_ratio_su(data.startup, deltah)
+            _su[step2] += startup[step] * unitsize * data.startupratio * ratio
             step2 = step2 - 1
         end
     end
     return _su
 end
+
+_su(b::AbstractFleetUnitCommitmentBehavior) = _su(b.data, b.unitsize, b.startup)
 
 # nb the durations are in hours, not in steps
 # the time intervals can be arbitrarily small
@@ -165,19 +169,29 @@ function _lin_ratio_sd(sdd, timeaftersd)
     end
 end
 
-function _sd(b::AbstractFleetUnitCommitmentBehavior{T}) where T
-    m = b.startup.mesh # mesh
+function _sd(data::AbstractUnitCommitmentData, unitsize::Float64, shutdown::Stepwise{T}) where T
+    m = shutdown.mesh
     _sd = Stepwise(differentzerovector(T, nsteps(m)), m)
     for step in eachindex(_sd)
         local deltah = 0//1
         local step2 = step + 1
-        while deltah < b.data.shutdown     
+        while deltah < data.shutdown
             deltah += weight(m, step2)
-            _sd[step2] += b.shutdown[step] * b.unitsize * b.data.shutdownratio * _lin_ratio_sd(b.data.shutdown, deltah)
+            ratio = _lin_ratio_sd(data.shutdown, deltah)
+            _sd[step2] += shutdown[step] * unitsize * data.shutdownratio * ratio
             step2 = step2 + 1
         end
     end
     return _sd
+end
+
+_sd(b::AbstractFleetUnitCommitmentBehavior) = _sd(b.data, b.unitsize, b.shutdown)
+
+function _variable_dispatch(c::Component, data::AbstractUnitCommitmentData, modifier::Function,
+    unitsize::Float64, startup::Stepwise, shutdown::Stepwise, state::Stepwise)
+    flow = modifier(getport(c, data.pname))
+    committed = data.minratio * unitsize * state
+    return flow - committed - _su(data, unitsize, startup) - _sd(data, unitsize, shutdown)
 end
 
 _flow(b::AbstractFleetUnitCommitmentBehavior) = _com(b) + _var(b) + _su(b) + _sd(b)
@@ -218,11 +232,10 @@ end
 """
 Unit commitment constraints:
   * switch: next step in function of previous step and startup/shutdown
-  * variable flow: variable flow is less than the maximum variable flow
+  * variable flow: residual dispatch is between zero and its endpoint-aware maximum
   * units: number of units is less than the maximum number of units
   * min uptime: minimum uptime constraint
   * min downtime: minimum downtime constraint
-  * flow: the flow of the port is equal to the flow calculated through unit commitment
 
 NB the startup and shutdown duration are not constraints, they are used to compute the flow.
 """
@@ -237,19 +250,28 @@ function _apply_constraint_uc_switch!(c::Component, b::AbstractFleetUnitCommitme
     end
 end
 
-# Not applied if minratio is 1 (no variable part of flow).
-#
-# For a regular committed unit, variable flow can span the full range between
-# minimum and maximum output. Units completing startup or beginning shutdown
-# are instead capped by their respective endpoint ratios. Startup and shutdown
-# cuts are kept separate because the same unit may complete startup and begin
-# shutdown in one timestep. A regular bound is added only where neither cut is
-# active, avoiding redundant rows when event variables are masked out.
+# At minratio equal to one, the residual dispatch is fixed to zero. Otherwise,
+# it can span the range between minimum and maximum output for a regular
+# committed unit. Units completing startup or beginning shutdown are instead
+# capped by their respective endpoint ratios. Startup and shutdown cuts are
+# kept separate because the same unit may complete startup and begin shutdown
+# in one timestep. A regular bound is added only where neither cut is active,
+# avoiding redundant rows when event variables are masked out.
 function _apply_constraint_uc_variable_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
-    if b.data.minratio < 1
-        lm = lowermodel(sim(c))
+    lm = lowermodel(sim(c))
+    if b.data.minratio == 1.
+        for variable_dispatch in b.variable
+            if !iszero(variable_dispatch)
+                @constraint(lm, variable_dispatch == 0.)
+            end
+        end
+    else
         max_variable_flow = b.state * (b.unitsize * (1. - b.data.minratio))
         for step in eachindex(b.variable)
+            if !iszero(b.variable[step])
+                @constraint(lm, b.variable[step] >= 0.)
+            end
+
             base_margin = b.variable[step] - max_variable_flow[step]
             has_endpoint_cut = false
 
@@ -352,18 +374,6 @@ function _apply_constraints_uc_shutdownselector!(c::Component, b::AbstractFleetU
     end
 end
 
-function _apply_constraints_uc_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
-    lm = lowermodel(sim(c))
-    flow = b.modifier(getport(c, b.data.pname))
-    ucflow = _flow(b)
-    for step in eachindex(flow)
-        if !iszero(flow[step] - ucflow[step])
-            @constraint(lm, flow[step] == ucflow[step])
-        end
-    end
-end
-
-
 function _apply_constraint_su_sd(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     # cannot shutdown more units than committed
     lm = lowermodel(sim(c))
@@ -384,7 +394,6 @@ function _apply_constraints!(c::Component, b::AbstractFleetUnitCommitmentBehavio
     _apply_constraints_uc_minuptime!(c, b)
     _apply_constraints_uc_mindowntime!(c, b)
     _apply_constraints_uc_shutdownselector!(c,b)
-    _apply_constraints_uc_flow!(c, b)
     _apply_constraint_su_sd(c, b)
 end
 
