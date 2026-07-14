@@ -74,15 +74,16 @@ end
 function _apply_constraints_ramping_uc!(c::Component, b::RampingBehavior, uc::FleetUnitCommitmentBehavior)
     var = _var(uc) # variable flow from uc, in the uc modifier
     car = getport(c, b.data.pname).carrier
-    diff = (shift(var,1) - var) .* b.data.modifier(car) ./ uc.modifier(car) # conversion of diff to ramping carrier
+    conversion = b.data.modifier(car) ./ uc.modifier(car)
+    diff = (shift(var,1) - var) .* conversion # conversion of diff to ramping carrier
     if b.data.sense == :up
-        @constraint(lowermodel(sim(c)), 
-            diff.data <= uc.state .* weight(mesh(c)) * b.data.val
-        )
+        maxramp = uc.state .* weight(mesh(c)) * b.data.val
+        startup_allowance = shift(uc.startup, 1) .* conversion * (uc.unitsize * (uc.data.startupratio - uc.data.minratio))
+        @constraint(lowermodel(sim(c)), diff.data .<= maxramp.data .+ startup_allowance.data)
     elseif b.data.sense == :down
-        @constraint(lowermodel(sim(c)),
-            diff.data >= - shift(uc.state,1) .* weight(mesh(c)) * b.data.val
-        )
+        maxramp = shift(uc.state, 1) .* weight(mesh(c)) * b.data.val
+        shutdown_allowance = uc.shutdown .* conversion * (uc.unitsize * (uc.data.shutdownratio - uc.data.minratio))
+        @constraint(lowermodel(sim(c)), diff.data .>= .-maxramp .- shutdown_allowance.data)
     else
         throw(AssertionError("this portion of code should never be reached"))
     end

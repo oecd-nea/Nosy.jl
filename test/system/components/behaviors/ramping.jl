@@ -2,6 +2,7 @@ using Nosy: energy
 using Nosy: Sim, TimeMesh, sim
 using Nosy: FixedCapacity
 using Nosy: UnitCommitment
+using Nosy: FleetUnitCommitmentBehavior, getbehaviors
 using Nosy: Ramping
 using Nosy: BasicConverter
 using Nosy: MassCarrier, EnergyCarrier
@@ -143,7 +144,7 @@ using Test
         c = makecomp([
             Ramping("output", :up, 0.2), 
             FixedCapacity("output", energy, 5., unitsize=1.),
-            UnitCommitment("output", 0.5, integer=true)    
+            UnitCommitment("output", 0.5, shutdownratio=1., integer=true)
         ])
         
         @constraint(sim(c).model, _balance(c, :output, energy, collapse=false)[1] == 0.)
@@ -170,7 +171,7 @@ using Test
         c = makecomp([
             Ramping("output", :down, 0.2), 
             FixedCapacity("output", energy, 5., unitsize=1.),
-            UnitCommitment("output", 0.5)    
+            UnitCommitment("output", 0.5, startupratio=1.)
         ])
         
         @constraint(sim(c).model, _balance(c, :output, energy, collapse=false)[1] == 5.)
@@ -197,7 +198,7 @@ using Test
         c = makecomp([
             Ramping("output", :up, 0.2), 
             FixedCapacity("output", energy, 5., unitsize=1.),
-            UnitCommitment("output", 0.5, startup=1, integer=true)    
+            UnitCommitment("output", 0.5, startup=1, shutdownratio=1., integer=true)
         ])
         
         @constraint(sim(c).model, _balance(c, :output, energy, collapse=false)[1] == 0.)
@@ -224,7 +225,7 @@ using Test
         c = makecomp([
             Ramping("output", :down, 0.2), 
             FixedCapacity("output", energy, 5., unitsize=1.),
-            UnitCommitment("output", 0.5, shutdown=1)    
+            UnitCommitment("output", 0.5, shutdown=1, startupratio=1.)
         ])
         
         @constraint(sim(c).model, _balance(c, :output, energy, collapse=false)[1] == 5.)
@@ -240,5 +241,45 @@ using Test
 
         @test all(isapprox.(_balance(_c, :output, energy, collapse=false), [5., 4.5, 4., 3.5, 3., 2.5, 1.25, 0., 0., 0.]))
 
+    end
+
+    # Startup endpoint output above minratio is allowed by the UC ramp constraint.
+    let
+        c = makecomp([
+            Ramping("output", :up, 0.),
+            FixedCapacity("output", energy, 1., unitsize=1.),
+            UnitCommitment("output", 0.5, startup=1., startupratio=0.8, shutdownratio=1., integer=true),
+        ])
+        uc = first(getbehaviors(c, FleetUnitCommitmentBehavior))
+        flow = _balance(c, :output, energy, collapse=false)
+
+        @constraint(sim(c).model, uc.state[1] == 0.)
+        @constraint(sim(c).model, uc.state[2] == 1.)
+        set_objective(sim(c).model, MAX_SENSE, flow[2])
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+
+        @test JuMP.termination_status(sim(c).model) == JuMP.MOI.OPTIMAL
+        @test isapprox(JuMP.value(flow[2]), 0.8)
+    end
+
+    # Shutdown endpoint output above minratio is allowed by the UC ramp constraint.
+    let
+        c = makecomp([
+            Ramping("output", :down, 0.),
+            FixedCapacity("output", energy, 1., unitsize=1.),
+            UnitCommitment("output", 0.5, shutdown=1., startupratio=1., shutdownratio=0.8, integer=true),
+        ])
+        uc = first(getbehaviors(c, FleetUnitCommitmentBehavior))
+        flow = _balance(c, :output, energy, collapse=false)
+
+        @constraint(sim(c).model, uc.state[1] == 1.)
+        @constraint(sim(c).model, uc.state[2] == 0.)
+        set_objective(sim(c).model, MAX_SENSE, flow[1])
+        JuMP.set_silent(sim(c).model)
+        JuMP.optimize!(sim(c).model)
+
+        @test JuMP.termination_status(sim(c).model) == JuMP.MOI.OPTIMAL
+        @test isapprox(JuMP.value(flow[1]), 0.8)
     end
 end

@@ -237,14 +237,36 @@ function _apply_constraint_uc_switch!(c::Component, b::AbstractFleetUnitCommitme
     end
 end
 
-# not applied if minratio is 1 (no variable part of flow)
+# Not applied if minratio is 1 (no variable part of flow).
+#
+# For a regular committed unit, variable flow can span the full range between
+# minimum and maximum output. Units completing startup or beginning shutdown
+# are instead capped by their respective endpoint ratios. Startup and shutdown
+# cuts are kept separate because the same unit may complete startup and begin
+# shutdown in one timestep. A regular bound is added only where neither cut is
+# active, avoiding redundant rows when event variables are masked out.
 function _apply_constraint_uc_variable_flow!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     if b.data.minratio < 1
         lm = lowermodel(sim(c))
-        variable_flow_margin = b.variable - b.state * (b.unitsize * (1. - b.data.minratio))
-        for step in eachindex(variable_flow_margin)
-            if !iszero(variable_flow_margin[step])
-                @constraint(lm, variable_flow_margin[step] <= 0.)
+        max_variable_flow = b.state * (b.unitsize * (1. - b.data.minratio))
+        for step in eachindex(b.variable)
+            base_margin = b.variable[step] - max_variable_flow[step]
+            has_endpoint_cut = false
+
+            if b.data.startupratio < 1. && !iszero(b.startup[step])
+                startup_margin = base_margin + b.startup[step] * b.unitsize * (1. - b.data.startupratio)
+                @constraint(lm, startup_margin <= 0.)
+                has_endpoint_cut = true
+            end
+
+            if b.data.shutdownratio < 1. && !iszero(b.shutdown[step])
+                shutdown_margin = base_margin + b.shutdown[step] * b.unitsize * (1. - b.data.shutdownratio)
+                @constraint(lm, shutdown_margin <= 0.)
+                has_endpoint_cut = true
+            end
+
+            if !has_endpoint_cut && !iszero(base_margin)
+                @constraint(lm, base_margin <= 0.)
             end
         end
     end

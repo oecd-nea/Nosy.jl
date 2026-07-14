@@ -29,8 +29,8 @@ Optional parameters:
   * shutdown: shutdown duration in hours (default=0).
   * uptime: minimum uptime duration in hours (default=0).
   * downtime: minimum downtime duration in hours, or a vector of alternative downtime durations (default=0).
-  * startupratio: flow ratio at the end of the startup phase (default=minratio)
-  * shutdownratio: flow ratio at the beginning of the shutdown phase (default=minratio)
+  * startupratio: maximum flow ratio for a unit at the end of the startup phase (default=minratio)
+  * shutdownratio: maximum flow ratio for a unit at the beginning of the shutdown phase (default=minratio)
   * integer: whether the unit commitment must follow an integer constraint (default=false).
   * startupmask: Boolean vector disallowing startup at certain hours.
   * shutdownmask: Vector of Boolean Vector, disallowing shutdown at certain hours for certain shutdown types.

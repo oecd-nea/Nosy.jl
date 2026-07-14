@@ -175,15 +175,15 @@ Some notes and observations:
     #=
         t	uc	st	sd	v	up	b
         1	0.0	0.0	0.0	0.0	0.0	0.0
-        2	2.0	2.0	2.0	5.0	2.0	10.0
+        2	2.0	2.0	2.0	0.0	2.0	5.0
         3	0.0	0.0	0.0	0.0	0.0	0.0
-        4	2.0	2.0	0.0	5.0	2.0	10.0
+        4	2.0	2.0	0.0	0.0	2.0	5.0
         5	2.0	0.0	0.0	5.0	2.0	10.0
         6	2.0	0.0	0.0	5.0	2.0	10.0
         7	2.0	0.0	0.0	5.0	2.0	10.0
         8	2.0	0.0	0.0	5.0	2.0	10.0
         9	2.0	0.0	0.0	5.0	2.0	10.0
-        10	2.0	0.0	2.0	5.0	2.0	10.0
+        10	2.0	0.0	2.0	0.0	2.0	5.0
     =#
     let   
         cap = FixedCapacity("input", mass, 10., unitsize=5.)
@@ -203,25 +203,26 @@ Some notes and observations:
         # 40 for uc attributes lower bounds (startup, shutdown, state, variable)
         # 40 for uc attributes upper bounds (startup, shutdown, state, variable)
         # 10 for uc switch constraint
-        # 10 for uc variable flow constraint
+        # 20 for uc startup and shutdown endpoint flow constraints
         # 0 for uc units constraint (fixed capacity is enforced by the state variable upper bound)
         # 0 for uc min uptime constraint (uptime=0)
         # 10 for uc min downtime constraint (downtime=0 but startup and shutdown are actually included and take at least one step each - even when duration is 0)
         # 10 for uc flow constraint
         # 10 for shutdown <= uc constraint
-        @test nconstraints(sim(m)) == 150
+        @test nconstraints(sim(m)) == 160
         
         # test: maximum capacity can be reached, even with constraint of 0 flow at some point
         # no startup / shutdown constraints
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[1] == 0.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 0.)
-        # max should be reached in at step 2 and steps 4:10
+        # Startup and shutdown endpoints remain capped at minratio; maximum
+        # output is reached on the regular committed steps 5:9.
         set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 10., 0., 10., 10., 10., 10., 10., 10., 10.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 5., 0., 5., 10., 10., 10., 10., 10., 5.])
         @test all(_up(_m.behaviors[2]) .== [0, 2, 0, 2, 2, 2, 2, 2, 2, 2])
     end
 
@@ -297,7 +298,7 @@ Some notes and observations:
     2	0.0	0.0	0.0	0.0	0.0	0.0
     3	0.0	0.0	0.0	0.0	0.0	0.0
     4	0.0	0.0	0.0	0.0	2.0	2.5
-    5	2.0	2.0	0.0	5.0	2.0	10.0
+    5	2.0	2.0	0.0	0.0	2.0	5.0
     6	2.0	0.0	0.0	0.0	2.0	5.0
     7	2.0	0.0	2.0	0.0	2.0	5.0
     8	0.0	0.0	0.0	0.0	2.0	2.5
@@ -312,14 +313,14 @@ Some notes and observations:
         
         # test: min uptime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 0.)
-        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 5.)
 
         set_objective(sim(m).model, MIN_SENSE, weighted_balance_sum(m, :input, energy))
         JuMP.set_silent(sim(m).model)
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 2.5, 10., 5., 5., 2.5, 0., 0.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [0., 0., 0., 2.5, 5., 5., 5., 2.5, 0., 0.])
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 2., 2., 2., 2., 2., 0., 0.])
     end
 
@@ -327,13 +328,13 @@ Some notes and observations:
     t	uc	st	sd	v	up	b
     1	2.0	0.0	0.0	5.0	2.0	10.0
     2	2.0	0.0	0.0	5.0	2.0	10.0
-    3	2.0	0.0	2.0	5.0	2.0	10.0
+    3	2.0	0.0	2.0	0.0	2.0	5.0
     4	0.0	0.0	0.0	0.0	2.0	2.5
     5	0.0	0.0	0.0	0.0	0.0	0.0
     6	0.0	0.0	0.0	0.0	0.0	0.0
     7	0.0	0.0	0.0	0.0	0.0	0.0
     8	0.0	0.0	0.0	0.0	2.0	2.5
-    9	2.0	2.0	0.0	5.0	2.0	10.0
+    9	2.0	2.0	0.0	0.0	2.0	5.0
     10	2.0	0.0	0.0	5.0	2.0	10.0
     =#
     let   
@@ -343,7 +344,7 @@ Some notes and observations:
         m = makecomp([cap, uc])
         
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 5.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
         set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
@@ -351,7 +352,7 @@ Some notes and observations:
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(_balance(_m, :output, energy, collapse=false) .== [10., 10., 10., 2.5, 0., 0., 0., 2.5, 10., 10.])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [10., 10., 5., 2.5, 0., 0., 0., 2.5, 5., 10.])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 2., 2., 2.])
     end
 
@@ -423,7 +424,7 @@ Some notes and observations:
     t	uc	st	sd	v	up	b
     1	0.0	0.0	0.0	0.0	2.0	2.5
     2	0.0	0.0	0.0	0.0	2.0	3.75
-    3	2.0	2.0	2.0	5.0	2.0	10.0
+    3	2.0	2.0	2.0	0.0	2.0	5.0
     4	0.0	0.0	0.0	0.0	2.0	2.5
     5	0.0	0.0	0.0	0.0	0.0	0.0
     6	0.0	0.0	0.0	0.0	0.0	0.0
@@ -452,16 +453,16 @@ Some notes and observations:
         # 40 for uc attributes upper bounds (startup, shutdown, state, variable)
         # 30 for uc attributes integer constraint (startup, shutdown, state)
         # 10 for uc switch constraint
-        # 10 for uc variable flow constraint
+        # 20 for uc startup and shutdown endpoint flow constraints
         # 10 for uc units constraint (state cannot exceed built capacity)
         # 0 for uc min uptime constraint (uptime=0)
         # 10 for uc min downtime constraint
         # 10 for uc flow constraint
         # 10 for shutdown <= uc constraint
-        @test nconstraints(sim(m)) == 192
+        @test nconstraints(sim(m)) == 202
 
         # test: startup and shutdown + downtime
-        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
+        @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 5.)
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[5] == 0.)
 
         set_objective(sim(m).model, MAX_SENSE, weighted_balance_sum(m, :input, energy))
@@ -469,7 +470,7 @@ Some notes and observations:
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(_balance(_m, :output, energy, collapse=false) .== [2.5, 3.75, 10., 2.5, 0., 0., 0., 0., 0., 1.25])
+        @test all(_balance(_m, :output, energy, collapse=false) .== [2.5, 3.75, 5., 2.5, 0., 0., 0., 0., 0., 1.25])
         @test all(_up(_m.behaviors[2]) .== [2., 2., 2., 2., 0., 0., 0., 0., 0., 2.])
     end
 
@@ -665,14 +666,14 @@ Some notes and observations:
     t	uc	st	sd	v	up	b
     1	0.0	0.0	0.0	0.0	0.0	0.0
     2	0.0	0.0	0.0	0.0	0.0	0.0
-    3   0.0 0.0 0.0 0.0 0.0 0.0
-    4	0.0	0.0	0.0	0.0	1.0	0.625
-    5	0.0	0.0	0.0	0.0	1.0	1.25
-    6	0.0	0.0	0.0	0.0	1.0	1.875
-    7	1.0	1.0	0.0	2.5	1.0	5.0
+    3	0.0	0.0	0.0	0.0	1.0	0.625
+    4	0.0	0.0	0.0	0.0	1.0	1.25
+    5	0.0	0.0	0.0	0.0	1.0	1.875
+    6	1.0	1.0	0.0	0.0	1.0	2.5
+    7	1.0	0.0	0.0	2.5	1.0	5.0
     8	1.0	0.0	0.0	2.5	1.0	5.0
-    9	1.0	0.0	0.0	2.5	1.0	5.0
-    10	1.0	0.0	1.0	2.5	1.0	5.0
+    9	1.0	0.0	1.0	2.5	1.0	5.0
+    10	0.0	0.0	0.0	0.0	0.0	0.0
     =#
     let   
         cap = VariableCapacity("input", mass, ub=5., unitsize=5.)
@@ -689,8 +690,8 @@ Some notes and observations:
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 5., 5., 5.], atol=1E-8)) # had to be patched due to numeric error after updating HiGHS
-        @test all(isapprox.(_up(_m.behaviors[2]), [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.], atol=1E-8))  # had to be patched due to numeric error after updating HiGHS
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0.625, 1.25, 1.875, 2.5, 5., 5., 5., 0.], atol=1E-8)) # had to be patched due to numeric error after updating HiGHS
+        @test all(isapprox.(_up(_m.behaviors[2]), [0., 0., 1., 1., 1., 1., 1., 1., 1., 0.], atol=1E-8))  # had to be patched due to numeric error after updating HiGHS
     end
 
     #=
@@ -701,7 +702,7 @@ Some notes and observations:
     4	0.0	0.0	0.0	0.0	1.0	0.625
     5	0.0	0.0	0.0	0.0	1.0	1.25
     6	0.0	0.0	0.0	0.0	1.0	1.875
-    7	1.0	1.0	1.0	2.5	1.0	5.0
+    7	1.0	1.0	1.0	0.0	1.0	2.5
     8	0.0	0.0	0.0	0.0	1.0	2.8125
     9	0.0	0.0	0.0	0.0	1.0	1.875
     10	0.0	0.0	0.0	0.0	1.0	0.9375
@@ -721,7 +722,7 @@ Some notes and observations:
         JuMP.optimize!(sim(m).model)
         _m = _extract(m)
         # _uctable(_m)
-        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 5., 2.8125, 1.875, 0.9375]))
+        @test all(isapprox.(_balance(_m, :output, energy, collapse=false), [0., 0., 0., 0.625, 1.25, 1.875, 2.5, 2.8125, 1.875, 0.9375]))
         @test all(_up(_m.behaviors[2]) .== [0., 0., 0., 1., 1., 1., 1., 1., 1., 1.])
     end
    
@@ -747,6 +748,46 @@ Some notes and observations:
             @test JuMP.termination_status(sim(m).model) == JuMP.MOI.OPTIMAL
             @test iszero(JuMP.value(uc_behavior.state.data[end]))
             @test iszero(JuMP.value(uc_behavior.startup.data[end]))
+        end
+
+        # A unit completing startup is capped by startupratio at the endpoint.
+        let
+            cap = FixedCapacity("input", mass, 5., unitsize=5.)
+            uc = UnitCommitment("input", 0.5, startup=1., startupratio=0.75, shutdownratio=1., integer=true)
+
+            m = makecomp_opentime([cap, uc])
+            uc_behavior = first(getbehaviors(m, FleetUnitCommitmentBehavior))
+            flow = _balance(m, :input, mass, collapse=false)
+
+            @constraint(sim(m).model, uc_behavior.state[2] == 0.)
+            @constraint(sim(m).model, uc_behavior.state[3] == 1.)
+            set_objective(sim(m).model, MAX_SENSE, flow[3])
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+
+            @test JuMP.termination_status(sim(m).model) == JuMP.MOI.OPTIMAL
+            @test isapprox(JuMP.value(uc_behavior.startup.data[3]), 1.)
+            @test isapprox(JuMP.value(flow[3]), 3.75)
+        end
+
+        # A unit beginning shutdown is capped by shutdownratio at the endpoint.
+        let
+            cap = FixedCapacity("input", mass, 5., unitsize=5.)
+            uc = UnitCommitment("input", 0.5, shutdown=1., startupratio=1., shutdownratio=0.75, integer=true)
+
+            m = makecomp_opentime([cap, uc])
+            uc_behavior = first(getbehaviors(m, FleetUnitCommitmentBehavior))
+            flow = _balance(m, :input, mass, collapse=false)
+
+            @constraint(sim(m).model, uc_behavior.state[3] == 1.)
+            @constraint(sim(m).model, uc_behavior.state[4] == 0.)
+            set_objective(sim(m).model, MAX_SENSE, flow[3])
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+
+            @test JuMP.termination_status(sim(m).model) == JuMP.MOI.OPTIMAL
+            @test isapprox(JuMP.value(uc_behavior.shutdown.data[3]), 1.)
+            @test isapprox(JuMP.value(flow[3]), 3.75)
         end
 
         let
