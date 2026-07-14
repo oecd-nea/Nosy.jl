@@ -250,6 +250,23 @@ function _apply_constraint_uc_variable_flow!(c::Component, b::AbstractFleetUnitC
     end
 end
 
+# Fixed-capacity commitment states already have the installed number of units as
+# their variable upper bound. For investable capacity, the variable upper bound
+# is only the maximum build, so an explicit coupling to the actual build is
+# required. In particular, this constraint must not depend on the presence of
+# shutdown variables: masks can otherwise remove the indirect coupling from the
+# minimum-downtime constraints.
+function _apply_constraint_uc_units!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
+    cap = getcapacitybehavior(c, b.data.pname)
+    if cap isa VariableCapacityBehavior
+        units = _nbunits(cap)
+        lm = lowermodel(sim(c))
+        for step in eachindex(b.state)
+            @constraint(lm, b.state[step] <= units)
+        end
+    end
+end
+
 function _apply_constraints_uc_minuptime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = mesh(c)
 
@@ -276,7 +293,8 @@ end
 # Same remark for shutdown.
 function _apply_constraints_uc_mindowntime!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     m = mesh(c)
-    _units = nbunits(c)
+    cap = getcapacitybehavior(c, b.data.pname)
+    _units = _nbunits(cap)
     lm = lowermodel(sim(c)) 
     for step in eachindex(b.state)
         val = exptype(sim(c))(0.)
@@ -340,6 +358,7 @@ end
 function _apply_constraints!(c::Component, b::AbstractFleetUnitCommitmentBehavior)
     _apply_constraint_uc_switch!(c, b)
     _apply_constraint_uc_variable_flow!(c, b)
+    _apply_constraint_uc_units!(c, b)
     _apply_constraints_uc_minuptime!(c, b)
     _apply_constraints_uc_mindowntime!(c, b)
     _apply_constraints_uc_shutdownselector!(c,b)

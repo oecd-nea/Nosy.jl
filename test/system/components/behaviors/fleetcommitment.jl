@@ -139,6 +139,39 @@ Some notes and observations:
         @test nconstraints(sim(m)) == 33
     end
 
+    # Commitment must be coupled to the capacity actually built even when all
+    # shutdown variables are masked out. Without the explicit units constraint,
+    # the minimum-downtime rows disappear and state could reach the build upper
+    # bound while installed capacity remained zero.
+    let
+        cap = VariableCapacity("input", mass, ub=10., unitsize=5., integer=true)
+        mask = fill(false, 10)
+        uc = UnitCommitment("input", 0., integer=true, shutdownmask=[mask])
+
+        m = makecomp([cap, uc])
+        cap_behavior = first(getbehaviors(m, Nosy.VariableCapacityBehavior))
+        uc_behavior = first(getbehaviors(m, FleetUnitCommitmentBehavior))
+
+        @constraint(sim(m).model, cap_behavior.val == 0.)
+        set_objective(sim(m).model, MAX_SENSE, sum(uc_behavior.state.data))
+        JuMP.set_silent(sim(m).model)
+        JuMP.optimize!(sim(m).model)
+
+        @test JuMP.termination_status(sim(m).model) == JuMP.MOI.OPTIMAL
+        @test all(iszero.(JuMP.value.(uc_behavior.state.data)))
+    end
+
+    # Unit count must come from the capacity attached to the committed port,
+    # not from a component-wide unique-capacity lookup.
+    let
+        input_cap = FixedCapacity("input", mass, 10., unitsize=5.)
+        output_cap = VariableCapacity("output", energy, ub=20.)
+        uc = UnitCommitment("input", 0.5, integer=true)
+
+        m = makecomp([input_cap, output_cap, uc])
+        @test length(getbehaviors(m, FleetUnitCommitmentBehavior)) == 1
+    end
+
     #=
         t	uc	st	sd	v	up	b
         1	0.0	0.0	0.0	0.0	0.0	0.0
@@ -171,7 +204,7 @@ Some notes and observations:
         # 40 for uc attributes upper bounds (startup, shutdown, state, variable)
         # 10 for uc switch constraint
         # 10 for uc variable flow constraint
-        # 0 for uc units constraint # currently deactivated
+        # 0 for uc units constraint (fixed capacity is enforced by the state variable upper bound)
         # 0 for uc min uptime constraint (uptime=0)
         # 10 for uc min downtime constraint (downtime=0 but startup and shutdown are actually included and take at least one step each - even when duration is 0)
         # 10 for uc flow constraint
@@ -420,12 +453,12 @@ Some notes and observations:
         # 30 for uc attributes integer constraint (startup, shutdown, state)
         # 10 for uc switch constraint
         # 10 for uc variable flow constraint
-        # 0 for uc units constraint # currently deactivated
+        # 10 for uc units constraint (state cannot exceed built capacity)
         # 0 for uc min uptime constraint (uptime=0)
         # 10 for uc min downtime constraint
         # 10 for uc flow constraint
         # 10 for shutdown <= uc constraint
-        @test nconstraints(sim(m)) == 182
+        @test nconstraints(sim(m)) == 192
 
         # test: startup and shutdown + downtime
         @constraint(sim(m).model, _balance(m, :output, energy, collapse=false)[3] == 10.)
@@ -694,6 +727,27 @@ Some notes and observations:
    
 
     @testset "Non-circular time" begin
+
+        # The terminal commitment state must also be bounded by installed
+        # capacity; there is no following minimum-downtime row on an open mesh
+        # from which this bound could be inferred.
+        let
+            cap = VariableCapacity("input", mass, ub=10., unitsize=5., integer=true)
+            uc = UnitCommitment("input", 0., integer=true)
+
+            m = makecomp_opentime([cap, uc])
+            cap_behavior = first(getbehaviors(m, Nosy.VariableCapacityBehavior))
+            uc_behavior = first(getbehaviors(m, FleetUnitCommitmentBehavior))
+
+            @constraint(sim(m).model, cap_behavior.val == 0.)
+            set_objective(sim(m).model, MAX_SENSE, uc_behavior.state.data[end])
+            JuMP.set_silent(sim(m).model)
+            JuMP.optimize!(sim(m).model)
+
+            @test JuMP.termination_status(sim(m).model) == JuMP.MOI.OPTIMAL
+            @test iszero(JuMP.value(uc_behavior.state.data[end]))
+            @test iszero(JuMP.value(uc_behavior.startup.data[end]))
+        end
 
         let
             cap = FixedCapacity("input", mass, 10., unitsize=5.)
