@@ -208,7 +208,7 @@ using Test
             Ramping("output", :up, 6.0; modifier=energy),
             ReserveUp(reserve_name, "output", :up, 1.0; modifier=energy),
         ])
-        tag!(c1, :tagged)
+        tag!(c1, :function, "tagged")
         connect!(sn, c1, n)
 
         c2 = Component("gen2", DispatchableSource(ec), [
@@ -225,18 +225,18 @@ using Test
         @test total_reserve == comp1_reserve + comp2_reserve
 
         # Only tagged component
-        tagged_reserve = reserve(sn, :up, reserve_name; with=[:tagged])
+        tagged_reserve = reserve(sn, :up, reserve_name; with=[:function => "tagged"])
         @test tagged_reserve == comp1_reserve
 
         # Without tagged component
-        untagged_reserve = reserve(sn, :up, reserve_name; without=[:tagged])
+        untagged_reserve = reserve(sn, :up, reserve_name; without=[:function => "tagged"])
         @test untagged_reserve == comp2_reserve
 
         # Node reserve with tags
-        node_tagged_reserve = reserve(sn, "n", :up, reserve_name; with=[:tagged])
+        node_tagged_reserve = reserve(sn, "n", :up, reserve_name; with=[:function => "tagged"])
         @test node_tagged_reserve == comp1_reserve
 
-        node_untagged_reserve = reserve(sn, "n", :up, reserve_name; without=[:tagged])
+        node_untagged_reserve = reserve(sn, "n", :up, reserve_name; without=[:function => "tagged"])
         @test node_untagged_reserve == comp2_reserve
     end
 

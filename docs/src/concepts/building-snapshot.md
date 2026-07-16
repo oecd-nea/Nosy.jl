@@ -109,9 +109,7 @@ model archetype and any number of behaviors and joint flows.
 
 Components default to the simulation mesh. Component archetypes accept
 `mesh=...` and build their ports, variables, profiles, costs, and
-component-internal constraints on that mesh. Transmission lines also build
-their flow variables on their component mesh; KVL constraints project AC line
-flows onto a compatible cycle mesh when needed.
+component-internal constraints on that mesh.
 
 
 ## Model Archetype
@@ -233,23 +231,6 @@ the sum of connected input and output joint flows:
 in simplified mode, with a trapezoidal variant otherwise. This is useful when a
 storage component needs several named charging or discharging ports.
 
-### [`ACLine`](@ref) And [`DCLine`](@ref)
-
-Both line archetypes expose four ports: output ports `from_out` and `to_out`,
-and input ports `from_in` and `to_in`. They create two non-negative
-directional flow variables per timestep, one for each direction:
-
-```math
-f^{from\to to}_t \in [0,+\infty[, \qquad
-f^{to\to from}_t \in [0,+\infty[.
-```
-
-The same directional variable appears as an output at one end and an input at
-the other. The line archetypes add no local capacity constraints by themselves;
-use capacity behaviors to bound the flows. `ACLine` carries admittance data
-for power-flow formulations, while `DCLine` is a transport line without
-Kirchhoff-voltage-law data.
-
 Model archetype ports are summarized below:
 
 | Model archetype | Input ports | Output ports | Level ports |
@@ -261,8 +242,6 @@ Model archetype ports are summarized below:
 | [`BasicConverter`](@ref) | `input` | `output` | - |
 | [`BasicStorage`](@ref) | `input` | `output` | `level` |
 | [`LazyStorage`](@ref) | - | - | `level` |
-| [`ACLine`](@ref) | `from_in`, `to_in` | `from_out`, `to_out` | - |
-| [`DCLine`](@ref) | `from_in`, `to_in` | `from_out`, `to_out` | - |
 
 
 ## Behaviors

@@ -138,10 +138,6 @@ produced in the first hour of that interval can satisfy demand in the fourth
 hour without an explicit hourly hydrogen storage variable. This can be a useful
 reduction, but it is a modelling approximation.
 
-AC transmission-line cycles use the same strict compatibility rule. If the AC
-lines in a cycle use different nested meshes, Nosy projects their net flows
-onto the coarsest line mesh in that cycle before applying the KVL equality.
-
 ## Time series
 
 Internally, Nosy works with irregular time meshes through the custom

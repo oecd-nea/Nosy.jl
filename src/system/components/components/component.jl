@@ -7,7 +7,7 @@ struct Component{T<:VAL,M<:AbstractModel} <: AbstractComponent{T}
     model::M
     behaviors::Vector{AbstractRegularBehavior{T}} # NB this is an abstract type, performance impact
     jointflows::Vector{AbstractJointFlow{T}}
-    tags::Vector{Symbol} # lightweight tagging system for post-processing etc.
+    tags::Dict{Symbol, Vector{String}} # key-value metadata for post-processing etc.
     s::PortStructure{T} # shallow copy of the port structure of the underlying model
 end
 
@@ -28,22 +28,28 @@ hasinput(c::Component, pname::String) = _hasinput(c.s, pname, name(c))
 hasoutput(c::Component, pname::String) = _hasoutput(c.s, pname, name(c))
 haslevel(c::Component, pname::String) = _haslevel(c.s, pname, name(c))
 
+"""
+    tag!(c::Component, k::Symbol, v::String)
+
+Add tag value `v` under key `k` on component `c`.
+
+Multiple values may be stored under the same key. Duplicate values are ignored.
+"""
+function tag!(c::Component, k::Symbol, v::String)
+    if haskey(c.tags, k)
+        v in c.tags[k] || push!(c.tags[k], v)
+    else
+        c.tags[k] = [v]
+    end
+    return nothing
+end
 
 """
-    tag!(element, tag::Symbol)
+    hastag(c::Component, k::Symbol, v::String)
 
-Add `tag` to a component or node.
-
-Tags are used to group model elements for reporting and filtering.
+Return whether component `c` has tag value `v` under key `k`.
 """
-tag!(c::Component, tag::Symbol) = tag in c.tags ? nothing : push!(c.tags, tag)
-
-"""
-    hastag(element, tag::Symbol)
-
-Return whether a component or node has `tag`.
-"""
-hastag(c::Component, tag::Symbol) = tag in c.tags
+hastag(c::Component, k::Symbol, v::String) = haskey(c.tags, k) && v in c.tags[k]
 
 # dispatch on model (e.g. ProfileSource has a different implementation)
 _addbehavior!(c::Component, b::AbstractBehavior) = _addbehavior!(c, b, model(c))
@@ -55,11 +61,11 @@ function _addbehavior!(c::Component, b::AbstractBehavior, ::AbstractModel)
 end
 
 """
-    Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Vector{Symbol}=Symbol[])
+    Component(name::String, model::AbstractModelData, behaviors::AbstractVector; tags::Dict{Symbol, Vector{String}}=Dict{Symbol, Vector{String}}())
 
 Construct a `Component` with name `name`, model archetype `model`, behaviors and joint flows from `behaviors`, and optional `tags`.
 """
-function Component(name::String, model::AbstractModelData, behaviors::AbstractVector=[]; tags::Vector{Symbol}=Symbol[])
+function Component(name::String, model::AbstractModelData, behaviors::AbstractVector=[]; tags::Dict{Symbol, Vector{String}}=Dict{Symbol, Vector{String}}())
     
     _assert_unreserved_component_name(name)
     
@@ -73,7 +79,7 @@ function Component(name::String, model::AbstractModelData, behaviors::AbstractVe
         m,
         Vector{AbstractRegularBehavior{exptype(sim(m))}}(undef,0),
         Vector{AbstractJointFlow{exptype(sim(m))}}(undef,0),
-        copy(tags),
+        Dict(k => copy(v) for (k, v) in tags),
         shallowcopy(portstructure(m))
     )
 
