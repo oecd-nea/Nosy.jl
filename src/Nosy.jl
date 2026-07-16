@@ -9,7 +9,6 @@ export BasicConverter
 export BasicSink, Demand, ProfileSink
 export DispatchableSource, ProfileSource
 export BasicStorage, LazyStorage
-export ACLine, DCLine
 
 export VariableCapacity, VariableComposedCapacity, FixedCapacity, FixedComposedCapacity
 export CapacityMultiplier, Duration
