@@ -10,7 +10,7 @@ formulations, solve them through JuMP-compatible optimizers, and inspect the
 resulting costs, capacities, flows, prices, and other metrics.
 
 Nosy is used at the OECD NEA to model energy systems in the frame of system
-cost studies. System costs studies at the OECD-NEA include:
+cost studies. System cost studies at the OECD-NEA include:
 
 - [Achieving Net Zero Carbon Emissions in Switzerland in 2050](https://www.oecd-nea.org/jcms/pl_74877/achieving-net-zero-carbon-emissions-in-switzerland-in-2050-low-carbon-scenarios-and-their-system-costs?details=true)
 - [A Least-cost Capacity Mix to Satisfy Growing Electricity Demand without Carbon Emissions in Sweden](https://www.oecd-nea.org/jcms/pl_116142/a-least-cost-capacity-mix-to-satisfy-growing-electricity-demand-without-carbon-emissions-in-sweden)
@@ -22,7 +22,7 @@ examples, is available [here](https://oecd-nea.github.io/Nosy.jl/dev/).
 
 ## Requirements
 
-Nosy requires Julia 1.11 or newer and a LP or MILP solver compatible with
+Nosy requires Julia 1.11 or newer and an LP or MILP solver compatible with
 [JuMP](https://jump.dev/JuMP.jl/stable/). The example below uses
 [HiGHS](https://highs.dev/), an open-source solver with a Julia wrapper
 compatible with JuMP. Other
@@ -78,7 +78,7 @@ plant = Component(
     "plant",
     DispatchableSource(elec),
     [
-        VariableCapacity("output", energy), # output capacity of the plant is an optimizatoin variable
+        VariableCapacity("output", energy), # output capacity of the plant is an optimization variable
         FixedCost(:capex, "output", energy, 60_000.0), # annualized CAPEX of 60000 USD/MW/year
         VariableCost(:fuel, "output", energy, 50.0), # fuel cost of 50 USD/MWh
     ],
@@ -86,7 +86,7 @@ plant = Component(
 connect!(snapshot, plant, grid)
 
 # Minimize total system cost and extract the solved values.
-optimize!(snapshot, cost(snapshot)) # optimize the Snapshot (with HiGHS) by minimizine total cost
+optimize!(snapshot, cost(snapshot)) # optimize the Snapshot (with HiGHS) by minimizing total cost
 result = extract(snapshot) # generate a Snapshot populated with the optimal solution
 
 # Inspect results.
