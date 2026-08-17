@@ -57,4 +57,26 @@ using Test
 
     end
 
+    # non-uniform mesh: the commitment state is a step function, so it must be integrated
+    # with the interval sum and not with the trapezoid rule used by sum(::Stepwise)
+    let
+        s = Sim(Model(), mesh=TimeMesh([1//1, 1//2, 1//2, 2//1, 1//1, 2//1])) # 6 steps, 7 hours
+        mc = MassCarrier("m", s, energy=[1,2,3,4,5,6,7])
+        ec = EnergyCarrier("e", s)
+        c = Component(
+            "comp",
+            BasicConverter(mc, ec),
+            [NoLoadCost(:noload, "input", 10), UnitCommitment("input", 0.5), FixedCapacity("input", energy, 5., unitsize=1)],
+        )
+
+        uc = c.behaviors[2]
+        nl = c.behaviors[3]
+        @test nl isa NoLoadCostBehavior{AffExpr}
+
+        @test _noloadcost(nl) == 10 * sum(weight(sim(c).mesh, st) * _up(uc)[st] for st in eachstep(sim(c)))
+
+        # the trapezoid rule would give a different (wrong) result on this mesh
+        @test _noloadcost(nl) != 10 * sum(_up(uc))
+    end
+
 end

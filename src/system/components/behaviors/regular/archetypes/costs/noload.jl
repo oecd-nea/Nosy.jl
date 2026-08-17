@@ -34,7 +34,10 @@ function buildbehavior(c::Component{T}, b::NoLoadCost) where T
     if isnothing(uc) 
         throw(AssertionError("Component $(name(c)) does not have a unit commitment behavior for port $(b.pname)"))
     end
-    _cost = sum(_up(uc)) * b.val # NB step weights already included in the sum(_up(uc)) as _up(uc) is a Stepwise series
+    # NB `_up(uc)` counts committed units: it is a step function, not a quantity varying
+    # linearly between instants, so it must not be integrated with the trapezoid rule
+    # used by `sum(::Stepwise)`. `_interval_sum` weights each step by its own duration.
+    _cost = _interval_sum(_up(uc)) * b.val
     return NoLoadCostBehavior(b, _cost)
 end
 
