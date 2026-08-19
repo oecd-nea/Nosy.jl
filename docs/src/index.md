@@ -21,6 +21,15 @@ range of technologies.
 - Stay solver-agnostic through [JuMP](https://jump.dev/JuMP.jl/stable/).
 - Query flows and built-in metrics for capacity, cost, reserve, price etc.
 
+## Higher-level modelling with Posy2.jl
+
+[Posy2.jl](https://github.com/oecd-nea/Posy2.jl) builds on Nosy with
+standard technology constructors, input-data workflows, multi-zone power
+system modelling, and energy-system reporting. Posy2 components remain
+ordinary Nosy components, so studies can still be extended directly with
+Nosy's compositional API. See the
+[Posy2.jl manual](https://oecd-nea.github.io/Posy2.jl/dev/).
+
 ## Licence
 
 Nosy is available under the MIT licence.
