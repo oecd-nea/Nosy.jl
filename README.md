@@ -2,6 +2,9 @@
 
 [![codecov](https://codecov.io/github/oecd-nea/Nosy.jl/branch/dev/graph/badge.svg)](https://app.codecov.io/github/oecd-nea/Nosy.jl/tree/dev)
 [![CI](https://github.com/oecd-nea/Nosy.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/oecd-nea/Nosy.jl/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://oecd-nea.github.io/Nosy.jl/dev/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![Julia General Registry](https://img.shields.io/badge/registry-General-4063D8.svg)](https://github.com/JuliaRegistries/General/tree/master/N/Nosy)
 
 Nosy is a composable, component-based energy system modeling and optimization
 toolkit developed at the OECD Nuclear Energy Agency (OECD-NEA). It provides a Julia
